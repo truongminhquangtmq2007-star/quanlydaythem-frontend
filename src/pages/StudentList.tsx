@@ -27,7 +27,7 @@ const StudentList = () => {
       return;
     }
     try {
-      const response = await axios.get('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/students', {
+      const response = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/students', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStudents(response.data);
@@ -50,7 +50,7 @@ const StudentList = () => {
     try {
       if (editingId) {
         // Nếu là Cập nhật (Sửa) thì không gửi password
-        await axios.put(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/students/${editingId}`, {
+        await axios.put(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/students/${editingId}`, {
           full_name: fullName,
           phone_number: phoneNumber,
           school_name: schoolName
@@ -58,7 +58,7 @@ const StudentList = () => {
         setMessage('✅ Cập nhật thông tin thành công!');
       } else {
         // Nếu là Tạo mới thì gửi kèm password
-        await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/students', {
+        await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/students', {
           full_name: fullName,
           phone_number: phoneNumber,
           school_name: schoolName,
@@ -92,7 +92,7 @@ const StudentList = () => {
 
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/students/${id}`, {
+      await axios.delete(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/students/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage('✅ Đã xóa học sinh thành công!');
@@ -109,7 +109,7 @@ const StudentList = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/students/${studentId}/reset-password`, 
+      await axios.put(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/students/${studentId}/reset-password`, 
         { newPassword: newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );

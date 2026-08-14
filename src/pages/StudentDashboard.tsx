@@ -12,7 +12,7 @@ const StudentDashboard = () => {
     const token = localStorage.getItem('token');
     if (!token) { navigate('/student/login'); return; }
     try {
-      const res = await axios.get(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/sessions/published?student_id=${studentId}`, {
+      const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/published?student_id=${studentId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSessions(res.data);

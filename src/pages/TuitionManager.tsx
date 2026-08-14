@@ -11,7 +11,7 @@ const TuitionManager = () => {
   const fetchBills = useCallback(async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/bills', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/bills', { headers: { Authorization: `Bearer ${token}` } });
       const allBills = res.data;
       
       // LỌC HÓA ĐƠN THEO THÁNG ĐƯỢC CHỌN
@@ -36,7 +36,7 @@ const TuitionManager = () => {
     if (!confirm) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/bills/${id}/pay`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/bills/${id}/pay`, {}, { headers: { Authorization: `Bearer ${token}` } });
       alert('✅ Đã ghi nhận doanh thu thành công! Học sinh đã được cấp tem.');
       fetchBills(); 
     } catch (error) { alert('❌ Lỗi hệ thống.'); }

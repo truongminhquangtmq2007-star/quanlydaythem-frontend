@@ -11,7 +11,7 @@ const StudentLogin = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/auth/student/login', { username, password });
+      const res = await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/auth/student/login', { username, password });
       
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('role', 'STUDENT');

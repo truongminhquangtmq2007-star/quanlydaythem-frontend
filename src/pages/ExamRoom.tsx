@@ -25,8 +25,8 @@ const ExamRoom = () => {
     try {
       const token = localStorage.getItem('token');
       const classId = localStorage.getItem('classId') || '1';
-      const resDocs = await axios.get(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/folders/drive?category=EXAM&class_id=${classId}`, { headers: { Authorization: `Bearer ${token}` } });
-      const resScores = await axios.get(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/exams/my-submissions`, { headers: { Authorization: `Bearer ${token}` } });
+      const resDocs = await axios.get(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/folders/drive?category=EXAM&class_id=${classId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const resScores = await axios.get(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/exams/my-submissions`, { headers: { Authorization: `Bearer ${token}` } });
       
       const historyMap: {[key: number]: any[]} = {};
       resScores.data.forEach((s: any) => { 
@@ -100,7 +100,7 @@ const ExamRoom = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/exams/submit', {
+      const res = await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/exams/submit', {
         document_id: selectedExam.id, student_answers: { part1: part1Answers, part2: part2Answers, part3: formattedPart3 }, 
         cheat_count: cheatWarnings, time_taken_seconds: timeTaken
       }, { headers: { Authorization: `Bearer ${token}` } });

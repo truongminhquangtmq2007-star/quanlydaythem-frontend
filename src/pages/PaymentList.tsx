@@ -36,14 +36,14 @@ const PaymentList = () => {
     if (!token) { navigate('/login'); return; }
 
     try {
-      const payRes = await axios.get('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/payments', { headers: { Authorization: `Bearer ${token}` } });
+      const payRes = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/payments', { headers: { Authorization: `Bearer ${token}` } });
       setPayments(payRes.data);
     } catch (error) {
       console.error('Lỗi tải lịch sử học phí', error);
     }
 
     try {
-      const stuRes = await axios.get('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/students', { headers: { Authorization: `Bearer ${token}` } });
+      const stuRes = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/students', { headers: { Authorization: `Bearer ${token}` } });
       setStudents(stuRes.data);
     } catch (error) {
       console.error('Lỗi tải danh sách học sinh', error);
@@ -64,7 +64,7 @@ const PaymentList = () => {
 
       const token = localStorage.getItem('token');
       try {
-        const res = await axios.get(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/enrollments/student/${studentId}`, {
+        const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/enrollments/student/${studentId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setClasses(res.data);
@@ -81,7 +81,7 @@ const PaymentList = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/payments', {
+      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/payments', {
         student_id: Number(studentId),
         class_id: Number(classId),
         amount: Number(amount),

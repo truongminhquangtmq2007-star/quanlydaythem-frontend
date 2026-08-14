@@ -38,7 +38,7 @@ const TeacherCalendar = () => {
   const fetchClasses = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/classes', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/classes', { headers: { Authorization: `Bearer ${token}` } });
       setClasses(res.data);
     } catch (error) {}
   };
@@ -46,7 +46,7 @@ const TeacherCalendar = () => {
   const fetchStudents = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/students', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/students', { headers: { Authorization: `Bearer ${token}` } });
       setStudents(res.data);
     } catch (error) {}
   };
@@ -56,8 +56,8 @@ const TeacherCalendar = () => {
     try {
       // Đã sửa: Nếu không có selectedClassId, lấy Lịch Tổng của mọi lớp
       const url = selectedClassId 
-        ? `[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/sessions?class_id=${selectedClassId}`
-        : `[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/sessions`;
+        ? `https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions?class_id=${selectedClassId}`
+        : `https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions`;
 
       const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
       const calendarEvents = res.data.map((session: any) => {
@@ -98,7 +98,7 @@ const TeacherCalendar = () => {
     setShowAttendanceModal(true);
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/sessions/evaluations?session_id=${formData.id}`, {
+      const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/evaluations?session_id=${formData.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCurrentEvaluations(res.data);
@@ -120,7 +120,7 @@ const TeacherCalendar = () => {
   const handleSave = async () => {
     const token = localStorage.getItem('token');
     try {
-      await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/sessions/upsert', { ...formData, class_id: selectedClassId }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/upsert', { ...formData, class_id: selectedClassId }, { headers: { Authorization: `Bearer ${token}` } });
       setShowModal(false); fetchSessions(); 
     } catch (error) {}
   };
@@ -129,7 +129,7 @@ const TeacherCalendar = () => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa buổi học này không?")) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/sessions/${formData.id}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/${formData.id}`, { headers: { Authorization: `Bearer ${token}` } });
       setShowModal(false); 
       fetchSessions(); 
     } catch (error) {
@@ -141,7 +141,7 @@ const TeacherCalendar = () => {
     if (!selectedClassId || !window.confirm("Gửi lịch cho Phụ huynh?")) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/sessions/publish', { class_id: selectedClassId }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/publish', { class_id: selectedClassId }, { headers: { Authorization: `Bearer ${token}` } });
       alert("🚀 Đã gửi lịch học!"); fetchSessions(); 
     } catch (error) {}
   };
@@ -150,7 +150,7 @@ const TeacherCalendar = () => {
     if (!evalForm.student_id) return alert("Vui lòng chọn học sinh để đánh giá!");
     const token = localStorage.getItem('token');
     try {
-      await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/sessions/evaluate', {
+      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/evaluate', {
         session_id: formData.id,
         student_id: evalForm.student_id, 
         is_present: evalForm.is_present,
@@ -173,7 +173,7 @@ const TeacherCalendar = () => {
       }
       const token = localStorage.getItem('token');
       try {
-        const res = await axios.get(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/sessions/published?student_id=${tuitionStudentId}`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/published?student_id=${tuitionStudentId}`, { headers: { Authorization: `Bearer ${token}` } });
         const filtered = res.data.filter((s: any) => {
           if (!s.session_date || !s.is_present) return false;
           
@@ -203,7 +203,7 @@ const TeacherCalendar = () => {
     window.print();
     const token = localStorage.getItem('token');
     try {
-      await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/bills/create', {
+      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/bills/create', {
         student_id: tuitionStudentId, 
         start_date: startDate, 
         end_date: endDate,

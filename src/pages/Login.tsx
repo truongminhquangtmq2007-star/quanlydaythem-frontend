@@ -11,7 +11,7 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); 
     try {
-      const response = await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/auth/login', {
+      const response = await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/auth/login', {
         username: username,
         password: password
       });
