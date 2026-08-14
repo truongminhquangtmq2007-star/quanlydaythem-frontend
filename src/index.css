@@ -1,0 +1,25 @@
+/* RESET MỌI THỨ VÀ ÉP DÙNG TIMES NEW ROMAN CHO TOÀN BỘ CÁC THẺ */
+* {
+  box-sizing: border-box;
+  font-family: "Times New Roman", Times, serif !important;
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100vw !important;
+  max-width: 100% !important;
+  min-height: 100vh !important;
+  overflow-x: hidden;
+  /* Đã đổi sang màu Trắng Tông Xanh cực dịu mắt */
+  background-color:#f0f4f8 !important; 
+}
+
+#root {
+  width: 100vw !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  border-inline: none !important; 
+}
