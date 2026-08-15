@@ -222,10 +222,13 @@ const ExamRoom = () => {
                 {/* NÚT XEM ĐÁP ÁN DỰA VÀO TRẠNG THÁI TỪ BACKEND */}
                 <div style={{ marginTop: '25px', textAlign: 'center', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
                   {examScore.allow_view_answers ? (
-                    <button style={{ padding: '10px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}>
-                      Xem chi tiết đáp án
-                    </button>
-                  ) : (
+                <button 
+                  onClick={() => navigate(`/student/view-answers/${selectedExam.id}`)}
+                  style={{ padding: '10px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}
+                >
+                  Xem chi tiết đáp án
+                </button>
+              ) : (
                     <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '14px' }}>Giáo viên chưa mở khóa đáp án chi tiết.</span>
                   )}
                 </div>
