@@ -17,7 +17,7 @@ const StudentDocuments = () => {
     const token = localStorage.getItem('token');
     try {
       // Đã sửa lỗi cú pháp ở dòng này (dùng phép cộng chuỗi thay vì nhúng template phức tạp)
-      const url = `https://quanlydaythem-api.onrender.com/api/auth/student/login/api/folders/drive?category=STORAGE&class_id=${classId}` + (parentId ? `&parent_id=${parentId}` : '');
+      const url = `https://quanlydaythem-api.onrender.com/api/folders/drive?category=STORAGE&class_id=${classId}` + (parentId ? `&parent_id=${parentId}` : '');
       const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
       setFolders(res.data.folders || []);
       setDocuments(res.data.documents || []);

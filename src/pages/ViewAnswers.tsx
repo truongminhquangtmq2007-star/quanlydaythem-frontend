@@ -9,7 +9,7 @@ const ViewAnswers = () => {
   useEffect(() => {
     const fetchKey = async () => {
       try {
-        const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/exams/key/${docId}`, {
+        const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/exams/key/${docId}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         setKey(res.data);

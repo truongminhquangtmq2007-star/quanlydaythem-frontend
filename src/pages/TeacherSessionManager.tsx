@@ -10,7 +10,7 @@ const TeacherSessionManager = () => {
   const fetchClasses = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/classes', {
+      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/classes', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setClasses(res.data);
@@ -24,7 +24,7 @@ const TeacherSessionManager = () => {
     if (!selectedClassId) return; // Nếu chưa chọn lớp thì không tải
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions?class_id=${selectedClassId}`, {
+      const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/sessions?class_id=${selectedClassId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSessions(res.data.length > 0 ? res.data : [{}]); 
@@ -54,7 +54,7 @@ const TeacherSessionManager = () => {
     if (sessionId) {
       const token = localStorage.getItem('token');
       try {
-        await axios.delete(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/${sessionId}`, {
+        await axios.delete(`https://quanlydaythem-api.onrender.com/api/sessions/${sessionId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } catch (error) {
@@ -71,7 +71,7 @@ const TeacherSessionManager = () => {
     const token = localStorage.getItem('token');
     try {
       await Promise.all(sessions.map(session => {
-        return axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/upsert', {
+        return axios.post('https://quanlydaythem-api.onrender.com/api/sessions/upsert', {
           ...session,
           class_id: selectedClassId // Gắn đúng ID của lớp đang chọn
         }, { headers: { Authorization: `Bearer ${token}` } });
@@ -88,7 +88,7 @@ const TeacherSessionManager = () => {
     if (!window.confirm("Học sinh sẽ nhận được lịch học này. Xác nhận công bố?")) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/sessions/publish', {
+      await axios.post('https://quanlydaythem-api.onrender.com/api/sessions/publish', {
         class_id: selectedClassId
       }, { headers: { Authorization: `Bearer ${token}` } });
       alert("🚀 Đã công bố lịch học cho Phụ huynh!");

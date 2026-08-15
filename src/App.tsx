@@ -16,6 +16,9 @@ import ExamManagement from './pages/ExamManagement';
 import StudentDocuments from './pages/StudentDocuments'; 
 import ViewAnswers from './pages/ViewAnswers'; 
 import TeacherManager from './pages/TeacherManager';
+import axios from 'axios';
+
+axios.defaults.baseURL = 'https://quanlydaythem-api.onrender.com';
 
 function App() {
   return (

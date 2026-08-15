@@ -17,7 +17,7 @@ const TeacherManager = () => {
   const fetchTeachers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/auth/teachers', {
+      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/teachers', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTeachers(res.data);
@@ -34,7 +34,7 @@ const TeacherManager = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/auth/teachers', {
+      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/teachers', {
         username,
         password,
         full_name: fullName
@@ -57,7 +57,7 @@ const TeacherManager = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/auth/teachers/${teacherId}/reset-password`, 
+      await axios.put(`https://quanlydaythem-api.onrender.com/api/auth/teachers/${teacherId}/reset-password`, 
         { newPassword: newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
