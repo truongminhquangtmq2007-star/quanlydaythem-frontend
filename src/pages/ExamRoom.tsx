@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import 'katex/dist/katex.min.css';
+import { InlineMath } from 'react-katex';
+
+// Hàm tiện ích: Render LaTeX và Text
+const renderContent = (text: string) => {
+  if (!text) return '';
+  const parts = text.split('$');
+  return parts.map((part, index) => {
+    if (index % 2 !== 0) return <InlineMath key={index} math={part} />;
+    return <span key={index}>{part}</span>;
+  });
+};
 
 const ExamRoom = () => {
   const navigate = useNavigate();
@@ -10,16 +22,20 @@ const ExamRoom = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [examScore, setExamScore] = useState<any>(null);
   
+  // Anti-cheat
   const [cheatWarnings, setCheatWarnings] = useState(0);
   const [showCheatModal, setShowCheatModal] = useState(false);
   const [cheatReason, setCheatReason] = useState('');
 
-  const part1Count = 40; const part2Count = 4; const part3Count = 6;
+  // Lưu đáp án
   const [part1Answers, setPart1Answers] = useState<{[key: number]: string}>({});
   const [part2Answers, setPart2Answers] = useState<{[key: number]: {[sub: string]: 'Đ' | 'S'}}>({});
-  const [part3Answers, setPart3Answers] = useState<{[key: number]: (string | null)[]}>({});
+  const [part3Answers, setPart3Answers] = useState<{[key: number]: string}>({}); // Đã đổi sang string cho input text
   
   const [myScores, setMyScores] = useState<{[key: number]: any[]}>({});
+  const [examData, setExamData] = useState<any>(null); // State chứa nội dung câu hỏi text
+  const [fontSize, setFontSize] = useState<number>(16);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const fetchExams = useCallback(async () => {
     try {
@@ -41,10 +57,37 @@ const ExamRoom = () => {
 
   useEffect(() => { if (viewState === 'LIST') fetchExams(); }, [viewState, fetchExams]);
 
-  useEffect(() => {
+useEffect(() => {
     if (viewState === 'EXAM' && selectedExam) {
+      // 1. Lấy thời gian làm bài từ cấu hình đề, nếu không có mặc định là 50 phút
       const duration = selectedExam.duration_minutes ? selectedExam.duration_minutes * 60 : 50 * 60;
       setTimeLeft(duration);
+
+      // 2. GỌI API LẤY NỘI DUNG ĐỀ THI THẬT TỪ BACKEND
+      const fetchExamContent = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          
+          // ⚠️ LƯU Ý: Thay '/api/exams/key/' bằng đúng đường dẫn route (API số 5) của bạn trong backend
+          const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/exams/key/${selectedExam.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          // Kiểm tra xem đề thi đã có nội dung (exam_content) chưa
+          if (res.data && res.data.exam_content) {
+            setExamData(res.data.exam_content);
+          } else {
+            // Nếu chưa có, tạm thời set mảng rỗng để giao diện không bị sập
+            alert('Giáo viên chưa cập nhật nội dung chi tiết cho đề thi này!');
+            setExamData({ part1: [], part2: [], part3: [] });
+          }
+        } catch (error) {
+          console.error('Lỗi khi tải nội dung đề thi:', error);
+          alert('Không thể tải nội dung đề thi. Vui lòng thử lại!');
+        }
+      };
+
+      fetchExamContent();
     }
   }, [viewState, selectedExam]);
 
@@ -53,6 +96,7 @@ const ExamRoom = () => {
     setCheatWarnings(prev => prev + 1); setCheatReason(reason); setShowCheatModal(true);
   }, [showCheatModal, viewState]);
 
+  // ANTI-CHEAT & TIMER HOOK
   useEffect(() => {
     if (viewState !== 'EXAM') return;
     const requestFS = async () => { try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch (e) {} };
@@ -82,34 +126,30 @@ const ExamRoom = () => {
     };
   }, [viewState, triggerWarning]);
 
-  const handlePart3Select = (question: number, colIndex: number, value: string) => {
-    setPart3Answers(prev => {
-      const currentAns = prev[question] || [null, null, null, null];
-      const newAns = [...currentAns]; newAns[colIndex] = newAns[colIndex] === value ? null : value;
-      return { ...prev, [question]: newAns };
-    });
-  };
-
   const forceSubmit = async () => {
     setViewState('RESULT');
+    setIsSubmitting(true);
     if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-    const formattedPart3: {[key: number]: string} = {};
-    Object.keys(part3Answers).forEach(q => { formattedPart3[Number(q)] = part3Answers[Number(q)].filter(v => v !== null).join(''); });
 
     const timeTaken = ((selectedExam?.duration_minutes || 50) * 60) - timeLeft;
 
     try {
       const token = localStorage.getItem('token');
       const res = await axios.post('https://quanlydaythem-api.onrender.com/api/exams/submit', {
-        document_id: selectedExam.id, student_answers: { part1: part1Answers, part2: part2Answers, part3: formattedPart3 }, 
-        cheat_count: cheatWarnings, time_taken_seconds: timeTaken
+        document_id: selectedExam.id, 
+        student_answers: { part1: part1Answers, part2: part2Answers, part3: part3Answers }, 
+        cheat_count: cheatWarnings, 
+        time_taken_seconds: timeTaken
       }, { headers: { Authorization: `Bearer ${token}` } });
-      setExamScore(res.data.score); // Đã có allow_view_answers từ Backend trả về
-    } catch (error: any) { alert("Lỗi nộp bài!"); }
+      setExamScore(res.data.score);
+    } catch (error: any) { alert("Lỗi nộp bài!"); } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const wrapperStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: '#f1f5f9', overflowY: 'auto' };
 
+  // ================= VIEW 1: DANH SÁCH ĐỀ =================
   if (viewState === 'LIST') {
     return (
       <div style={wrapperStyle}>
@@ -144,37 +184,18 @@ const ExamRoom = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px', maxHeight: '100px', overflowY: 'auto' }}>
                           {attempts.map((att, idx) => (
                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', backgroundColor: 'white', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                <span>Lần {attempts.length - idx}</span><span style={{ fontWeight: 'bold', color: '#10b981' }}>{att.total_score}đ</span>
+                               <span>Lần {attempts.length - idx}</span><span style={{ fontWeight: 'bold', color: '#10b981' }}>{att.total_score}đ</span>
                              </div>
                           ))}
                         </div>
                         <button onClick={() => { setSelectedExam(doc); setViewState('CONFIRM'); }} style={{ width: '100%', padding: '12px 0', backgroundColor: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Luyện Lại ➔</button>
                       {doc.allow_view_answers && (
-  <button 
-    onClick={() => navigate(`/student/view-answers/${doc.id}`)} 
-    style={{ 
-      marginTop: '10px', 
-      padding: '12px', 
-      width: '100%', // <--- THAY ĐỔI Ở ĐÂY: Chiếm 100% chiều rộng
-      backgroundColor: '#fff', 
-      color: '#f59e0b', 
-      border: '2px solid #f59e0b', 
-      borderRadius: '8px', 
-      cursor: 'pointer', 
-      fontWeight: 'bold',
-      transition: '0.2s', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      gap: '8px',
-      boxSizing: 'border-box' // Đảm bảo padding không làm nút bị tràn ra ngoài
-    }}
-    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f59e0b'; e.currentTarget.style.color = 'white'; }}
-    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#f59e0b'; }}
-  >
-    👁️ Xem đáp án
-  </button>
-)}
+                        <button onClick={() => navigate(`/student/view-answers/${doc.id}`)} style={{ marginTop: '10px', padding: '12px', width: '100%', backgroundColor: '#fff', color: '#f59e0b', border: '2px solid #f59e0b', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f59e0b'; e.currentTarget.style.color = 'white'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#f59e0b'; }}>
+                          👁️ Xem đáp án
+                        </button>
+                      )}
                       </div>
                     ) : (
                       <button onClick={() => { setSelectedExam(doc); setViewState('CONFIRM'); }} style={{ width: '100%', padding: '12px 0', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Vào Thi Ngay ⚡</button>
@@ -189,6 +210,7 @@ const ExamRoom = () => {
     );
   }
 
+  // ================= VIEW 2: MÀN HÌNH XÁC NHẬN =================
   if (viewState === 'CONFIRM') {
     return (
       <div style={{...wrapperStyle, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f1f5f9'}}>
@@ -205,6 +227,7 @@ const ExamRoom = () => {
     );
   }
 
+  // ================= VIEW 3: KẾT QUẢ THI =================
   if (viewState === 'RESULT') {
     return (
       <div style={{...wrapperStyle, display: 'flex', flexDirection: 'column'}}>
@@ -218,21 +241,13 @@ const ExamRoom = () => {
                 <p style={{ color: '#475569' }}>Phần II: {examScore.p2Score}đ</p>
                 <p style={{ color: '#475569' }}>Phần III: {examScore.p3Score}đ</p>
                 <h3 style={{ color: '#ea580c', fontSize: '26px', marginTop: '15px' }}>Tổng điểm: {examScore.totalScore} / 10</h3>
-                
-                {/* NÚT XEM ĐÁP ÁN DỰA VÀO TRẠNG THÁI TỪ BACKEND */}
                 <div style={{ marginTop: '25px', textAlign: 'center', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
                   {examScore.allow_view_answers ? (
-                <button 
-                  onClick={() => navigate(`/student/view-answers/${selectedExam.id}`)}
-                  style={{ padding: '10px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}
-                >
-                  Xem chi tiết đáp án
-                </button>
+                <button onClick={() => navigate(`/student/view-answers/${selectedExam.id}`)} style={{ padding: '10px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}>Xem chi tiết đáp án</button>
               ) : (
                     <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '14px' }}>Giáo viên chưa mở khóa đáp án chi tiết.</span>
                   )}
                 </div>
-
               </div>
             ) : <p>Đang xử lý điểm...</p>}
             <button onClick={() => { setViewState('LIST'); fetchExams(); }} style={{ padding: '12px 30px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' }}>Về danh sách đề</button>
@@ -242,9 +257,48 @@ const ExamRoom = () => {
     );
   }
 
-  // ================= MÀN HÌNH LÀM BÀI CHÍNH (ĐẦY ĐỦ 3 PHẦN) =================
+  // ================= VIEW 4: MÀN HÌNH LÀM BÀI CHÍNH (GIAO DIỆN CHUẨN THI QUỐC GIA) =================
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const totalQuestions = (examData?.part1?.length || 0) + (examData?.part2?.length || 0) + (examData?.part3?.length || 0);
+  const answeredCount = Object.keys(part1Answers).length + Object.keys(part2Answers).length + Object.keys(part3Answers).filter(k => part3Answers[Number(k)]?.trim() !== '').length;
+
+  const examStyles = {
+    layout: { backgroundColor: '#f1f5f9', minHeight: '100vh', display: 'flex', flexDirection: 'column' as const, fontSize: `${fontSize}px`, position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0 },
+    header: { backgroundColor: '#1e293b', color: 'white', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    titleArea: { display: 'flex', flexDirection: 'column' as const, gap: '4px' },
+    examTitle: { fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' as const, margin: 0 },
+    studentInfo: { fontSize: '13px', color: '#cbd5e1', display: 'flex', gap: '20px' },
+    statusArea: { display: 'flex', alignItems: 'center', gap: '15px' },
+    timer: { border: '1px solid #475569', padding: '6px 15px', borderRadius: '20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' },
+    submitBtn: { backgroundColor: 'transparent', color: 'white', border: '1px solid white', padding: '8px 20px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' },
+    toolbar: { backgroundColor: '#fff', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' },
+    toolGroup: { display: 'flex', alignItems: 'center', gap: '10px' },
+    outlineBtn: { backgroundColor: 'white', border: '1px solid #cbd5e1', padding: '6px 15px', borderRadius: '5px', cursor: 'pointer', color: '#475569' },
+    primaryBtn: { backgroundColor: '#3b82f6', border: 'none', padding: '7px 15px', borderRadius: '5px', cursor: 'pointer', color: 'white' },
+    darkBtn: { backgroundColor: '#1e293b', border: 'none', padding: '7px 15px', borderRadius: '5px', cursor: 'pointer', color: 'white' },
+    fontBtn: { backgroundColor: 'white', border: '1px solid #cbd5e1', padding: '6px 10px', cursor: 'pointer', color: '#475569' },
+    mainContent: { flex: 1, padding: '30px 20px', overflowY: 'auto' as const, paddingBottom: '100px' },
+    card: { backgroundColor: '#fff', maxWidth: '900px', margin: '0 auto', borderRadius: '8px', padding: '40px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' },
+    sectionTitle: { color: '#1e3a8a', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' as const, borderBottom: '2px solid #1e3a8a', paddingBottom: '10px', marginBottom: '30px' },
+    questionBox: { marginBottom: '40px' },
+    questionText: { fontWeight: 'bold', marginBottom: '15px', lineHeight: '1.6' },
+    optionsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
+    optionItem: (isSelected: boolean) => ({ border: isSelected ? '2px solid #3b82f6' : '1px solid #cbd5e1', backgroundColor: isSelected ? '#eff6ff' : 'white', borderRadius: '8px', padding: '12px 15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }),
+    radioCircle: (isSelected: boolean) => ({ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '5px solid #3b82f6' : '1px solid #94a3b8', backgroundColor: 'white' }),
+    tfTable: { width: '100%', borderCollapse: 'collapse' as const, marginTop: '10px' },
+    tfCell: { padding: '12px', borderBottom: '1px dashed #e2e8f0' },
+    footer: { position: 'fixed' as const, bottom: 0, left: 0, right: 0, backgroundColor: 'white', borderTop: '1px solid #e2e8f0', padding: '15px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' as const },
+    navBubble: (isAnswered: boolean) => ({ width: '35px', height: '35px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', backgroundColor: isAnswered ? '#3b82f6' : 'white', color: isAnswered ? 'white' : '#64748b', border: isAnswered ? 'none' : '1px solid #cbd5e1' })
+  };
+
   return (
-    <div style={{...wrapperStyle, overflow: 'hidden', display: 'flex', flexDirection: 'column'}}>
+    <div style={examStyles.layout}>
+      {/* MODAL CẢNH BÁO GIAN LẬN */}
       {showCheatModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(239, 68, 68, 0.95)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', textAlign: 'center', width: '450px' }}>
@@ -257,107 +311,146 @@ const ExamRoom = () => {
         </div>
       )}
 
-      <div style={{ backgroundColor: '#1e3a8a', color: 'white', padding: '10px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-        <span style={{ fontWeight: 'bold' }}>Đề thi: {selectedExam?.title}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <span style={{ fontSize: '20px', fontWeight: 'bold' }}>🕒 {Math.floor(timeLeft/60).toString().padStart(2,'0')}:{(timeLeft%60).toString().padStart(2,'0')}</span>
-          <button onClick={() => { if(window.confirm("Xác nhận nộp bài?")) forceSubmit() }} style={{ padding: '8px 20px', backgroundColor: 'white', color: '#1e3a8a', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>NỘP BÀI</button>
+      {/* 1. TOP HEADER */}
+      <div style={examStyles.header}>
+        <div style={examStyles.titleArea}>
+          <h1 style={examStyles.examTitle}>{selectedExam?.title || 'ĐỀ THAM KHẢO TỐT NGHIỆP THPT'}</h1>
+          <div style={examStyles.studentInfo}>
+            <span><strong>Thí sinh:</strong> Ẩn danh</span>
+            <span><strong>SBD:</strong> GUEST</span>
+            <span><strong>Môn thi:</strong> TOÁN</span>
+          </div>
+        </div>
+        <div style={examStyles.statusArea}>
+          <div style={examStyles.timer}>
+            <span>⏱</span> {formatTime(timeLeft)}
+          </div>
+          <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px', color: '#10b981' }}>
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%' }}></span> Mạng ổn định
+          </div>
+          <button style={examStyles.submitBtn} onClick={() => { if(window.confirm("Xác nhận nộp bài?")) forceSubmit() }} disabled={isSubmitting}>
+            {isSubmitting ? 'ĐANG XỬ LÝ...' : 'NỘP BÀI'}
+          </button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        
-        {/* BÊN TRÁI: FILE ĐỀ THI */}
-        <div style={{ flex: 6, borderRight: '2px solid #cbd5e1', backgroundColor: '#525659' }}>
-          {selectedExam?.file_url ? <iframe src={`${selectedExam.file_url}#toolbar=0`} width="100%" height="100%" style={{ border: 'none' }} title="Đề thi" /> : <div style={{color:'white', padding:'20px'}}>Đề thi không tải được</div>}
+      {/* 2. SUB TOOLBAR */}
+      <div style={examStyles.toolbar}>
+        <button style={examStyles.outlineBtn} onClick={() => window.confirm("Thoát sẽ không lưu bài, bạn chắc chứ?") && setViewState('LIST')}>Thoát</button>
+        <div style={examStyles.toolGroup}>
+          <button style={examStyles.outlineBtn}>Quay lại</button>
+          <button style={examStyles.primaryBtn}>Tiếp theo</button>
         </div>
-        
-        {/* BÊN PHẢI: PHIẾU TÔ TRẮC NGHIỆM ĐẦY ĐỦ */}
-        <div style={{ flex: 4, padding: '20px', backgroundColor: 'white', overflowY: 'auto' }}>
-          <h2 style={{ textAlign: 'center', color: '#1e3a8a', fontSize: '20px', fontWeight: 'bold', borderBottom: '2px solid #e2e8f0', paddingBottom: '15px', marginBottom: '20px' }}>PHIẾU TRẢ LỜI TRẮC NGHIỆM</h2>
-          
-          {/* PHẦN 1 */}
-          <div style={{ marginBottom: '30px' }}>
-            <div style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #3b82f6', padding: '8px 12px', marginBottom: '15px', fontWeight: 'bold' }}>PHẦN I. Chọn 1 phương án</div>
-            <div style={{ columnCount: 2, columnGap: '40px' }}>
-              {Array.from({ length: part1Count }, (_, i) => i + 1).map(q => (
-                <div key={`p1-${q}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '15px', breakInside: 'avoid' }}>
-                  <span style={{ fontWeight: 'bold', width: '25px' }}>{q}.</span>
-                  {['A', 'B', 'C', 'D'].map(opt => (
-                    <div key={opt} onClick={() => setPart1Answers({ ...part1Answers, [q]: opt })} style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid #94a3b8', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '13px', cursor: 'pointer', backgroundColor: part1Answers[q] === opt ? '#1e3a8a' : 'white', color: part1Answers[q] === opt ? 'white' : '#64748b' }}>{opt}</div>
-                  ))}
-                </div>
-              ))}
-            </div>
+        <div style={examStyles.toolGroup}>
+          <span style={{ fontSize: '14px', color: '#475569', fontWeight: 'bold', marginRight: '15px' }}>
+            Đã làm: <span style={{ color: '#3b82f6' }}>{answeredCount} / {totalQuestions}</span>
+          </span>
+          <button style={examStyles.darkBtn}>Lưu nháp</button>
+          <div style={{ display: 'flex', marginLeft: '10px' }}>
+            <button style={{ ...examStyles.fontBtn, borderRadius: '5px 0 0 5px' }} onClick={() => setFontSize(prev => Math.max(12, prev - 1))}>A-</button>
+            <button style={{ ...examStyles.fontBtn, borderRadius: '0 5px 5px 0', borderLeft: 'none' }} onClick={() => setFontSize(prev => Math.min(24, prev + 1))}>A+</button>
           </div>
+        </div>
+      </div>
 
-          {/* PHẦN 2 */}
-          <div style={{ marginBottom: '30px' }}>
-            <div style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #10b981', padding: '8px 12px', marginBottom: '15px', fontWeight: 'bold' }}>PHẦN II. Đúng/Sai</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              {Array.from({ length: part2Count }, (_, i) => i + 1).map(q => (
-                <div key={`p2-${q}`} style={{ border: '1px solid #cbd5e1', borderRadius: '4px', padding: '10px' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '10px', textAlign: 'center' }}>Câu {q}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 5px' }}>
-                    {['a', 'b', 'c', 'd'].map(sub => (
-                      <div key={sub} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: 'bold' }}>Ý {sub}</span>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <div onClick={() => setPart2Answers(prev => ({ ...prev, [q]: { ...(prev[q] || {}), [sub]: 'Đ' } }))} style={{ width: '26px', height: '26px', borderRadius: '50%', border: '1px solid #94a3b8', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '12px', cursor: 'pointer', backgroundColor: part2Answers[q]?.[sub] === 'Đ' ? '#1e3a8a' : 'white', color: part2Answers[q]?.[sub] === 'Đ' ? 'white' : '#64748b' }}>Đ</div>
-                          <div onClick={() => setPart2Answers(prev => ({ ...prev, [q]: { ...(prev[q] || {}), [sub]: 'S' } }))} style={{ width: '26px', height: '26px', borderRadius: '50%', border: '1px solid #94a3b8', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '12px', cursor: 'pointer', backgroundColor: part2Answers[q]?.[sub] === 'S' ? '#ef4444' : 'white', color: part2Answers[q]?.[sub] === 'S' ? 'white' : '#64748b' }}>S</div>
+      {/* 3. MAIN CONTENT */}
+      <div style={examStyles.mainContent}>
+        {!examData ? (
+          <div style={{ padding: '50px', textAlign: 'center', fontWeight: 'bold' }}>Đang tải nội dung đề thi...</div>
+        ) : (
+          <div style={examStyles.card}>
+            {/* PHẦN 1 */}
+            {examData.part1 && examData.part1.length > 0 && (
+              <div style={{ marginBottom: '50px' }}>
+                <div style={examStyles.sectionTitle}>PHẦN I. CÂU TRẮC NGHIỆM NHIỀU PHƯƠNG ÁN</div>
+                {examData.part1.map((q: any) => (
+                  <div key={q.id} id={`q-${q.id}`} style={examStyles.questionBox}>
+                    <div style={examStyles.questionText}>
+                      <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
+                    </div>
+                    <div style={examStyles.optionsGrid}>
+                      {['A', 'B', 'C', 'D'].map((opt) => (
+                        <div key={opt} style={examStyles.optionItem(part1Answers[q.id] === opt)} onClick={() => setPart1Answers({ ...part1Answers, [q.id]: opt })}>
+                          <div style={examStyles.radioCircle(part1Answers[q.id] === opt)}></div>
+                          <div><strong>{opt}.</strong> {renderContent(q.options[opt])}</div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                ))}
+              </div>
+            )}
 
-          {/* PHẦN 3 */}
-          <div style={{ marginBottom: '30px' }}>
-            <div style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #8b5cf6', padding: '8px 12px', marginBottom: '15px', fontWeight: 'bold' }}>PHẦN III. Trả lời ngắn</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '15px' }}>
-              {Array.from({ length: part3Count }, (_, i) => i + 1).map(q => {
-                const currentAns = part3Answers[q] || [null, null, null, null];
-                return (
-                  <div key={`p3-${q}`} style={{ border: '1px solid #cbd5e1', padding: '10px', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Câu {q}</div>
-                    <table style={{ borderSpacing: '4px', borderCollapse: 'separate' }}>
+            {/* PHẦN 2 */}
+            {examData.part2 && examData.part2.length > 0 && (
+              <div style={{ marginBottom: '50px' }}>
+                <div style={examStyles.sectionTitle}>PHẦN II. CÂU TRẮC NGHIỆM ĐÚNG/SAI</div>
+                {examData.part2.map((q: any) => (
+                  <div key={q.id} id={`q-${q.id}`} style={examStyles.questionBox}>
+                    <div style={examStyles.questionText}>
+                      <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
+                    </div>
+                    <table style={examStyles.tfTable}>
                       <tbody>
-                        <tr>
-                          <td style={{ fontWeight: 'bold', textAlign: 'right', paddingRight: '5px' }}>-</td>
-                          <td><div onClick={() => handlePart3Select(q, 0, '-')} style={{ width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #94a3b8', cursor: 'pointer', backgroundColor: currentAns[0] === '-' ? '#1e3a8a' : 'white' }}></div></td>
-                          <td></td><td></td><td></td>
-                        </tr>
-                        <tr>
-                          <td style={{ fontWeight: 'bold', textAlign: 'right', paddingRight: '5px' }}>,</td>
-                          <td></td>
-                          <td><div onClick={() => handlePart3Select(q, 1, ',')} style={{ width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #94a3b8', cursor: 'pointer', backgroundColor: currentAns[1] === ',' ? '#1e3a8a' : 'white' }}></div></td>
-                          <td><div onClick={() => handlePart3Select(q, 2, ',')} style={{ width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #94a3b8', cursor: 'pointer', backgroundColor: currentAns[2] === ',' ? '#1e3a8a' : 'white' }}></div></td>
-                          <td></td>
-                        </tr>
-                        {[0,1,2,3,4,5,6,7,8,9].map(num => {
-                          const val = num.toString();
-                          return (
-                            <tr key={num}>
-                              <td style={{ fontWeight: 'bold', textAlign: 'right', paddingRight: '5px' }}>{num}</td>
-                              <td><div onClick={() => handlePart3Select(q, 0, val)} style={{ width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #94a3b8', cursor: 'pointer', backgroundColor: currentAns[0] === val ? '#1e3a8a' : 'white' }}></div></td>
-                              <td><div onClick={() => handlePart3Select(q, 1, val)} style={{ width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #94a3b8', cursor: 'pointer', backgroundColor: currentAns[1] === val ? '#1e3a8a' : 'white' }}></div></td>
-                              <td><div onClick={() => handlePart3Select(q, 2, val)} style={{ width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #94a3b8', cursor: 'pointer', backgroundColor: currentAns[2] === val ? '#1e3a8a' : 'white' }}></div></td>
-                              <td><div onClick={() => handlePart3Select(q, 3, val)} style={{ width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #94a3b8', cursor: 'pointer', backgroundColor: currentAns[3] === val ? '#1e3a8a' : 'white' }}></div></td>
-                            </tr>
-                          );
-                        })}
+                        {['a', 'b', 'c', 'd'].map((stmt) => (
+                          <tr key={stmt}>
+                            <td style={examStyles.tfCell}><strong>{stmt})</strong> {renderContent(q.statements[stmt])}</td>
+                            <td style={{ ...examStyles.tfCell, width: '120px', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <input type="radio" checked={part2Answers[q.id]?.[stmt] === 'Đ'} onChange={() => setPart2Answers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || {}), [stmt]: 'Đ' } }))} /> Đ
+                                </label>
+                                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <input type="radio" checked={part2Answers[q.id]?.[stmt] === 'S'} onChange={() => setPart2Answers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || {}), [stmt]: 'S' } }))} /> S
+                                </label>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                ))}
+              </div>
+            )}
 
-        </div>
+            {/* PHẦN 3 */}
+            {examData.part3 && examData.part3.length > 0 && (
+              <div style={{ marginBottom: '10px' }}>
+                <div style={examStyles.sectionTitle}>PHẦN III. CÂU TRẮC NGHIỆM TRẢ LỜI NGẮN</div>
+                {examData.part3.map((q: any) => (
+                  <div key={q.id} id={`q-${q.id}`} style={examStyles.questionBox}>
+                    <div style={examStyles.questionText}>
+                      <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
+                    </div>
+                    <div style={{ marginTop: '10px' }}>
+                      <span style={{ fontWeight: 'bold', marginRight: '15px' }}>Đáp án của bạn:</span>
+                      <input 
+                        type="text" 
+                        style={{ padding: '10px 15px', borderRadius: '5px', border: '2px solid #cbd5e1', fontSize: '16px', width: '200px' }} 
+                        value={part3Answers[q.id] || ''} 
+                        onChange={(e) => setPart3Answers({ ...part3Answers, [q.id]: e.target.value })}
+                        placeholder="Nhập giá trị..."
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 4. FOOTER */}
+      <div style={examStyles.footer}>
+        {[...(examData?.part1 || []), ...(examData?.part2 || []), ...(examData?.part3 || [])].map((q: any) => {
+          const isAnswered = part1Answers[q.id] || (part2Answers[q.id] && Object.keys(part2Answers[q.id]).length > 0) || (part3Answers[q.id] && part3Answers[q.id].trim() !== '');
+          return (
+            <a href={`#q-${q.id}`} key={q.id} style={{ textDecoration: 'none' }}>
+              <div style={examStyles.navBubble(!!isAnswered)}>{q.id}</div>
+            </a>
+          );
+        })}
       </div>
     </div>
   );
