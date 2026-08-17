@@ -61,10 +61,10 @@ const CreateExamAI = () => {
     try {
       const token = localStorage.getItem('token'); 
 
-      let response;
+      let response; // Biến response được khai báo ở đây
 
       if (inputMode === 'text') {
-        // LUỒNG 1: Dùng JSON như cũ (Đã hoạt động)
+        // LUỒNG 1: Dùng JSON như cũ
         response = await axios.post(
           'https://quanlydaythem-api.onrender.com/api/exams/parse-ai-file',
           {
@@ -76,16 +76,16 @@ const CreateExamAI = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
-        // LUỒNG 2: Dùng FormData để gửi File (Cần nâng cấp Backend ở bước sau)
+        // LUỒNG 2: Dùng FormData để gửi File
         const formData = new FormData();
         formData.append('document_id', String(documentId));
         formData.append('class_id', String(classId));
         formData.append('durationMinutes', String(duration));
         formData.append('examFile', selectedFile as File);
 
-        // TÌM VÀ SỬA ĐƯỜNG LINK NÀY:
-        const response = await axios.post(
-          'https://quanlydaythem-api.onrender.com/api/exams/parse-ai-file', // Đã sửa thành link Render
+        // ĐÃ XÓA CHỮ "const" Ở ĐÂY ĐỂ GÁN ĐÚNG VÀO BIẾN BÊN NGOÀI
+        response = await axios.post(
+          'https://quanlydaythem-api.onrender.com/api/exams/parse-ai-file', 
           formData,
           {
             headers: {
@@ -95,8 +95,11 @@ const CreateExamAI = () => {
           }
         );
       }
+      
+      // Bây giờ if này sẽ nhận được dữ liệu thành công
       if (response && response.data){
-      setResult(response.data);}
+        setResult(response.data);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.message || 'Có lỗi xảy ra khi gọi AI bóc tách!');
