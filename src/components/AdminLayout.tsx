@@ -4,6 +4,9 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // 1. LẤY ROLE TỪ LOCAL STORAGE ĐỂ PHÂN QUYỀN
+  const role = localStorage.getItem('role'); 
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -11,22 +14,24 @@ const AdminLayout = () => {
     navigate('/login');
   };
 
-  // ĐÃ THÊM MENU QUẢN LÝ TÀI CHÍNH VÀO ĐÂY
+  // 2. CẤU HÌNH MENU LINH HOẠT THEO ROLE
   const menuItems = [
     { path: '/students', icon: '👨‍🎓', label: 'Quản lý Học sinh' },
     { path: '/classes', icon: '🏫', label: 'Quản lý Lớp học' },
-    { path: '/quan-ly-giao-vien', icon: '👨‍🏫', label: 'Quản lý Giáo viên' },
+    
+    // CHỈ THÊM MENU "QUẢN LÝ GIÁO VIÊN" NẾU TÀI KHOẢN LÀ ADMIN
+    ...(role === 'admin' ? [{ path: '/quan-ly-giao-vien', icon: '👨‍🏫', label: 'Quản lý Giáo viên' }] : []),
+    
     { path: '/tai-lieu', icon: '📚', label: 'Kho Tài Liệu' }, 
-    // THÊM MODULE MỚI VÀO ĐÂY
     { path: '/quan-ly-thi', icon: '📊', label: 'Quản lý Thi & Điểm' }, 
     { path: '/quan-ly-tien-do', icon: '📅', label: 'Lịch Dạy & Điểm Danh' },
     { path: '/quan-ly-tai-chinh', icon: '💰', label: 'Quản lý Tài chính' }, 
   ];
+
   return (
-    // Đã xóa thuộc tính fontFamily cũ để hệ thống tự nhận Times New Roman từ index.css
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f0f4f8' }}>
       
-      {/* SIDEBAR: Nới rộng lên 280px để không bị rớt dòng */}
+      {/* SIDEBAR */}
       <div style={{ width: '280px', backgroundColor: '#1e293b', color: 'white', display: 'flex', flexDirection: 'column', boxShadow: '4px 0 20px rgba(0,0,0,0.05)', zIndex: 10 }}>
         
         <div style={{ padding: '35px 20px', textAlign: 'center', backgroundColor: '#0f172a' }}>
@@ -34,7 +39,10 @@ const AdminLayout = () => {
             ✨
           </div>
           <h2 style={{ margin: 0, fontSize: '20px', letterSpacing: '0.5px', color: '#f8fafc' }}>Gia Sư Minh Quang</h2>
-          <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>Admin Workspace</p>
+          {/* Đổi chữ Admin Workspace thành Giáo viên nếu không phải Admin */}
+          <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
+            {role === 'admin' ? 'Admin Workspace' : 'Teacher Workspace'}
+          </p>
         </div>
         
         <nav style={{ flex: 1, padding: '25px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -74,7 +82,7 @@ const AdminLayout = () => {
         </div>
       </div>
 
-      {/* CONTENT ÁREA */}
+      {/* CONTENT AREA */}
       <div style={{ flex: 1, height: '100vh', overflowY: 'auto' }}>
         <Outlet /> 
       </div>

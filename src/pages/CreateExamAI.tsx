@@ -26,7 +26,7 @@ const CreateExamAI = () => {
       try {
         const token = localStorage.getItem('token');
         // Thay URL này bằng API lấy danh sách lớp thực tế của bạn
-        const response = await axios.get('http://localhost:5000/api/classes', {
+        const response = await axios.get('https://quanlydaythem-api.onrender.com/api/classes', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setClassOptions(response.data);
