@@ -193,8 +193,33 @@ const CreateExamAI = () => {
         </button>
       </div>
 
-      {/* Tạm thời giữ nguyên giao diện Preview kết quả của phiên bản trước ở đây */}
-      {/* ... (Bạn dán khối {result && ( <div style={{...}}> ... </div> )} của hôm trước xuống dưới này nhé) ... */}
+{/* KHU VỰC HIỂN THỊ KẾT QUẢ AI BÓC TÁCH */}
+      {result && (
+        <div style={{ ...styles.card, marginTop: '30px' }}>
+          <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#10b981' }}>✅ Tạo đề thành công!</h3>
+          <p><strong>Mã đề thi (ID):</strong> {result.examId}</p>
+          
+          <h4 style={{ marginTop: '20px' }}>Chi tiết các câu hỏi đã nhận diện:</h4>
+          <div style={{ maxHeight: '400px', overflowY: 'auto', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            {result.questions && result.questions.map((q: any, index: number) => (
+              <div key={index} style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px dashed #cbd5e1' }}>
+                <p style={{ fontWeight: 'bold', margin: '0 0 10px 0' }}>Câu {index + 1}: {q.question_text}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginLeft: '15px' }}>
+                  <div style={{ color: q.correct_answer === 'A' ? '#10b981' : '#64748b', fontWeight: q.correct_answer === 'A' ? 'bold' : 'normal' }}>A. {q.option_a}</div>
+                  <div style={{ color: q.correct_answer === 'B' ? '#10b981' : '#64748b', fontWeight: q.correct_answer === 'B' ? 'bold' : 'normal' }}>B. {q.option_b}</div>
+                  <div style={{ color: q.correct_answer === 'C' ? '#10b981' : '#64748b', fontWeight: q.correct_answer === 'C' ? 'bold' : 'normal' }}>C. {q.option_c}</div>
+                  <div style={{ color: q.correct_answer === 'D' ? '#10b981' : '#64748b', fontWeight: q.correct_answer === 'D' ? 'bold' : 'normal' }}>D. {q.option_d}</div>
+                </div>
+                {q.explanation && (
+                  <div style={{ marginTop: '10px', backgroundColor: '#fffbeb', padding: '10px', borderRadius: '5px', fontSize: '13px' }}>
+                    <strong>Giải thích:</strong> {q.explanation}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
