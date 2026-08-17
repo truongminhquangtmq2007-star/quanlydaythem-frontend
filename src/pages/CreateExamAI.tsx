@@ -193,31 +193,100 @@ const CreateExamAI = () => {
         </button>
       </div>
 
-{/* KHU VỰC HIỂN THỊ KẾT QUẢ AI BÓC TÁCH */}
-      {result && (
-        <div style={{ ...styles.card, marginTop: '30px' }}>
-          <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#10b981' }}>✅ Tạo đề thành công!</h3>
-          <p><strong>Mã đề thi (ID):</strong> {result.examId}</p>
+{/* KHU VỰC HIỂN THỊ KẾT QUẢ AI BÓC TÁCH (FORMAT 3 PHẦN) */}
+      {result && result.examContent && (
+        <div style={{ ...styles.card, marginTop: '30px', borderTop: '4px solid #10b981' }}>
+          <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#10b981' }}>
+            ✅ Đã nhận phản hồi từ hệ thống
+          </h3>
+          <p style={{ color: '#f59e0b', fontWeight: 'bold', backgroundColor: '#fef3c7', padding: '10px', borderRadius: '8px' }}>
+            Trạng thái Backend: {result.message}
+          </p>
           
-          <h4 style={{ marginTop: '20px' }}>Chi tiết các câu hỏi đã nhận diện:</h4>
-          <div style={{ maxHeight: '400px', overflowY: 'auto', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            {result.questions && result.questions.map((q: any, index: number) => (
-              <div key={index} style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px dashed #cbd5e1' }}>
-                <p style={{ fontWeight: 'bold', margin: '0 0 10px 0' }}>Câu {index + 1}: {q.question_text}</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginLeft: '15px' }}>
-                  <div style={{ color: q.correct_answer === 'A' ? '#10b981' : '#64748b', fontWeight: q.correct_answer === 'A' ? 'bold' : 'normal' }}>A. {q.option_a}</div>
-                  <div style={{ color: q.correct_answer === 'B' ? '#10b981' : '#64748b', fontWeight: q.correct_answer === 'B' ? 'bold' : 'normal' }}>B. {q.option_b}</div>
-                  <div style={{ color: q.correct_answer === 'C' ? '#10b981' : '#64748b', fontWeight: q.correct_answer === 'C' ? 'bold' : 'normal' }}>C. {q.option_c}</div>
-                  <div style={{ color: q.correct_answer === 'D' ? '#10b981' : '#64748b', fontWeight: q.correct_answer === 'D' ? 'bold' : 'normal' }}>D. {q.option_d}</div>
-                </div>
-                {q.explanation && (
-                  <div style={{ marginTop: '10px', backgroundColor: '#fffbeb', padding: '10px', borderRadius: '5px', fontSize: '13px' }}>
-                    <strong>Giải thích:</strong> {q.explanation}
+          {/* PHẦN 1: Trắc nghiệm nhiều lựa chọn */}
+          <div style={{ marginTop: '25px' }}>
+            <h4 style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '10px 15px', borderRadius: '8px' }}>
+              Phần 1: Câu hỏi trắc nghiệm nhiều phương án lựa chọn
+            </h4>
+            {result.examContent.part1 && result.examContent.part1.length > 0 ? (
+              <div style={{ padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                {result.examContent.part1.map((q: any, index: number) => (
+                  <div key={index} style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px dashed #cbd5e1' }}>
+                    <p style={{ fontWeight: 'bold' }}>Câu {index + 1}: {q.question_text || q.question || 'Nội dung câu hỏi...'}</p>
+                    {/* Hỗ trợ linh hoạt nếu AI trả về A,B,C,D rời rạc hoặc mảng options */}
+                    <div style={{ marginLeft: '15px', color: '#475569' }}>
+                      {q.option_a && <div>A. {q.option_a}</div>}
+                      {q.option_b && <div>B. {q.option_b}</div>}
+                      {q.option_c && <div>C. {q.option_c}</div>}
+                      {q.option_d && <div>D. {q.option_d}</div>}
+                      {q.options && Array.isArray(q.options) && q.options.map((opt: string, i: number) => (
+                        <div key={i}>{String.fromCharCode(65 + i)}. {opt}</div>
+                      ))}
+                    </div>
+                    {/* Hiển thị đáp án nếu có trong examKey */}
+                    {result.examKey?.part1_key && result.examKey.part1_key[index + 1] && (
+                      <p style={{ color: '#10b981', fontWeight: 'bold', marginTop: '10px' }}>
+                        👉 Đáp án: {result.examKey.part1_key[index + 1]}
+                      </p>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
+            ) : (
+              <p style={{ color: '#94a3b8', fontStyle: 'italic', paddingLeft: '15px' }}>Chưa có dữ liệu hoặc danh sách câu hỏi trống.</p>
+            )}
           </div>
+
+          {/* PHẦN 2: Đúng/Sai */}
+          <div style={{ marginTop: '25px' }}>
+            <h4 style={{ backgroundColor: '#f0fdf4', color: '#15803d', padding: '10px 15px', borderRadius: '8px' }}>
+              Phần 2: Câu hỏi trắc nghiệm Đúng/Sai
+            </h4>
+            {result.examContent.part2 && result.examContent.part2.length > 0 ? (
+              <div style={{ padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                {result.examContent.part2.map((q: any, index: number) => (
+                  <div key={index} style={{ marginBottom: '15px', borderBottom: '1px dashed #cbd5e1', paddingBottom: '15px' }}>
+                    <p style={{ fontWeight: 'bold' }}>Câu {index + 1}: {q.question_text || q.question}</p>
+                    {/* Liệt kê các ý a, b, c, d */}
+                    <div style={{ marginLeft: '15px', color: '#475569' }}>
+                      {q.statements && Array.isArray(q.statements) && q.statements.map((stmt: string, i: number) => (
+                        <div key={i}>{String.fromCharCode(97 + i)}) {stmt}</div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: '#94a3b8', fontStyle: 'italic', paddingLeft: '15px' }}>Chưa có dữ liệu hoặc danh sách câu hỏi trống.</p>
+            )}
+          </div>
+
+          {/* PHẦN 3: Tự luận / Trả lời ngắn */}
+          <div style={{ marginTop: '25px' }}>
+            <h4 style={{ backgroundColor: '#fdf4ff', color: '#a21caf', padding: '10px 15px', borderRadius: '8px' }}>
+              Phần 3: Câu hỏi Trả lời ngắn / Tự luận
+            </h4>
+            {result.examContent.part3 && result.examContent.part3.length > 0 ? (
+              <div style={{ padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                {result.examContent.part3.map((q: any, index: number) => (
+                  <div key={index} style={{ marginBottom: '15px' }}>
+                    <p style={{ fontWeight: 'bold', margin: '0 0 5px 0' }}>Câu {index + 1}:</p>
+                    <p style={{ color: '#334155', margin: 0 }}>{q.question_text || q.question}</p>
+                    {/* Hiển thị đáp án tự luận/trả lời ngắn */}
+                    {result.examKey?.part3_key && result.examKey.part3_key[index + 1] && (
+                      <div style={{ backgroundColor: '#f1f5f9', padding: '10px', borderRadius: '5px', marginTop: '10px' }}>
+                        <span style={{ fontWeight: 'bold', color: '#475569' }}>Đáp án: </span>
+                        <span style={{ color: '#0f172a' }}>{result.examKey.part3_key[index + 1]}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: '#94a3b8', fontStyle: 'italic', paddingLeft: '15px' }}>Chưa có dữ liệu hoặc danh sách câu hỏi trống.</p>
+            )}
+          </div>
+
         </div>
       )}
     </div>
