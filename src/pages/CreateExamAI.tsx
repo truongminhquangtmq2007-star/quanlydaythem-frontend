@@ -3,23 +3,29 @@ import axios from 'axios';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 
-// Hàm tiện ích: Render LaTeX và Text để hiển thị Preview
+// Hàm tiện ích: Render LaTeX an toàn (Chống sập giao diện nếu gõ sai mã Toán)
 const renderContent = (text: string) => {
   if (!text) return '';
   const parts = text.split('$');
   return parts.map((part, index) => {
-    if (index % 2 !== 0) return <InlineMath key={index} math={part} />;
+    if (index % 2 !== 0) {
+      return (
+        <InlineMath 
+          key={index} 
+          math={part} 
+          renderError={(error) => <span style={{ color: 'red', fontWeight: 'bold' }}>${part}$</span>} 
+        />
+      );
+    }
     return <span key={index}>{part}</span>;
   });
 };
 
 const CreateExamAI = () => {
-  // 1. Quản lý trạng thái thông số
   const [documentId, setDocumentId] = useState<number | string>('');
   const [classId, setClassId] = useState<number | string>('');
   const [duration, setDuration] = useState<number | string>(50);
   
-  // Trạng thái nhập liệu
   const [inputMode, setInputMode] = useState<'text' | 'file'>('text');
   const [rawText, setRawText] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -28,11 +34,13 @@ const CreateExamAI = () => {
   const [error, setError] = useState<string>('');
   const [classOptions, setClassOptions] = useState<any[]>([]);
 
-  // 2. Trạng thái ĐỂ CHỈNH SỬA (Editable State)
   const [editContent, setEditContent] = useState<any>(null);
   const [editKeys, setEditKeys] = useState<any>(null);
+  
+  // 👉 STATE MỚI CHO TÍNH NĂNG LIVE JSON EDITOR
+  const [jsonString, setJsonString] = useState<string>('');
+  const [jsonError, setJsonError] = useState<string>('');
 
-  // Lấy danh sách lớp
   useEffect(() => {
     const fetchClasses = async () => {
       try {
@@ -48,25 +56,12 @@ const CreateExamAI = () => {
     fetchClasses();
   }, []);
 
-  // HÀM 1: GỌI AI BÓC TÁCH
   const handleParseExam = async () => {
-    if (!documentId || !classId) {
-      setError('Vui lòng chọn Mã đề và Lớp học!');
-      return;
-    }
-    if (inputMode === 'text' && !rawText) {
-      setError('Vui lòng dán nội dung đề thi!');
-      return;
-    }
-    if (inputMode === 'file' && !selectedFile) {
-      setError('Vui lòng chọn file PDF hoặc Hình ảnh!');
-      return;
-    }
+    if (!documentId || !classId) return setError('Vui lòng chọn Mã đề và Lớp học!');
+    if (inputMode === 'text' && !rawText) return setError('Vui lòng dán nội dung đề thi!');
+    if (inputMode === 'file' && !selectedFile) return setError('Vui lòng chọn file PDF hoặc Hình ảnh!');
 
-    setIsLoading(true);
-    setError('');
-    setEditContent(null);
-    setEditKeys(null);
+    setIsLoading(true); setError(''); setEditContent(null); setEditKeys(null); setJsonString(''); setJsonError('');
 
     try {
       const token = localStorage.getItem('token'); 
@@ -80,116 +75,92 @@ const CreateExamAI = () => {
         );
       } else {
         const formData = new FormData();
-        formData.append('document_id', String(documentId));
-        formData.append('class_id', String(classId));
-        formData.append('durationMinutes', String(duration));
-        formData.append('examFile', selectedFile as File);
+        formData.append('document_id', String(documentId)); formData.append('class_id', String(classId));
+        formData.append('durationMinutes', String(duration)); formData.append('examFile', selectedFile as File);
 
         response = await axios.post(
           'https://quanlydaythem-api.onrender.com/api/exams/parse-ai-file', 
-          formData,
-          { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+          formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
         );
       }
       
       if (response && response.data) {
         setEditContent(response.data.examContent);
         setEditKeys(response.data.examKey);
+        // Đổ dữ liệu JSON vào khung Editor
+        setJsonString(JSON.stringify(response.data.examContent, null, 2));
       }
     } catch (err: any) {
-      console.error(err);
       setError(err.response?.data?.message || 'Có lỗi xảy ra khi gọi AI bóc tách!');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // HÀM 2: LƯU ĐỀ CHÍNH THỨC VÀO DATABASE
-  // HÀM 2: LƯU ĐỀ CHÍNH THỨC VÀO DATABASE
   const handleSaveExam = async () => {
-    // ==========================================
-    // 🛑 BƯỚC KIỂM TRA: ĐẢM BẢO KHÔNG BỎ TRỐNG ĐÁP ÁN
-    // ==========================================
+    if (jsonError) {
+      alert('❌ KHÔNG THỂ LƯU: Mã JSON của bạn đang bị lỗi cú pháp. Vui lòng sửa lại lỗi báo đỏ ở dưới cùng.');
+      return;
+    }
+
     if (editContent) {
-      // 1. Kiểm tra Phần 1 (Trắc nghiệm 1 lựa chọn)
       if (editContent.part1) {
         for (let i = 0; i < editContent.part1.length; i++) {
           const qId = editContent.part1[i].id || i + 1;
-          if (!editKeys.part1_key[qId] || editKeys.part1_key[qId].trim() === '') {
-            alert(`❌ KHÔNG THỂ LƯU: Bạn chưa chọn đáp án chuẩn cho Câu ${qId} (Phần 1).`);
-            return; // Dừng tiến trình lưu
-          }
+          if (!editKeys.part1_key[qId] || editKeys.part1_key[qId].trim() === '') return alert(`❌ Bạn chưa chọn đáp án cho Câu ${qId} (Phần 1).`);
         }
       }
-
-      // 2. Kiểm tra Phần 2 (Đúng/Sai - Phải đủ 4 ý a, b, c, d)
       if (editContent.part2) {
         for (let i = 0; i < editContent.part2.length; i++) {
           const qId = editContent.part2[i].id || i + 1;
-          const requiredStmts = ['a', 'b', 'c', 'd'];
-          for (const stmt of requiredStmts) {
-            // Kiểm tra xem câu đó có tồn tại trong key chưa, và ý đó đã chọn Đ/S chưa
+          for (const stmt of ['a', 'b', 'c', 'd']) {
             if (!editKeys.part2_key[qId] || !editKeys.part2_key[qId][stmt] || editKeys.part2_key[qId][stmt].trim() === '') {
-              alert(`❌ KHÔNG THỂ LƯU: Bạn chưa chọn Đúng/Sai cho Câu ${qId}, ý ${stmt}) (Phần 2).`);
-              return; // Dừng tiến trình lưu
+              return alert(`❌ Bạn chưa chọn Đúng/Sai cho Câu ${qId}, ý ${stmt}) (Phần 2).`);
             }
           }
         }
       }
-
-      // 3. Kiểm tra Phần 3 (Trả lời ngắn)
       if (editContent.part3) {
         for (let i = 0; i < editContent.part3.length; i++) {
           const qId = editContent.part3[i].id || i + 1;
-          if (!editKeys.part3_key[qId] || editKeys.part3_key[qId].trim() === '') {
-            alert(`❌ KHÔNG THỂ LƯU: Bạn chưa nhập đáp án cho Câu ${qId} (Phần 3).`);
-            return; // Dừng tiến trình lưu
-          }
+          if (!editKeys.part3_key[qId] || editKeys.part3_key[qId].trim() === '') return alert(`❌ Bạn chưa nhập đáp án cho Câu ${qId} (Phần 3).`);
         }
       }
     }
-    // ==========================================
 
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
-      
       await axios.post(
         'https://quanlydaythem-api.onrender.com/api/exams/save-answer-key', 
         {
-          document_id: documentId,
-          class_id: classId,
-          duration_minutes: duration,
-          allow_view_answers: true,
-          part1_key: editKeys.part1_key,
-          part2_key: editKeys.part2_key,
-          part3_key: editKeys.part3_key,
-          
-          // Gửi nội dung câu hỏi đã chỉnh sửa lên Backend
+          document_id: documentId, class_id: classId, duration_minutes: duration, allow_view_answers: true,
+          part1_key: editKeys.part1_key, part2_key: editKeys.part2_key, part3_key: editKeys.part3_key,
           exam_content: editContent 
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       alert('🎉 Đã lưu bộ đề và đáp án thành công vào hệ thống!');
     } catch (err) {
-      console.error(err);
       alert('❌ Lỗi khi lưu đề. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Cập nhật State khi gõ
-  const updateQuestionText = (part: string, index: number, value: string) => {
-    const newContent = { ...editContent }; newContent[part][index].questionText = value; setEditContent(newContent);
+  // 👉 HÀM XỬ LÝ KHI NGƯỜI DÙNG GÕ VÀO Ô JSON
+  const handleJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setJsonString(val);
+    try {
+      const parsed = JSON.parse(val);
+      setEditContent(parsed);
+      setJsonError(''); // Nếu parse thành công -> Xóa lỗi
+    } catch (err: any) {
+      setJsonError('Lỗi cú pháp JSON: Vui lòng kiểm tra lại dấu ngoặc {}, [], hoặc dấu phẩy (,).');
+    }
   };
-  const updateOptionText = (part: string, index: number, optKey: string, value: string) => {
-    const newContent = { ...editContent }; newContent[part][index].options[optKey] = value; setEditContent(newContent);
-  };
-  const updateStatementText = (index: number, stmtKey: string, value: string) => {
-    const newContent = { ...editContent }; newContent.part2[index].statements[stmtKey] = value; setEditContent(newContent);
-  };
+
   const updateKey = (partKey: string, qId: number, value: string) => {
     const newKeys = { ...editKeys }; newKeys[partKey][qId] = value; setEditKeys(newKeys);
   };
@@ -199,16 +170,15 @@ const CreateExamAI = () => {
     newKeys.part2_key[qId][stmtKey] = value; setEditKeys(newKeys);
   };
 
-  // 3. CSS Inline phong cách Dashboard
   const styles = {
-    container: { maxWidth: '1000px', margin: '30px auto', fontFamily: 'Inter, Arial, sans-serif', color: '#333' },
+    container: { maxWidth: '1200px', margin: '30px auto', fontFamily: 'Inter, Arial, sans-serif', color: '#333' },
     card: { backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', padding: '30px' },
     header: { color: '#1e293b', fontSize: '24px', margin: '0 0 20px 0', borderBottom: '2px solid #e2e8f0', paddingBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' },
     formGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '25px' },
     label: { display: 'block', fontSize: '14px', fontWeight: 'bold', color: '#475569', marginBottom: '8px' },
     input: { width: '100%', padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '15px', boxSizing: 'border-box' as const },
-    textarea: { width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #94a3b8', fontSize: '14px', minHeight: '60px', fontFamily: 'inherit', backgroundColor: '#fff' },
-    previewBox: { backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', padding: '12px', borderRadius: '6px', marginBottom: '8px', color: '#1e293b', lineHeight: '1.6' },
+    previewBox: { backgroundColor: '#fff', border: '1px solid #e2e8f0', padding: '15px', borderRadius: '8px', marginBottom: '15px', color: '#1e293b', lineHeight: '1.6', fontSize: '16px' },
+    jsonEditor: { width: '100%', height: '500px', padding: '15px', borderRadius: '8px', border: '2px solid #3b82f6', backgroundColor: '#1e293b', color: '#10b981', fontFamily: 'monospace', fontSize: '14px', boxSizing: 'border-box' as const, resize: 'vertical' as const },
     button: { width: '100%', padding: '15px', backgroundColor: isLoading ? '#94a3b8' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: isLoading ? 'not-allowed' : 'pointer', marginTop: '20px' },
     saveBtn: { padding: '15px 40px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }
   };
@@ -240,99 +210,106 @@ const CreateExamAI = () => {
         <button onClick={handleParseExam} disabled={isLoading} style={styles.button}>{isLoading ? '⏳ Đang phân tích dữ liệu...' : '✨ Bắt Đầu Tạo Đề'}</button>
       </div>
 
-      {/* KHU VỰC CHỈNH SỬA KẾT QUẢ TỪ AI */}
       {editContent && editKeys && (
         <div style={{ ...styles.card, marginTop: '30px', borderTop: '4px solid #10b981' }}>
-          <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#10b981' }}>✏️ Kiểm tra và chỉnh sửa trước khi lưu</h3>
-          <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>* Khung viền xanh nhạt là hiển thị thực tế. Bạn hãy chỉnh sửa code LaTeX ở ô trắng bên dưới.</p>
           
-          {/* PHẦN 1 */}
-          <div style={{ marginTop: '25px' }}>
-            <h4 style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '10px 15px', borderRadius: '8px' }}>Phần 1: Trắc nghiệm nhiều lựa chọn</h4>
+          {/* ========================================================== */}
+          {/* KHU VỰC 1: LIVE PREVIEW (HIỂN THỊ VĂN BẢN VÀ CHỌN ĐÁP ÁN) */}
+          {/* ========================================================== */}
+          <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#10b981' }}>👀 Live Preview (Bản xem trước)</h3>
+          <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '20px' }}>Kiểm tra văn bản hiển thị và <strong>chọn đáp án chuẩn</strong> tại đây. Nếu muốn sửa nội dung câu hỏi, hãy sửa ở bảng JSON bên dưới.</p>
+          
+          <div style={{ maxHeight: '600px', overflowY: 'auto', backgroundColor: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+            
+            {/* PHẦN 1 */}
+            <h4 style={{ color: '#1d4ed8' }}>Phần 1: Trắc nghiệm nhiều lựa chọn</h4>
             {editContent.part1?.map((q: any, index: number) => {
               const qId = q.id || index + 1;
               return (
-                <div key={index} style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px dashed #cbd5e1' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Câu {qId}:</div>
-                  <div style={styles.previewBox}>{renderContent(q.questionText)}</div>
-                  <textarea style={styles.textarea} value={q.questionText} onChange={(e) => updateQuestionText('part1', index, e.target.value)} />
+                <div key={index} style={styles.previewBox}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Câu {qId}: {renderContent(q.questionText)}</div>
+                  {/* Hiển thị ảnh nếu giáo viên điền link vào JSON */}
+                  {q.image_url && <img src={q.image_url} alt="Hình vẽ minh họa" style={{ maxWidth: '100%', maxHeight: '300px', marginBottom: '10px', borderRadius: '8px' }} />}
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     {['A', 'B', 'C', 'D'].map(opt => (
-                      <div key={opt} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 'bold', color: '#475569' }}>{opt}.</span>
-                          <div style={{ ...styles.previewBox, marginBottom: 0, padding: '5px 10px', flex: 1 }}>{renderContent(q.options[opt])}</div>
-                        </div>
-                        <input type="text" style={{ ...styles.input, padding: '8px', marginLeft: '22px', width: 'calc(100% - 22px)' }} value={q.options[opt] || ''} onChange={(e) => updateOptionText('part1', index, opt, e.target.value)} />
-                      </div>
+                      <div key={opt}><strong>{opt}.</strong> {renderContent(q.options[opt])}</div>
                     ))}
                   </div>
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '20px', backgroundColor: '#ecfdf5', padding: '10px', borderRadius: '5px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#10b981' }}>👉 Đáp án chuẩn:</span>
-                    <select style={{ padding: '5px', borderRadius: '5px' }} value={editKeys.part1_key[qId] || ''} onChange={(e) => updateKey('part1_key', qId, e.target.value)}>
-                      <option value="">-- Chọn --</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+                  <div style={{ marginTop: '15px', backgroundColor: '#ecfdf5', padding: '10px', borderRadius: '5px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #a7f3d0' }}>
+                    <span style={{ fontWeight: 'bold', color: '#10b981' }}>👉 Chọn đáp án chuẩn:</span>
+                    <select style={{ padding: '5px' }} value={editKeys.part1_key[qId] || ''} onChange={(e) => updateKey('part1_key', qId, e.target.value)}>
+                      <option value="">- Chọn -</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
                     </select>
                   </div>
                 </div>
               );
             })}
-          </div>
 
-          {/* PHẦN 2 */}
-          <div style={{ marginTop: '25px' }}>
-            <h4 style={{ backgroundColor: '#f0fdf4', color: '#15803d', padding: '10px 15px', borderRadius: '8px' }}>Phần 2: Đúng/Sai</h4>
+            {/* PHẦN 2 */}
+            <h4 style={{ color: '#15803d', marginTop: '30px' }}>Phần 2: Đúng/Sai</h4>
             {editContent.part2?.map((q: any, index: number) => {
               const qId = q.id || index + 1;
               return (
-                <div key={index} style={{ marginBottom: '20px', borderBottom: '1px dashed #cbd5e1', paddingBottom: '20px' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Câu {qId}:</div>
-                  <div style={styles.previewBox}>{renderContent(q.questionText)}</div>
-                  <textarea style={styles.textarea} value={q.questionText} onChange={(e) => updateQuestionText('part2', index, e.target.value)} />
+                <div key={index} style={styles.previewBox}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Câu {qId}: {renderContent(q.questionText)}</div>
+                  {q.image_url && <img src={q.image_url} alt="Hình vẽ minh họa" style={{ maxWidth: '100%', maxHeight: '300px', marginBottom: '10px', borderRadius: '8px' }} />}
                   
-                  <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {['a', 'b', 'c', 'd'].map(stmt => (
-                      <div key={stmt} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <strong>{stmt})</strong>
-                          <div style={{ ...styles.previewBox, marginBottom: 0, padding: '5px 10px', flex: 1 }}>{renderContent(q.statements[stmt])}</div>
-                          <select style={{ padding: '6px', borderRadius: '5px', backgroundColor: '#fffbeb', border: '1px solid #f59e0b', width: '80px' }} value={editKeys.part2_key?.[qId]?.[stmt] || ''} onChange={(e) => updatePart2Key(qId, stmt, e.target.value)}>
-                            <option value="">-Chọn-</option><option value="Đ">Đúng</option><option value="S">Sai</option>
-                          </select>
-                        </div>
-                        <input type="text" style={{ ...styles.input, padding: '8px', marginLeft: '25px', width: 'calc(100% - 115px)' }} value={q.statements[stmt] || ''} onChange={(e) => updateStatementText(index, stmt, e.target.value)} />
+                      <div key={stmt} style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px dashed #e2e8f0', paddingBottom: '8px' }}>
+                        <div style={{ flex: 1 }}><strong>{stmt})</strong> {renderContent(q.statements[stmt])}</div>
+                        <select style={{ padding: '6px', borderRadius: '5px', backgroundColor: '#fffbeb', border: '1px solid #f59e0b' }} value={editKeys.part2_key?.[qId]?.[stmt] || ''} onChange={(e) => updatePart2Key(qId, stmt, e.target.value)}>
+                          <option value="">- Chọn -</option><option value="Đ">Đúng</option><option value="S">Sai</option>
+                        </select>
                       </div>
                     ))}
                   </div>
                 </div>
               );
             })}
-          </div>
 
-          {/* PHẦN 3 */}
-          <div style={{ marginTop: '25px' }}>
-            <h4 style={{ backgroundColor: '#fdf4ff', color: '#a21caf', padding: '10px 15px', borderRadius: '8px' }}>Phần 3: Trả lời ngắn</h4>
+            {/* PHẦN 3 */}
+            <h4 style={{ color: '#a21caf', marginTop: '30px' }}>Phần 3: Trả lời ngắn</h4>
             {editContent.part3?.map((q: any, index: number) => {
               const qId = q.id || index + 1;
               return (
-                <div key={index} style={{ marginBottom: '20px', paddingBottom: '15px' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Câu {qId}:</div>
-                  <div style={styles.previewBox}>{renderContent(q.questionText)}</div>
-                  <textarea style={styles.textarea} value={q.questionText} onChange={(e) => updateQuestionText('part3', index, e.target.value)} />
+                <div key={index} style={styles.previewBox}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Câu {qId}: {renderContent(q.questionText)}</div>
+                  {q.image_url && <img src={q.image_url} alt="Hình vẽ minh họa" style={{ maxWidth: '100%', maxHeight: '300px', marginBottom: '10px', borderRadius: '8px' }} />}
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', backgroundColor: '#f1f5f9', padding: '10px', borderRadius: '5px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#475569' }}>Đáp án:</span>
-                    <input type="text" style={{ ...styles.input, padding: '5px', width: '200px' }} value={editKeys.part3_key[qId] || ''} onChange={(e) => updateKey('part3_key', qId, e.target.value)} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', backgroundColor: '#f1f5f9', padding: '10px', borderRadius: '5px', border: '1px solid #cbd5e1' }}>
+                    <span style={{ fontWeight: 'bold', color: '#475569' }}>Nhập đáp án chuẩn:</span>
+                    <input type="text" style={{ padding: '5px', width: '200px', border: '1px solid #94a3b8', borderRadius: '4px' }} value={editKeys.part3_key[qId] || ''} onChange={(e) => updateKey('part3_key', qId, e.target.value)} />
                   </div>
                 </div>
               );
             })}
           </div>
 
+          {/* ========================================================== */}
+          {/* KHU VỰC 2: JSON EDITOR (CHỈNH SỬA VĂN BẢN GỐC) */}
+          {/* ========================================================== */}
+          <h3 style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', color: '#3b82f6', marginTop: '40px' }}>🛠 Trình sửa mã JSON (Gõ để cập nhật Preview)</h3>
+          <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '10px' }}>Chỉnh sửa trực tiếp lỗi LaTeX, thêm sửa chữ. Bạn có thể thêm <code>"image_url": "link_anh_cua_ban"</code> vào bất kỳ câu nào để chèn hình.</p>
+          
+          <textarea 
+            style={{...styles.jsonEditor, borderColor: jsonError ? '#ef4444' : '#3b82f6'}} 
+            value={jsonString} 
+            onChange={handleJsonChange} 
+            spellCheck="false"
+          />
+          
+          {jsonError && (
+            <div style={{ backgroundColor: '#fef2f2', color: '#ef4444', padding: '12px', borderRadius: '8px', marginTop: '10px', fontWeight: 'bold', border: '1px solid #f87171' }}>
+              {jsonError}
+            </div>
+          )}
+
           <div style={{ marginTop: '40px', textAlign: 'center', borderTop: '2px solid #e2e8f0', paddingTop: '20px' }}>
             <button onClick={handleSaveExam} disabled={isLoading} style={styles.saveBtn}>
-              {isLoading ? '⏳ Đang lưu...' : '💾 XÁC NHẬN & ĐƯA ĐỀ LÊN HỆ THỐNG'}
+              {isLoading ? '⏳ Đang lưu...' : '💾 XÁC NHẬN ĐỦ ĐÁP ÁN & LƯU LÊN HỆ THỐNG'}
             </button>
           </div>
         </div>
