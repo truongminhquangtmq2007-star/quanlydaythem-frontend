@@ -83,14 +83,15 @@ const CreateExamAI = () => {
         formData.append('durationMinutes', String(duration));
         formData.append('examFile', selectedFile as File);
 
-        response = await axios.post(
-          'http://localhost:5000/api/exams/parse-ai-file', // Endpoint mới sẽ làm sau
+        // TÌM VÀ SỬA ĐƯỜNG LINK NÀY:
+        const response = await axios.post(
+          'https://quanlydaythem-api.onrender.com/api/exams/parse-ai-file', // Đã sửa thành link Render
           formData,
-          { 
-            headers: { 
+          {
+            headers: {
               Authorization: `Bearer ${token}`,
-              'Content-Type': 'multipart/form-data' 
-            } 
+              'Content-Type': 'multipart/form-data',
+            },
           }
         );
       }
