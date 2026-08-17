@@ -66,7 +66,7 @@ const CreateExamAI = () => {
       if (inputMode === 'text') {
         // LUỒNG 1: Dùng JSON như cũ (Đã hoạt động)
         response = await axios.post(
-          'http://localhost:5000/api/exams/parse-ai',
+          'https://quanlydaythem-api.onrender.com/api/exams/parse-ai-file',
           {
             document_id: Number(documentId),
             class_id: Number(classId),
@@ -95,8 +95,8 @@ const CreateExamAI = () => {
           }
         );
       }
-
-      setResult(response.data);
+      if (response && response.data){
+      setResult(response.data);}
     } catch (err: any) {
       console.error(err);
       setError(err.response?.data?.message || 'Có lỗi xảy ra khi gọi AI bóc tách!');
