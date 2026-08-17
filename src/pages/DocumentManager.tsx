@@ -23,17 +23,22 @@ const DocumentManager = () => {
   const fetchClasses = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/classes', { headers: { Authorization: `Bearer ${token}` } });
+      // ĐÃ SỬA: Xóa đoạn dư thừa trong URL
+      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/classes', { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
       setClasses(res.data);
-    } catch (error) { console.error("Lỗi lấy danh sách lớp"); }
+    } catch (error) { 
+      console.error("Lỗi lấy danh sách lớp"); 
+    }
   };
 
   const fetchDriveContents = useCallback(async (parentId: number | null) => {
     if (!selectedClassId) return;
     const token = localStorage.getItem('token');
     try {
-      // LUÔN LUÔN LÀ 'STORAGE' (Kho lưu trữ)
-      const url = `https://quanlydaythem-api.onrender.com/api/auth/student/login/api/folders/drive?category=STORAGE&class_id=${selectedClassId}${parentId ? `&parent_id=${parentId}` : ''}`;
+      // ĐÃ SỬA: Xóa đoạn dư thừa trong URL
+      const url = `https://quanlydaythem-api.onrender.com/api/folders/drive?category=STORAGE&class_id=${selectedClassId}${parentId ? `&parent_id=${parentId}` : ''}`;
       const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
       setFolders(res.data.folders || []);
       setDocuments(res.data.documents || []);
@@ -67,7 +72,8 @@ const DocumentManager = () => {
     if (!folderName) return alert("Vui lòng nhập tên thư mục!");
     const token = localStorage.getItem('token');
     try {
-      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/folders', {
+      // ĐÃ SỬA: Xóa đoạn dư thừa trong URL
+      await axios.post('https://quanlydaythem-api.onrender.com/api/folders', {
         name: folderName, category: 'STORAGE', class_id: selectedClassId, parent_id: currentParentId
       }, { headers: { Authorization: `Bearer ${token}` } });
       setShowFolderModal(false); setFolderName(''); fetchDriveContents(currentParentId);
@@ -78,7 +84,8 @@ const DocumentManager = () => {
     if (!window.confirm('CẢNH BÁO: Xóa thư mục này sẽ xóa luôn cả các thư mục con. Chắc chắn không?')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/folders/${folderId}`, { headers: { Authorization: `Bearer ${token}` } });
+      // ĐÃ SỬA: Xóa đoạn dư thừa trong URL
+      await axios.delete(`https://quanlydaythem-api.onrender.com/api/folders/${folderId}`, { headers: { Authorization: `Bearer ${token}` } });
       fetchDriveContents(currentParentId);
     } catch (error) { alert('❌ Lỗi khi xóa thư mục!'); }
   };
@@ -96,7 +103,8 @@ const DocumentManager = () => {
 
     const token = localStorage.getItem('token');
     try {
-      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/student/login/api/documents/upload', formData, {
+      // ĐÃ SỬA: Xóa đoạn dư thừa trong URL
+      await axios.post('https://quanlydaythem-api.onrender.com/api/documents/upload', formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       alert(`✅ Đã tải thành công tệp lên Kho Lưu Trữ!`);
@@ -108,7 +116,8 @@ const DocumentManager = () => {
     if (!window.confirm("Bạn có chắc muốn xóa tài liệu này?")) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`https://quanlydaythem-api.onrender.com/api/auth/student/login/api/documents/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      // ĐÃ SỬA: Xóa đoạn dư thừa trong URL
+      await axios.delete(`https://quanlydaythem-api.onrender.com/api/documents/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       fetchDriveContents(currentParentId);
     } catch (error) { alert("Lỗi khi xóa tệp"); }
   };

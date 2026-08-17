@@ -144,7 +144,7 @@ const CreateExamAI = () => {
             <select value={classId} onChange={(e) => setClassId(e.target.value)} style={styles.input}>
               <option value="">-- Chọn lớp học --</option>
               {classOptions.map(cls => (
-                <option key={cls.id} value={cls.id}>{cls.name}</option>
+                <option key={cls.id} value={cls.id}>{cls.class_name}</option>
               ))}
             </select>
           </div>
