@@ -19,10 +19,15 @@ const ClassList = () => {
     const token = localStorage.getItem('token');
     if (!token) { navigate('/login'); return; }
     try {
-      const response = await axios.get('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/classes', { headers: { Authorization: `Bearer ${token}` } });
+      const response = await axios.get('https://quanlydaythem-api.onrender.com/api/classes', { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
       setClasses(response.data);
     } catch (error: any) {
-      if (error.response?.status === 401 || error.response?.status === 403) { localStorage.removeItem('token'); navigate('/login'); }
+      if (error.response?.status === 401 || error.response?.status === 403) { 
+        localStorage.removeItem('token'); 
+        navigate('/login'); 
+      }
     }
   };
 
@@ -33,10 +38,10 @@ const ClassList = () => {
     const token = localStorage.getItem('token');
     try {
       if (editingId) {
-        await axios.put(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/classes/${editingId}`, { class_name: className }, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.put(`https://quanlydaythem-api.onrender.com/api/classes/${editingId}`, { class_name: className }, { headers: { Authorization: `Bearer ${token}` } });
         setMessage('✅ Cập nhật thành công!');
       } else {
-        await axios.post('[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/classes', { class_name: className }, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post('https://quanlydaythem-api.onrender.com/api/classes', { class_name: className }, { headers: { Authorization: `Bearer ${token}` } });
         setMessage('✅ Thêm mới thành công!');
       }
       setClassName(''); setEditingId(null); fetchClasses();
@@ -54,13 +59,13 @@ const ClassList = () => {
     if (!window.confirm('Chắc chắn xóa? Các dữ liệu liên quan sẽ bị ảnh hưởng.')) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`[https://quanlydaythem-api.onrender.com](https://quanlydaythem-api.onrender.com)/api/classes/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`https://quanlydaythem-api.onrender.com/api/classes/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       fetchClasses();
     } catch (error) {}
   };
 
   return (
-<div style={{ padding: '40px', width: '100%', boxSizing: 'border-box' }}>      
+    <div style={{ padding: '40px', width: '100%', boxSizing: 'border-box' }}>      
       {/* HEADER PAGE */}
       <div style={{ marginBottom: '35px' }}>
         <h1 style={{ margin: 0, color: '#1e293b', fontSize: '28px', fontWeight: '800' }}>Quản Lý Lớp Học</h1>

@@ -17,6 +17,7 @@ import StudentDocuments from './pages/StudentDocuments';
 import ViewAnswers from './pages/ViewAnswers'; 
 import TeacherManager from './pages/TeacherManager';
 import axios from 'axios';
+import CreateExamAI from './pages/CreateExamAI';
 
 axios.defaults.baseURL = 'https://quanlydaythem-api.onrender.com';
 
@@ -54,6 +55,7 @@ function App() {
           <Route path="/tai-lieu" element={<DocumentManager />} />
           <Route path="/quan-ly-thi" element={<ExamManagement />} />
           <Route path="/quan-ly-giao-vien" element={<TeacherManager />} />
+          <Route path="/admin/create-exam" element={<CreateExamAI />} />
         </Route>
 
       </Routes>
