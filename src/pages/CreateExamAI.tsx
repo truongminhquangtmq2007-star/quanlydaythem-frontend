@@ -11,7 +11,14 @@ const renderContent = (text: string) => {
   const parts = text.split('$');
   return parts.map((part, index) => {
     if (index % 2 !== 0) {
-      let cleanMath = part.trim().replace(/\\\\(frac|int|sum|lim|mathrm|text|begin|end|hline)/g, '\\$1');
+      let cleanMath = part.trim();
+      
+      // 1. Sửa lỗi escape: Khử các dấu gạch chéo kép do JSON trả về
+      cleanMath = cleanMath.replace(/\\\\([a-zA-Z]+)/g, '\\$1');
+      
+      // 2. Phòng hờ trường hợp chuỗi bị lỗi ký tự form-feed (\f) của JavaScript
+      cleanMath = cleanMath.replace(/\x0C/g, '\\f'); 
+
       return (
         <InlineMath
           key={index}
