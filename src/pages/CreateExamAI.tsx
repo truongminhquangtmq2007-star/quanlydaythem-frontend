@@ -4,52 +4,39 @@ import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 
 // ==========================================
-// HÀM RENDER "BỌC THÉP" - TỰ ĐỘNG SỬA LỖI AI
-// ==========================================
-// ==========================================
-// HÀM RENDER "BỌC THÉP" - TỰ ĐỘNG SỬA LỖI AI
+// HÀM RENDER "BỌC THÉP" TỐI THƯỢNG
 // ==========================================
 const renderContent = (text: string) => {
   if (!text) return '';
   
-  // 1. Tự động bọc $ cho các bảng (array, matrix) nếu AI quên
-  let safeText = text.replace(/(\\begin\{(array|matrix|cases|pmatrix)\}[\s\S]*?\\end\{\2\})/g, function(match) {
-     return ` $${match}$ `;
-  });
+  // 1. Tự động bọc $ cho các bảng/ma trận (nếu AI quên)
+  let safeText = text.replace(/(\\begin\{(array|matrix|cases|pmatrix|bmatrix)\}[\s\S]*?\\end\{\2\})/g, ' $ $1 $ ');
   
-  // 2. Chia tách bằng regex chuẩn để lấy chính xác nội dung trong cặp $...$
-  const parts = safeText.split(/(\$(?:[^\$]+)\$)/g);
-  
+  const parts = safeText.split('$');
   return parts.map((part, index) => {
-    // Nếu là chuỗi Toán học (được bọc bởi $)
-    if (part.startsWith('$') && part.endsWith('$')) {
-      // Xóa dấu $ ở hai đầu
-      let cleanMath = part.slice(1, -1).trim();
+    if (index % 2 !== 0) {
+      let cleanMath = part.trim();
       
-      // 3. KHỬ MỌI DẤU GẠCH CHÉO KÉP (Trường hợp JSON trả về \\frac)
-      cleanMath = cleanMath.replace(/\\\\/g, '\\');
+      // 2. Tiêu diệt toàn bộ ký tự tàng hình, khoảng trắng lỗi làm sập KaTeX
+      cleanMath = cleanMath.replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ');
       
-      // 4. KHÔI PHỤC KÝ TỰ BỊ HỎNG DO LỖI ESCAPE CỦA JAVASCRIPT
-      cleanMath = cleanMath.replace(/\x0C/g, '\\f'); // Cứu \frac, \f
-      cleanMath = cleanMath.replace(/\x08/g, '\\b'); // Cứu \beta, \b
-      cleanMath = cleanMath.replace(/\x09/g, '\\t'); // Cứu \tan, \theta
-      cleanMath = cleanMath.replace(/\x0A/g, '\\n'); // Cứu \ne, \n
-      cleanMath = cleanMath.replace(/\x0D/g, '\\r'); // Cứu \rho, \r
-      cleanMath = cleanMath.replace(/\x0B/g, '\\v'); // Cứu \vec, \v
-      
+      // 3. Ép các lệnh thường bị AI double-escape về chuẩn 1 gạch chéo
+      cleanMath = cleanMath.replace(/\\\\(pi|infty|int|frac|sum|lim|alpha|beta|gamma|Delta|theta|ne|ge|le|sin|cos|tan|log|ln|vec|rightarrow)/g, '\\$1');
+
       return (
         <InlineMath
           key={index}
           math={cleanMath}
           renderError={(error) => (
-            <span style={{ color: '#ef4444', fontSize: '15px', fontWeight: 'bold', padding: '0 4px' }}>
-              ⚠️ Lỗi: {cleanMath}
+            // 4. In thẳng lý do lỗi của KaTeX ra màn hình để bắt tận tay
+            <span style={{ color: '#ef4444', fontSize: '14px', fontWeight: 'bold' }}>
+              ⚠️ Lỗi: {cleanMath} <br/>
+              <span style={{ fontSize: '11px', color: '#b91c1c' }}>(Chi tiết: {error.message})</span>
             </span>
           )}
         />
       );
     }
-    // Nếu là văn bản bình thường
     return <span key={index}>{part}</span>;
   });
 };
@@ -176,7 +163,13 @@ const CreateExamAI = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert('🎉 Đã lưu bộ đề thành công!');
-    } catch (err) { alert('❌ Lỗi khi lưu đề.'); } finally { setIsLoading(false); }
+     } catch (err: any) {
+      console.error("LỖI CHI TIẾT TỪ BACKEND:", err);
+      const errorMessage = err.response?.data?.message || err.message || "Lỗi không xác định";
+      alert(`❌ Lỗi từ Server: ${errorMessage}`);
+    } finally { 
+      setIsLoading(false); 
+    }
   };
 
   const uploadImageToCloudinary = async (file: File): Promise<string | null> => {
