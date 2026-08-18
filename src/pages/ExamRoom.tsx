@@ -4,15 +4,50 @@ import axios from 'axios';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 
-// Hàm tiện ích: Render LaTeX và Text
+// ==========================================
+// CẤU TRÚC DỮ LIỆU
+// ==========================================
+export interface SharedContext {
+  id: number;
+  content: string;
+  image_url?: string;
+  questionIds: number[];
+  part: 'part1' | 'part2' | 'part3';
+}
+
+// ==========================================
+// HÀM TIỆN ÍCH: Render LaTeX an toàn
+// ==========================================
 const renderContent = (text: string) => {
   if (!text) return '';
   const parts = text.split('$');
   return parts.map((part, index) => {
-    if (index % 2 !== 0) return <InlineMath key={index} math={part} />;
+    if (index % 2 !== 0) {
+      let cleanMath = part.trim().replace(/\\\\(frac|int|sum|lim|mathrm|text|begin|end|hline)/g, '\\$1');
+      return (
+        <InlineMath
+          key={index}
+          math={cleanMath}
+          renderError={() => (
+            <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'bold' }}>
+              ⚠️ Lỗi công thức: {cleanMath}
+            </span>
+          )}
+        />
+      );
+    }
     return <span key={index}>{part}</span>;
   });
 };
+
+// ==========================================
+// COMPONENT HIỂN THỊ ẢNH CHO HỌC SINH (Chỉ đọc)
+// ==========================================
+const ImageBlock = ({ url }: { url: string }) => (
+  <div style={{ float: 'right', marginLeft: '15px', marginBottom: '10px', maxWidth: '42%' }}>
+    <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'block' }} />
+  </div>
+);
 
 const ExamRoom = () => {
   const navigate = useNavigate();
@@ -30,10 +65,10 @@ const ExamRoom = () => {
   // Lưu đáp án
   const [part1Answers, setPart1Answers] = useState<{[key: number]: string}>({});
   const [part2Answers, setPart2Answers] = useState<{[key: number]: {[sub: string]: 'Đ' | 'S'}}>({});
-  const [part3Answers, setPart3Answers] = useState<{[key: number]: string}>({}); // Đã đổi sang string cho input text
+  const [part3Answers, setPart3Answers] = useState<{[key: number]: string}>({}); 
   
   const [myScores, setMyScores] = useState<{[key: number]: any[]}>({});
-  const [examData, setExamData] = useState<any>(null); // State chứa nội dung câu hỏi text
+  const [examData, setExamData] = useState<any>(null); 
   const [fontSize, setFontSize] = useState<number>(16);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -57,29 +92,23 @@ const ExamRoom = () => {
 
   useEffect(() => { if (viewState === 'LIST') fetchExams(); }, [viewState, fetchExams]);
 
-useEffect(() => {
+  useEffect(() => {
     if (viewState === 'EXAM' && selectedExam) {
-      // 1. Lấy thời gian làm bài từ cấu hình đề, nếu không có mặc định là 50 phút
       const duration = selectedExam.duration_minutes ? selectedExam.duration_minutes * 60 : 50 * 60;
       setTimeLeft(duration);
 
-      // 2. GỌI API LẤY NỘI DUNG ĐỀ THI THẬT TỪ BACKEND
       const fetchExamContent = async () => {
         try {
           const token = localStorage.getItem('token');
-          
-          // ⚠️ LƯU Ý: Thay '/api/exams/key/' bằng đúng đường dẫn route (API số 5) của bạn trong backend
           const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/exams/key/${selectedExam.id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
 
-          // Kiểm tra xem đề thi đã có nội dung (exam_content) chưa
           if (res.data && res.data.exam_content) {
             setExamData(res.data.exam_content);
           } else {
-            // Nếu chưa có, tạm thời set mảng rỗng để giao diện không bị sập
             alert('Giáo viên chưa cập nhật nội dung chi tiết cho đề thi này!');
-            setExamData({ part1: [], part2: [], part3: [] });
+            setExamData({ part1: [], part2: [], part3: [], sharedContexts: [] });
           }
         } catch (error) {
           console.error('Lỗi khi tải nội dung đề thi:', error);
@@ -146,6 +175,28 @@ useEffect(() => {
       setIsSubmitting(false);
     }
   };
+
+  // ==========================================
+  // HÀM TÌM & HIỂN THỊ CÂU HỎI NHÓM
+  // ==========================================
+  const findGroupIfFirst = (part: 'part1' | 'part2' | 'part3', qId: number): SharedContext | null => {
+    const groups: SharedContext[] = examData?.sharedContexts || [];
+    const group = groups.find((g) => g.part === part && g.questionIds.includes(qId));
+    if (!group) return null;
+    const minId = Math.min(...group.questionIds);
+    return qId === minId ? group : null;
+  };
+
+  const renderGroupBlock = (group: SharedContext) => (
+    <div style={{ backgroundColor: '#fffbeb', border: '1px dashed #f59e0b', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
+      {group.image_url && <ImageBlock url={group.image_url} />}
+      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+        📌 Sử dụng thông tin sau để trả lời các câu {group.questionIds.join(', ')}:
+      </div>
+      <div>{renderContent(group.content)}</div>
+      <div style={{ clear: 'both' }} />
+    </div>
+  );
 
   const wrapperStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: '#f1f5f9', overflowY: 'auto' };
 
@@ -257,7 +308,7 @@ useEffect(() => {
     );
   }
 
-  // ================= VIEW 4: MÀN HÌNH LÀM BÀI CHÍNH (GIAO DIỆN CHUẨN THI QUỐC GIA) =================
+  // ================= VIEW 4: MÀN HÌNH LÀM BÀI CHÍNH =================
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
@@ -285,7 +336,7 @@ useEffect(() => {
     mainContent: { flex: 1, padding: '30px 20px', overflowY: 'auto' as const, paddingBottom: '100px' },
     card: { backgroundColor: '#fff', maxWidth: '900px', margin: '0 auto', borderRadius: '8px', padding: '40px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' },
     sectionTitle: { color: '#1e3a8a', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' as const, borderBottom: '2px solid #1e3a8a', paddingBottom: '10px', marginBottom: '30px' },
-    questionBox: { marginBottom: '40px' },
+    questionBox: { marginBottom: '40px', clear: 'both' as const },
     questionText: { fontWeight: 'bold', marginBottom: '15px', lineHeight: '1.6' },
     optionsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
     optionItem: (isSelected: boolean) => ({ border: isSelected ? '2px solid #3b82f6' : '1px solid #cbd5e1', backgroundColor: isSelected ? '#eff6ff' : 'white', borderRadius: '8px', padding: '12px 15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }),
@@ -359,25 +410,36 @@ useEffect(() => {
           <div style={{ padding: '50px', textAlign: 'center', fontWeight: 'bold' }}>Đang tải nội dung đề thi...</div>
         ) : (
           <div style={examStyles.card}>
+            
             {/* PHẦN 1 */}
             {examData.part1 && examData.part1.length > 0 && (
               <div style={{ marginBottom: '50px' }}>
                 <div style={examStyles.sectionTitle}>PHẦN I. CÂU TRẮC NGHIỆM NHIỀU PHƯƠNG ÁN</div>
-                {examData.part1.map((q: any) => (
-                  <div key={q.id} id={`q-${q.id}`} style={examStyles.questionBox}>
-                    <div style={examStyles.questionText}>
-                      <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
-                    </div>
-                    <div style={examStyles.optionsGrid}>
-                      {['A', 'B', 'C', 'D'].map((opt) => (
-                        <div key={opt} style={examStyles.optionItem(part1Answers[q.id] === opt)} onClick={() => setPart1Answers({ ...part1Answers, [q.id]: opt })}>
-                          <div style={examStyles.radioCircle(part1Answers[q.id] === opt)}></div>
-                          <div><strong>{opt}.</strong> {renderContent(q.options[opt])}</div>
+                {examData.part1.map((q: any) => {
+                  const group = findGroupIfFirst('part1', q.id);
+                  return (
+                    <React.Fragment key={q.id}>
+                      {group && renderGroupBlock(group)}
+                      <div id={`q-${q.id}`} style={examStyles.questionBox}>
+                        <div>
+                          {q.image_url && <ImageBlock url={q.image_url} />}
+                          <div style={examStyles.questionText}>
+                            <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
+                          </div>
+                          <div style={examStyles.optionsGrid}>
+                            {['A', 'B', 'C', 'D'].map((opt) => (
+                              <div key={opt} style={examStyles.optionItem(part1Answers[q.id] === opt)} onClick={() => setPart1Answers({ ...part1Answers, [q.id]: opt })}>
+                                <div style={examStyles.radioCircle(part1Answers[q.id] === opt)}></div>
+                                <div><strong>{opt}.</strong> {renderContent(q.options[opt])}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                        <div style={{ clear: 'both' }}></div>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
               </div>
             )}
 
@@ -385,32 +447,42 @@ useEffect(() => {
             {examData.part2 && examData.part2.length > 0 && (
               <div style={{ marginBottom: '50px' }}>
                 <div style={examStyles.sectionTitle}>PHẦN II. CÂU TRẮC NGHIỆM ĐÚNG/SAI</div>
-                {examData.part2.map((q: any) => (
-                  <div key={q.id} id={`q-${q.id}`} style={examStyles.questionBox}>
-                    <div style={examStyles.questionText}>
-                      <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
-                    </div>
-                    <table style={examStyles.tfTable}>
-                      <tbody>
-                        {['a', 'b', 'c', 'd'].map((stmt) => (
-                          <tr key={stmt}>
-                            <td style={examStyles.tfCell}><strong>{stmt})</strong> {renderContent(q.statements[stmt])}</td>
-                            <td style={{ ...examStyles.tfCell, width: '120px', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                  <input type="radio" checked={part2Answers[q.id]?.[stmt] === 'Đ'} onChange={() => setPart2Answers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || {}), [stmt]: 'Đ' } }))} /> Đ
-                                </label>
-                                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                  <input type="radio" checked={part2Answers[q.id]?.[stmt] === 'S'} onChange={() => setPart2Answers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || {}), [stmt]: 'S' } }))} /> S
-                                </label>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ))}
+                {examData.part2.map((q: any) => {
+                  const group = findGroupIfFirst('part2', q.id);
+                  return (
+                    <React.Fragment key={q.id}>
+                      {group && renderGroupBlock(group)}
+                      <div id={`q-${q.id}`} style={examStyles.questionBox}>
+                        <div>
+                          {q.image_url && <ImageBlock url={q.image_url} />}
+                          <div style={examStyles.questionText}>
+                            <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
+                          </div>
+                          <table style={examStyles.tfTable}>
+                            <tbody>
+                              {['a', 'b', 'c', 'd'].map((stmt) => (
+                                <tr key={stmt}>
+                                  <td style={examStyles.tfCell}><strong>{stmt})</strong> {renderContent(q.statements[stmt])}</td>
+                                  <td style={{ ...examStyles.tfCell, width: '120px', textAlign: 'right' }}>
+                                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                                      <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                        <input type="radio" checked={part2Answers[q.id]?.[stmt] === 'Đ'} onChange={() => setPart2Answers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || {}), [stmt]: 'Đ' } }))} /> Đ
+                                      </label>
+                                      <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                        <input type="radio" checked={part2Answers[q.id]?.[stmt] === 'S'} onChange={() => setPart2Answers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || {}), [stmt]: 'S' } }))} /> S
+                                      </label>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div style={{ clear: 'both' }}></div>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
               </div>
             )}
 
@@ -418,23 +490,33 @@ useEffect(() => {
             {examData.part3 && examData.part3.length > 0 && (
               <div style={{ marginBottom: '10px' }}>
                 <div style={examStyles.sectionTitle}>PHẦN III. CÂU TRẮC NGHIỆM TRẢ LỜI NGẮN</div>
-                {examData.part3.map((q: any) => (
-                  <div key={q.id} id={`q-${q.id}`} style={examStyles.questionBox}>
-                    <div style={examStyles.questionText}>
-                      <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
-                    </div>
-                    <div style={{ marginTop: '10px' }}>
-                      <span style={{ fontWeight: 'bold', marginRight: '15px' }}>Đáp án của bạn:</span>
-                      <input 
-                        type="text" 
-                        style={{ padding: '10px 15px', borderRadius: '5px', border: '2px solid #cbd5e1', fontSize: '16px', width: '200px' }} 
-                        value={part3Answers[q.id] || ''} 
-                        onChange={(e) => setPart3Answers({ ...part3Answers, [q.id]: e.target.value })}
-                        placeholder="Nhập giá trị..."
-                      />
-                    </div>
-                  </div>
-                ))}
+                {examData.part3.map((q: any) => {
+                  const group = findGroupIfFirst('part3', q.id);
+                  return (
+                    <React.Fragment key={q.id}>
+                      {group && renderGroupBlock(group)}
+                      <div id={`q-${q.id}`} style={examStyles.questionBox}>
+                        <div>
+                          {q.image_url && <ImageBlock url={q.image_url} />}
+                          <div style={examStyles.questionText}>
+                            <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
+                          </div>
+                          <div style={{ marginTop: '10px' }}>
+                            <span style={{ fontWeight: 'bold', marginRight: '15px' }}>Đáp án của bạn:</span>
+                            <input 
+                              type="text" 
+                              style={{ padding: '10px 15px', borderRadius: '5px', border: '2px solid #cbd5e1', fontSize: '16px', width: '200px' }} 
+                              value={part3Answers[q.id] || ''} 
+                              onChange={(e) => setPart3Answers({ ...part3Answers, [q.id]: e.target.value })}
+                              placeholder="Nhập giá trị..."
+                            />
+                          </div>
+                        </div>
+                        <div style={{ clear: 'both' }}></div>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
               </div>
             )}
           </div>
