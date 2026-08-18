@@ -6,33 +6,50 @@ import { InlineMath } from 'react-katex';
 // ==========================================
 // HÀM RENDER "BỌC THÉP" - TỰ ĐỘNG SỬA LỖI AI
 // ==========================================
+// ==========================================
+// HÀM RENDER "BỌC THÉP" - TỰ ĐỘNG SỬA LỖI AI
+// ==========================================
 const renderContent = (text: string) => {
   if (!text) return '';
   
   // 1. Tự động bọc $ cho các bảng (array, matrix) nếu AI quên
   let safeText = text.replace(/(\\begin\{(array|matrix|cases|pmatrix)\}[\s\S]*?\\end\{\2\})/g, function(match) {
-     return ` $ ${match} $ `;
+     return ` $${match}$ `;
   });
-  // Khử các cặp $$ bị dư thừa
-  safeText = safeText.replace(/\$\$/g, '$');
-
-  const parts = safeText.split('$');
+  
+  // 2. Chia tách bằng regex chuẩn để lấy chính xác nội dung trong cặp $...$
+  const parts = safeText.split(/(\$(?:[^\$]+)\$)/g);
+  
   return parts.map((part, index) => {
-    if (index % 2 !== 0) {
-      // 2. Chuyển toàn bộ gạch chéo kép \\ thành \ chuẩn của KaTeX
-      let cleanMath = part.trim().replace(/\\\\/g, '\\');
+    // Nếu là chuỗi Toán học (được bọc bởi $)
+    if (part.startsWith('$') && part.endsWith('$')) {
+      // Xóa dấu $ ở hai đầu
+      let cleanMath = part.slice(1, -1).trim();
+      
+      // 3. KHỬ MỌI DẤU GẠCH CHÉO KÉP (Trường hợp JSON trả về \\frac)
+      cleanMath = cleanMath.replace(/\\\\/g, '\\');
+      
+      // 4. KHÔI PHỤC KÝ TỰ BỊ HỎNG DO LỖI ESCAPE CỦA JAVASCRIPT
+      cleanMath = cleanMath.replace(/\x0C/g, '\\f'); // Cứu \frac, \f
+      cleanMath = cleanMath.replace(/\x08/g, '\\b'); // Cứu \beta, \b
+      cleanMath = cleanMath.replace(/\x09/g, '\\t'); // Cứu \tan, \theta
+      cleanMath = cleanMath.replace(/\x0A/g, '\\n'); // Cứu \ne, \n
+      cleanMath = cleanMath.replace(/\x0D/g, '\\r'); // Cứu \rho, \r
+      cleanMath = cleanMath.replace(/\x0B/g, '\\v'); // Cứu \vec, \v
+      
       return (
         <InlineMath
           key={index}
           math={cleanMath}
-          renderError={() => (
-            <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'bold' }}>
+          renderError={(error) => (
+            <span style={{ color: '#ef4444', fontSize: '15px', fontWeight: 'bold', padding: '0 4px' }}>
               ⚠️ Lỗi: {cleanMath}
             </span>
           )}
         />
       );
     }
+    // Nếu là văn bản bình thường
     return <span key={index}>{part}</span>;
   });
 };
