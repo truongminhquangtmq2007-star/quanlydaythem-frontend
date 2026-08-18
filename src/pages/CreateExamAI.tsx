@@ -4,21 +4,29 @@ import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 
 // ==========================================
-// Hàm tiện ích: Render LaTeX CỰC KỲ AN TOÀN
+// HÀM RENDER "BỌC THÉP" - TỰ ĐỘNG SỬA LỖI AI
 // ==========================================
 const renderContent = (text: string) => {
   if (!text) return '';
-  const parts = text.split('$');
+  
+  // 1. Tự động bọc $ cho các bảng (array, matrix) nếu AI quên
+  let safeText = text.replace(/(\\begin\{(array|matrix|cases|pmatrix)\}[\s\S]*?\\end\{\2\})/g, function(match) {
+     return ` $ ${match} $ `;
+  });
+  // Khử các cặp $$ bị dư thừa
+  safeText = safeText.replace(/\$\$/g, '$');
+
+  const parts = safeText.split('$');
   return parts.map((part, index) => {
     if (index % 2 !== 0) {
-      // Ép toàn bộ gạch chéo kép thành gạch chéo đơn ngay trước khi render, không can thiệp vào JSON
+      // 2. Chuyển toàn bộ gạch chéo kép \\ thành \ chuẩn của KaTeX
       let cleanMath = part.trim().replace(/\\\\/g, '\\');
       return (
         <InlineMath
           key={index}
           math={cleanMath}
-          renderError={(err) => (
-            <span style={{ color: '#ef4444', fontWeight: 'bold' }}>
+          renderError={() => (
+            <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'bold' }}>
               ⚠️ Lỗi: {cleanMath}
             </span>
           )}
@@ -46,18 +54,20 @@ const styles = {
   header: { color: '#1e293b', fontSize: '24px', margin: '0 0 20px 0', borderBottom: '2px solid #e2e8f0', paddingBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' },
   formGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '25px' },
   input: { width: '100%', padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '15px', boxSizing: 'border-box' as const },
-  previewBox: { backgroundColor: '#fff', border: '1px solid #e2e8f0', padding: '20px', borderRadius: '8px', marginBottom: '15px', color: '#1e293b', lineHeight: '1.6', fontSize: '16px' },
-  sharedBox: { backgroundColor: '#fffbeb', border: '1px dashed #f59e0b', padding: '15px', borderRadius: '8px', marginBottom: '15px', color: '#78350f', lineHeight: '1.6', fontSize: '15px' },
-  deleteImgBtn: { backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', padding: '8px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' },
+  // Thêm whiteSpace để giữ nguyên các đoạn xuống dòng của đoạn văn
+  previewBox: { backgroundColor: '#fff', border: '1px solid #e2e8f0', padding: '20px', borderRadius: '8px', marginBottom: '15px', color: '#1e293b', lineHeight: '1.6', fontSize: '16px', whiteSpace: 'pre-wrap' as const },
+  sharedBox: { backgroundColor: '#fffbeb', border: '1px dashed #f59e0b', padding: '15px', borderRadius: '8px', marginBottom: '15px', color: '#78350f', lineHeight: '1.6', fontSize: '15px', whiteSpace: 'pre-wrap' as const },
   jsonEditor: { width: '100%', height: '400px', padding: '15px', borderRadius: '8px', border: '2px solid #3b82f6', backgroundColor: '#1e293b', color: '#10b981', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical' as const },
   saveBtn: { padding: '15px 40px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' },
 };
 
-// Ảnh hiển thị bên phải
+// ==========================================
+// COMPONENT RENDER ẢNH
+// ==========================================
 const ImageBlock = ({ url, onRemove }: { url: string; onRemove: () => void }) => (
   <div style={{ float: 'right', marginLeft: '15px', marginBottom: '10px', maxWidth: '40%', textAlign: 'center' }}>
     <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '250px', objectFit: 'contain', borderRadius: '8px', border: '2px solid #cbd5e1', display: 'block', marginBottom: '8px' }} />
-    <button onClick={onRemove} style={styles.deleteImgBtn}>🗑️ Xóa ảnh này</button>
+    <button onClick={onRemove} style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', padding: '6px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>🗑️ Xóa ảnh này</button>
   </div>
 );
 
@@ -120,7 +130,7 @@ const CreateExamAI = () => {
       }
 
       if (response?.data) {
-        // Parse bình thường, không dùng hàm replace làm hỏng JSON nữa
+        // Lấy dữ liệu thuần túy, không dùng hàm replace làm gãy JSON nữa
         const content = response.data.examContent;
         if (!content.sharedContexts) content.sharedContexts = [];
         setEditContent(content);
@@ -170,6 +180,7 @@ const CreateExamAI = () => {
     const newContent = { ...editContent, [part]: editContent[part].map((q: any, i: number) => (i === index ? { ...q, image_url: url } : q)) };
     setEditContent(newContent); setJsonString(JSON.stringify(newContent, null, 2));
   };
+
   const removeQuestionImage = (part: 'part1' | 'part2' | 'part3', index: number) => {
     const newContent = { ...editContent, [part]: editContent[part].map((q: any, i: number) => (i === index ? { ...q, image_url: undefined } : q)) };
     setEditContent(newContent); setJsonString(JSON.stringify(newContent, null, 2));
@@ -232,19 +243,20 @@ const CreateExamAI = () => {
                     </div>
                     <div style={{ clear: 'both' }} />
 
-                    {/* NÚT TẢI ẢNH ĐƯỢC LÀM RẤT TO VÀ NỔI BẬT */}
-                    <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f1f5f9', border: '2px dashed #3b82f6', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {/* KHỐI NÚT TẢI ẢNH ĐƯỢC LÀM MỚI CHẮC CHẮN 100% NHÌN THẤY */}
+                    <div style={{ marginTop: '20px', padding: '12px 15px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 'bold', color: '#10b981' }}>👉 Chọn đáp án:</span>
-                        <select style={{ padding: '8px', fontSize: '15px' }} value={editKeys.part1_key[qId] || ''} onChange={(e) => updateKey('part1_key', qId, e.target.value)}>
+                        <span style={{ fontWeight: 'bold', color: '#047857' }}>👉 Chọn đáp án chuẩn:</span>
+                        <select style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '15px' }} value={editKeys.part1_key[qId] || ''} onChange={(e) => updateKey('part1_key', qId, e.target.value)}>
                           <option value="">- Chọn -</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
                         </select>
                       </div>
-                      <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', boxShadow: '0 4px 6px rgba(59,130,246,0.3)' }}>
-                        📸 THÊM ẢNH CHO CÂU NÀY
+                      <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                        📸 TẢI ẢNH LÊN
                         <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if(e.target.files?.[0]) handleQuestionImage('part1', index, e.target.files[0]); e.target.value = ''; }} />
                       </label>
                     </div>
+
                   </div>
                 </div>
               );
@@ -269,18 +281,20 @@ const CreateExamAI = () => {
                     {['a', 'b', 'c', 'd'].map((stmt) => (
                       <div key={stmt} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px dashed #e2e8f0' }}>
                         <span><strong>{stmt})</strong> {renderContent(q.statements?.[stmt])}</span>
-                        <select value={editKeys.part2_key?.[qId]?.[stmt] || ''} onChange={(e) => updatePart2Key(qId, stmt, e.target.value)}><option value="">-</option><option value="Đ">Đ</option><option value="S">S</option></select>
+                        <select style={{ padding: '4px' }} value={editKeys.part2_key?.[qId]?.[stmt] || ''} onChange={(e) => updatePart2Key(qId, stmt, e.target.value)}><option value="">-</option><option value="Đ">Đ</option><option value="S">S</option></select>
                       </div>
                     ))}
                     <div style={{ clear: 'both' }} />
 
-                    {/* NÚT TẢI ẢNH */}
-                    <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f1f5f9', border: '2px dashed #3b82f6', borderRadius: '8px', textAlign: 'right' }}>
-                      <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px' }}>
-                        📸 THÊM ẢNH CHO CÂU NÀY
+                    {/* KHỐI NÚT TẢI ẢNH */}
+                    <div style={{ marginTop: '20px', padding: '12px 15px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', color: '#047857', fontWeight: 'bold' }}>Đáp án Đ/S ở từng dòng trên.</span>
+                      <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                        📸 TẢI ẢNH LÊN
                         <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if(e.target.files?.[0]) handleQuestionImage('part2', index, e.target.files[0]); e.target.value = ''; }} />
                       </label>
                     </div>
+
                   </div>
                 </div>
               );
@@ -304,17 +318,18 @@ const CreateExamAI = () => {
                     <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Câu {qId}: {renderContent(q.questionText)}</div>
                     <div style={{ clear: 'both' }} />
 
-                    {/* NÚT TẢI ẢNH */}
-                    <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f1f5f9', border: '2px dashed #3b82f6', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {/* KHỐI NÚT TẢI ẢNH */}
+                    <div style={{ marginTop: '20px', padding: '12px 15px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 'bold', color: '#10b981' }}>👉 Đáp án chuẩn:</span>
-                        <input type="text" style={{ padding: '8px', borderRadius: '5px', border: '1px solid #cbd5e1' }} value={editKeys.part3_key[qId] || ''} onChange={(e) => updateKey('part3_key', qId, e.target.value)} />
+                        <span style={{ fontWeight: 'bold', color: '#047857' }}>👉 Đáp án chuẩn:</span>
+                        <input type="text" style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #cbd5e1' }} value={editKeys.part3_key[qId] || ''} onChange={(e) => updateKey('part3_key', qId, e.target.value)} />
                       </div>
-                      <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px' }}>
-                        📸 THÊM ẢNH CHO CÂU NÀY
+                      <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                        📸 TẢI ẢNH LÊN
                         <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if(e.target.files?.[0]) handleQuestionImage('part3', index, e.target.files[0]); e.target.value = ''; }} />
                       </label>
                     </div>
+
                   </div>
                 </div>
               );
@@ -326,7 +341,7 @@ const CreateExamAI = () => {
             setJsonString(e.target.value);
             try { setEditContent(JSON.parse(e.target.value)); setJsonError(''); } catch (err) { setJsonError('Lỗi cú pháp JSON'); }
           }} spellCheck="false" />
-          <button onClick={handleSaveExam} disabled={isLoading} style={{ ...styles.saveBtn, marginTop: '20px', width: '100%' }}>💾 XÁC NHẬN LƯU</button>
+          <button onClick={handleSaveExam} disabled={isLoading} style={{ ...styles.saveBtn, marginTop: '20px', width: '100%' }}>💾 XÁC NHẬN LƯU HỆ THỐNG</button>
         </div>
       )}
     </div>
