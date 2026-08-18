@@ -15,41 +15,38 @@ export interface SharedContext {
   part: 'part1' | 'part2' | 'part3';
 }
 
-// ==========================================
-// HÀM TIỆN ÍCH: Render LaTeX an toàn
-// ==========================================
-// ==========================================
-// HÀM RENDER "BỌC THÉP" - TỰ ĐỘNG SỬA LỖI AI
-// ==========================================
-// ==========================================
-// HÀM RENDER "BỌC THÉP" TỐI THƯỢNG
-// ==========================================
 const renderContent = (text: string) => {
   if (!text) return '';
   
-  // 1. Tự động bọc $ cho các bảng/ma trận (nếu AI quên)
+  // 1. Tự động bọc $ cho các bảng (array, matrix) nếu AI quên
   let safeText = text.replace(/(\\begin\{(array|matrix|cases|pmatrix|bmatrix)\}[\s\S]*?\\end\{\2\})/g, ' $ $1 $ ');
-  
+  safeText = safeText.replace(/\$\$/g, '$');
+
   const parts = safeText.split('$');
   return parts.map((part, index) => {
     if (index % 2 !== 0) {
       let cleanMath = part.trim();
-      
-      // 2. Tiêu diệt toàn bộ ký tự tàng hình, khoảng trắng lỗi làm sập KaTeX
-      cleanMath = cleanMath.replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ');
-      
+
+      // 2. KHÔI PHỤC KÝ TỰ BỊ HỎNG DO LỖI ESCAPE CỦA JAVASCRIPT
+      // Khi AI trả JSON thiếu gạch chéo, JS sẽ biến nó thành ký tự điều khiển
+      cleanMath = cleanMath.replace(/\x08/g, '\\b'); // Cứu \begin, \beta (Backspace)
+      cleanMath = cleanMath.replace(/\x09/g, '\\t'); // Cứu \tan, \text (Tab)
+      cleanMath = cleanMath.replace(/\x0A/g, '\\n'); // Cứu \ne, \n (Newline)
+      cleanMath = cleanMath.replace(/\x0B/g, '\\v'); // Cứu \vec, \v (Vertical Tab)
+      cleanMath = cleanMath.replace(/\x0C/g, '\\f'); // Cứu \frac, \f (Form Feed)
+      cleanMath = cleanMath.replace(/\x0D/g, '\\r'); // Cứu \rightarrow, \rho (Carriage Return)
+
       // 3. Ép các lệnh thường bị AI double-escape về chuẩn 1 gạch chéo
-      cleanMath = cleanMath.replace(/\\\\(pi|infty|int|frac|sum|lim|alpha|beta|gamma|Delta|theta|ne|ge|le|sin|cos|tan|log|ln|vec|rightarrow)/g, '\\$1');
+      cleanMath = cleanMath.replace(/\\\\/g, '\\');
 
       return (
         <InlineMath
           key={index}
           math={cleanMath}
           renderError={(error) => (
-            // 4. In thẳng lý do lỗi của KaTeX ra màn hình để bắt tận tay
-            <span style={{ color: '#ef4444', fontSize: '14px', fontWeight: 'bold' }}>
+            <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'bold' }}>
               ⚠️ Lỗi: {cleanMath} <br/>
-              <span style={{ fontSize: '11px', color: '#b91c1c' }}>(Chi tiết: {error.message})</span>
+              <span style={{ fontSize: '10px', color: '#b91c1c' }}>({error.message})</span>
             </span>
           )}
         />

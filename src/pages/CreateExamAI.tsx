@@ -4,34 +4,40 @@ import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 
 // ==========================================
-// HÀM RENDER "BỌC THÉP" TỐI THƯỢNG
+// HÀM RENDER "BỌC THÉP" TỐI THƯỢNG (XỬ LÝ MỌI KÝ TỰ TÀNG HÌNH)
 // ==========================================
 const renderContent = (text: string) => {
   if (!text) return '';
   
-  // 1. Tự động bọc $ cho các bảng/ma trận (nếu AI quên)
+  // 1. Tự động bọc $ cho các bảng (array, matrix) nếu AI quên
   let safeText = text.replace(/(\\begin\{(array|matrix|cases|pmatrix|bmatrix)\}[\s\S]*?\\end\{\2\})/g, ' $ $1 $ ');
-  
+  safeText = safeText.replace(/\$\$/g, '$');
+
   const parts = safeText.split('$');
   return parts.map((part, index) => {
     if (index % 2 !== 0) {
       let cleanMath = part.trim();
-      
-      // 2. Tiêu diệt toàn bộ ký tự tàng hình, khoảng trắng lỗi làm sập KaTeX
-      cleanMath = cleanMath.replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, ' ');
-      
+
+      // 2. KHÔI PHỤC KÝ TỰ BỊ HỎNG DO LỖI ESCAPE CỦA JAVASCRIPT
+      // Khi AI trả JSON thiếu gạch chéo, JS sẽ biến nó thành ký tự điều khiển
+      cleanMath = cleanMath.replace(/\x08/g, '\\b'); // Cứu \begin, \beta (Backspace)
+      cleanMath = cleanMath.replace(/\x09/g, '\\t'); // Cứu \tan, \text (Tab)
+      cleanMath = cleanMath.replace(/\x0A/g, '\\n'); // Cứu \ne, \n (Newline)
+      cleanMath = cleanMath.replace(/\x0B/g, '\\v'); // Cứu \vec, \v (Vertical Tab)
+      cleanMath = cleanMath.replace(/\x0C/g, '\\f'); // Cứu \frac, \f (Form Feed)
+      cleanMath = cleanMath.replace(/\x0D/g, '\\r'); // Cứu \rightarrow, \rho (Carriage Return)
+
       // 3. Ép các lệnh thường bị AI double-escape về chuẩn 1 gạch chéo
-      cleanMath = cleanMath.replace(/\\\\(pi|infty|int|frac|sum|lim|alpha|beta|gamma|Delta|theta|ne|ge|le|sin|cos|tan|log|ln|vec|rightarrow)/g, '\\$1');
+      cleanMath = cleanMath.replace(/\\\\/g, '\\');
 
       return (
         <InlineMath
           key={index}
           math={cleanMath}
           renderError={(error) => (
-            // 4. In thẳng lý do lỗi của KaTeX ra màn hình để bắt tận tay
-            <span style={{ color: '#ef4444', fontSize: '14px', fontWeight: 'bold' }}>
+            <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'bold' }}>
               ⚠️ Lỗi: {cleanMath} <br/>
-              <span style={{ fontSize: '11px', color: '#b91c1c' }}>(Chi tiết: {error.message})</span>
+              <span style={{ fontSize: '10px', color: '#b91c1c' }}>({error.message})</span>
             </span>
           )}
         />
@@ -58,7 +64,6 @@ const styles = {
   header: { color: '#1e293b', fontSize: '24px', margin: '0 0 20px 0', borderBottom: '2px solid #e2e8f0', paddingBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' },
   formGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '25px' },
   input: { width: '100%', padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '15px', boxSizing: 'border-box' as const },
-  // Thêm whiteSpace để giữ nguyên các đoạn xuống dòng của đoạn văn
   previewBox: { backgroundColor: '#fff', border: '1px solid #e2e8f0', padding: '20px', borderRadius: '8px', marginBottom: '15px', color: '#1e293b', lineHeight: '1.6', fontSize: '16px', whiteSpace: 'pre-wrap' as const },
   sharedBox: { backgroundColor: '#fffbeb', border: '1px dashed #f59e0b', padding: '15px', borderRadius: '8px', marginBottom: '15px', color: '#78350f', lineHeight: '1.6', fontSize: '15px', whiteSpace: 'pre-wrap' as const },
   jsonEditor: { width: '100%', height: '400px', padding: '15px', borderRadius: '8px', border: '2px solid #3b82f6', backgroundColor: '#1e293b', color: '#10b981', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical' as const },
@@ -76,7 +81,8 @@ const ImageBlock = ({ url, onRemove }: { url: string; onRemove: () => void }) =>
 );
 
 const CreateExamAI = () => {
-  const [documentId, setDocumentId] = useState<number | string>('');
+  // Thay thế documentId bằng examTitle
+  const [examTitle, setExamTitle] = useState<string>(''); 
   const [classId, setClassId] = useState<number | string>('');
   const [duration, setDuration] = useState<number | string>(50);
 
@@ -104,7 +110,7 @@ const CreateExamAI = () => {
   }, []);
 
   const handleParseExam = async () => {
-    if (!documentId || !classId) return setError('Vui lòng chọn Mã đề và Lớp học!');
+    if (!classId) return setError('Vui lòng chọn Lớp học!');
     if (inputMode === 'text' && !rawText) return setError('Vui lòng dán nội dung đề thi!');
     if (inputMode === 'file' && !selectedFile) return setError('Vui lòng chọn file PDF/Ảnh!');
 
@@ -114,15 +120,16 @@ const CreateExamAI = () => {
       const token = localStorage.getItem('token');
       let response;
 
+      // Truyền tạm document_id = 0 để qua cổng AI (vì AI không dùng id này, nó chỉ dùng để lưu)
       if (inputMode === 'text') {
         response = await axios.post(
           'https://quanlydaythem-api.onrender.com/api/exams/parse-ai-text',
-          { document_id: Number(documentId), class_id: Number(classId), durationMinutes: Number(duration), rawText },
+          { document_id: 0, class_id: Number(classId), durationMinutes: Number(duration), rawText },
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
         const formData = new FormData();
-        formData.append('document_id', String(documentId));
+        formData.append('document_id', '0');
         formData.append('class_id', String(classId));
         formData.append('durationMinutes', String(duration));
         formData.append('examFile', selectedFile as File);
@@ -134,12 +141,14 @@ const CreateExamAI = () => {
       }
 
       if (response?.data) {
-        // Lấy dữ liệu thuần túy, không dùng hàm replace làm gãy JSON nữa
         const content = response.data.examContent;
         if (!content.sharedContexts) content.sharedContexts = [];
         setEditContent(content);
         setEditKeys(response.data.examKey);
         setJsonString(JSON.stringify(content, null, 2));
+        
+        // Tự động gợi ý tên đề thi nếu chưa nhập
+        if (!examTitle) setExamTitle(`Đề thi AI - Lớp ${classOptions.find(c => c.id == classId)?.class_name || 'Mới'}`);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Có lỗi xảy ra khi bóc tách!');
@@ -148,22 +157,56 @@ const CreateExamAI = () => {
     }
   };
 
+  // ==========================================
+  // LUỒNG TỰ ĐỘNG HÓA LƯU TÀI LIỆU
+  // ==========================================
   const handleSaveExam = async () => {
     if (jsonError) return alert('❌ Mã JSON đang bị lỗi cú pháp.');
+    if (!examTitle.trim()) return alert('⚠️ Vui lòng nhập Tên đề thi trước khi lưu!');
+
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
+
+      // BƯỚC 1: TỰ ĐỘNG TẠO TÀI LIỆU ĐỂ LẤY ID CHUẨN
+      let fileToUpload = selectedFile;
+      if (inputMode === 'text' || !fileToUpload) {
+          // Tạo một file txt ảo từ văn bản để đẩy lên server
+          const blob = new Blob([rawText || 'Nội dung đề thi được tạo tự động từ AI'], { type: 'text/plain' });
+          fileToUpload = new File([blob], `${examTitle}.txt`, { type: 'text/plain' });
+      }
+
+      const formData = new FormData();
+      formData.append('title', examTitle);
+      formData.append('category', 'EXAM');
+      formData.append('file', fileToUpload);
+
+      const uploadRes = await axios.post(
+        'https://quanlydaythem-api.onrender.com/api/documents/upload',
+        formData,
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+      );
+
+      const newDocumentId = uploadRes.data?.document?.id;
+      if (!newDocumentId) throw new Error("Không thể khởi tạo mã tài liệu gốc.");
+
+      // BƯỚC 2: LƯU ĐÁP ÁN VÀO ĐÚNG ID VỪA TẠO
       await axios.post(
         'https://quanlydaythem-api.onrender.com/api/exams/key',
         {
-          document_id: documentId, class_id: classId, duration_minutes: duration, allow_view_answers: true,
-          part1_key: editKeys.part1_key, part2_key: editKeys.part2_key, part3_key: editKeys.part3_key,
+          document_id: newDocumentId, 
+          class_id: classId, 
+          duration_minutes: duration, 
+          allow_view_answers: true,
+          part1_key: editKeys.part1_key, 
+          part2_key: editKeys.part2_key, 
+          part3_key: editKeys.part3_key,
           exam_content: editContent,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('🎉 Đã lưu bộ đề thành công!');
-     } catch (err: any) {
+      alert('🎉 Đã tự động tạo tài liệu và lưu bộ đề thành công!');
+    } catch (err: any) { 
       console.error("LỖI CHI TIẾT TỪ BACKEND:", err);
       const errorMessage = err.response?.data?.message || err.message || "Lỗi không xác định";
       alert(`❌ Lỗi từ Server: ${errorMessage}`);
@@ -213,18 +256,19 @@ const CreateExamAI = () => {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h2 style={styles.header}>📑 Bóc Tách Đề AI</h2>
+        <h2 style={styles.header}>📑 Bóc Tách Đề AI (Tự động hóa)</h2>
         <div style={styles.formGrid}>
-          <div><label style={{ fontWeight: 'bold' }}>Mã tài liệu</label><input type="number" value={documentId} onChange={(e) => setDocumentId(e.target.value)} style={styles.input} /></div>
+          {/* Ô MÃ TÀI LIỆU ĐÃ ĐƯỢC THAY BẰNG TÊN ĐỀ THI */}
+          <div><label style={{ fontWeight: 'bold' }}>Tên đề thi</label><input type="text" placeholder="Nhập tên đề..." value={examTitle} onChange={(e) => setExamTitle(e.target.value)} style={styles.input} /></div>
           <div><label style={{ fontWeight: 'bold' }}>Lớp</label><select value={classId} onChange={(e) => setClassId(e.target.value)} style={styles.input}><option value="">-Chọn-</option>{classOptions.map((c) => <option key={c.id} value={c.id}>{c.class_name}</option>)}</select></div>
-          <div><label style={{ fontWeight: 'bold' }}>Thời gian</label><input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} style={styles.input} /></div>
+          <div><label style={{ fontWeight: 'bold' }}>Thời gian (Phút)</label><input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} style={styles.input} /></div>
         </div>
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
           <div style={{ padding: '10px', cursor: 'pointer', borderBottom: inputMode === 'text' ? '3px solid #3b82f6' : '3px solid transparent' }} onClick={() => setInputMode('text')}>📝 Văn bản (Word)</div>
           <div style={{ padding: '10px', cursor: 'pointer', borderBottom: inputMode === 'file' ? '3px solid #3b82f6' : '3px solid transparent' }} onClick={() => setInputMode('file')}>📎 File (PDF/Ảnh)</div>
         </div>
         {inputMode === 'text' ? <textarea value={rawText} onChange={(e) => setRawText(e.target.value)} style={{ ...styles.input, height: '150px' }} /> : <input type="file" onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])} />}
-        <button onClick={handleParseExam} disabled={isLoading} style={{ width: '100%', padding: '15px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', marginTop: '20px', cursor: 'pointer' }}>{isLoading ? '⏳ Đang xử lý...' : '✨ Bắt Đầu Tạo Đề'}</button>
+        <button onClick={handleParseExam} disabled={isLoading} style={{ width: '100%', padding: '15px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', marginTop: '20px', cursor: 'pointer' }}>{isLoading ? '⏳ Đang xử lý...' : '✨ Bắt Đầu Phân Tích'}</button>
       </div>
 
       {editContent && editKeys && (
@@ -253,7 +297,6 @@ const CreateExamAI = () => {
                     </div>
                     <div style={{ clear: 'both' }} />
 
-                    {/* KHỐI NÚT TẢI ẢNH ĐƯỢC LÀM MỚI CHẮC CHẮN 100% NHÌN THẤY */}
                     <div style={{ marginTop: '20px', padding: '12px 15px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span style={{ fontWeight: 'bold', color: '#047857' }}>👉 Chọn đáp án chuẩn:</span>
@@ -296,7 +339,6 @@ const CreateExamAI = () => {
                     ))}
                     <div style={{ clear: 'both' }} />
 
-                    {/* KHỐI NÚT TẢI ẢNH */}
                     <div style={{ marginTop: '20px', padding: '12px 15px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '13px', color: '#047857', fontWeight: 'bold' }}>Đáp án Đ/S ở từng dòng trên.</span>
                       <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
@@ -328,7 +370,6 @@ const CreateExamAI = () => {
                     <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Câu {qId}: {renderContent(q.questionText)}</div>
                     <div style={{ clear: 'both' }} />
 
-                    {/* KHỐI NÚT TẢI ẢNH */}
                     <div style={{ marginTop: '20px', padding: '12px 15px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span style={{ fontWeight: 'bold', color: '#047857' }}>👉 Đáp án chuẩn:</span>
@@ -351,7 +392,9 @@ const CreateExamAI = () => {
             setJsonString(e.target.value);
             try { setEditContent(JSON.parse(e.target.value)); setJsonError(''); } catch (err) { setJsonError('Lỗi cú pháp JSON'); }
           }} spellCheck="false" />
-          <button onClick={handleSaveExam} disabled={isLoading} style={{ ...styles.saveBtn, marginTop: '20px', width: '100%' }}>💾 XÁC NHẬN LƯU HỆ THỐNG</button>
+          <button onClick={handleSaveExam} disabled={isLoading} style={{ ...styles.saveBtn, marginTop: '20px', width: '100%' }}>
+            {isLoading ? '⏳ ĐANG LƯU VÀ TẠO TÀI LIỆU...' : '💾 XÁC NHẬN LƯU HỆ THỐNG'}
+          </button>
         </div>
       )}
     </div>
