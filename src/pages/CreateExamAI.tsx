@@ -4,16 +4,32 @@ import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 
 // Hàm tiện ích: Render LaTeX an toàn (Chống sập giao diện nếu gõ sai mã Toán)
+// Hàm tiện ích: Render LaTeX an toàn, tự động dọn rác và in lỗi chi tiết
 const renderContent = (text: string) => {
   if (!text) return '';
   const parts = text.split('$');
   return parts.map((part, index) => {
+    // Các phần tử ở vị trí lẻ (nằm trong dấu $)
     if (index % 2 !== 0) {
+      let cleanMath = part.trim();
+      
+      // MẸO TRỊ AI: AI thường hay viết \\frac thay vì \frac. 
+      // Dòng code này sẽ tự động gọt bớt dấu gạch chéo thừa cho các lệnh phổ biến.
+      cleanMath = cleanMath.replace(/\\\\(frac|int|sum|lim|mathrm|text|begin|end|hline)/g, '\\$1');
+
       return (
         <InlineMath 
           key={index} 
-          math={part} 
-          renderError={(error) => <span style={{ color: 'red', fontWeight: 'bold' }}>${part}$</span>} 
+          math={cleanMath} 
+          renderError={(error) => (
+            <span 
+              style={{ backgroundColor: '#fef2f2', color: '#ef4444', padding: '2px 6px', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold' }} 
+              title={error.message}
+            >
+              {/* Hiển thị rõ nguyên nhân lỗi trên màn hình để giáo viên biết đường sửa trong JSON */}
+              ⚠️ Lỗi: {error.message.replace('KaTeX parse error: ', '')} ({cleanMath})
+            </span>
+          )} 
         />
       );
     }
