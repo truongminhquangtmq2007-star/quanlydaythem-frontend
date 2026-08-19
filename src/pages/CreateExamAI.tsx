@@ -163,6 +163,9 @@ const CreateExamAI = () => {
   const handleSaveExam = async () => {
     if (jsonError) return alert('❌ Mã JSON đang bị lỗi cú pháp.');
     if (!examTitle.trim()) return alert('⚠️ Vui lòng nhập Tên đề thi trước khi lưu!');
+    if (!editContent?.part1 || !editContent?.part2 || !editContent?.part3) {
+  return alert('❌ Dữ liệu đề thi không hợp lệ!');
+}
 
     try {
       setIsLoading(true);
@@ -175,6 +178,33 @@ const CreateExamAI = () => {
           const blob = new Blob([rawText || 'Nội dung đề thi được tạo tự động từ AI'], { type: 'text/plain' });
           fileToUpload = new File([blob], `${examTitle}.txt`, { type: 'text/plain' });
       }
+      const invalidPart1 = editContent.part1.some(
+  (q: any) => !['A', 'B', 'C', 'D'].includes(editKeys.part1_key?.[q.id])
+);
+
+if (invalidPart1) {
+  return alert('⚠️ Có câu Phần 1 chưa chọn đáp án!');
+}
+      const invalidPart2 = editContent.part2.some((q: any) => {
+  const key = editKeys.part2_key?.[q.id];
+
+  return !key ||
+    !['Đ', 'S'].includes(key.a) ||
+    !['Đ', 'S'].includes(key.b) ||
+    !['Đ', 'S'].includes(key.c) ||
+    !['Đ', 'S'].includes(key.d);
+});
+
+if (invalidPart2) {
+  return alert('⚠️ Có câu Phần 2 chưa nhập đủ đáp án Đúng/Sai!');
+}
+      const invalidPart3 = editContent.part3.some(
+  (q: any) => !String(editKeys.part3_key?.[q.id] || '').trim()
+);
+
+if (invalidPart3) {
+  return alert('⚠️ Có câu Phần 3 chưa nhập đáp án!');
+}
 
       const formData = new FormData();
       formData.append('title', examTitle);
@@ -189,7 +219,20 @@ const CreateExamAI = () => {
 
       const newDocumentId = uploadRes.data?.document?.id;
       if (!newDocumentId) throw new Error("Không thể khởi tạo mã tài liệu gốc.");
+      const finalPart1Key = editContent.part1.reduce((acc: any, q: any) => {
+  acc[q.id] = q.correctAnswer || editKeys.part1_key?.[q.id] || '';
+  return acc;
+}, {});
 
+const finalPart2Key = editContent.part2.reduce((acc: any, q: any) => {
+  acc[q.id] = q.correctAnswer || editKeys.part2_key?.[q.id] || {};
+  return acc;
+}, {});
+
+const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
+  acc[q.id] = q.correctAnswer || editKeys.part3_key?.[q.id] || '';
+  return acc;
+}, {});
       // BƯỚC 2: LƯU ĐÁP ÁN VÀO ĐÚNG ID VỪA TẠO
       await axios.post(
         'https://quanlydaythem-api.onrender.com/api/exams/key',
@@ -239,12 +282,77 @@ const CreateExamAI = () => {
     setEditContent(newContent); setJsonString(JSON.stringify(newContent, null, 2));
   };
 
-  const updateKey = (partKey: string, qId: number, value: string) => {
-    setEditKeys({ ...editKeys, [partKey]: { ...editKeys[partKey], [qId]: value } });
-  };
-  const updatePart2Key = (qId: number, stmtKey: string, value: string) => {
-    setEditKeys({ ...editKeys, part2_key: { ...editKeys.part2_key, [qId]: { ...editKeys.part2_key[qId], [stmtKey]: value } } });
-  };
+  const updateKey = (
+  partKey: 'part1_key' | 'part3_key',
+  qId: number,
+  value: string
+) => {
+
+  // Cập nhật đáp án để lưu database
+  setEditKeys((prev: any) => ({
+    ...prev,
+    [partKey]: {
+      ...prev[partKey],
+      [qId]: value
+    }
+  }));
+
+  // Đồng bộ vào nội dung đề
+  const part = partKey === 'part1_key' ? 'part1' : 'part3';
+
+  setEditContent((prev: any) => {
+    const newContent = {
+      ...prev,
+      [part]: prev[part].map((q: any) =>
+        q.id === qId
+          ? { ...q, correctAnswer: value }
+          : q
+      )
+    };
+
+    setJsonString(JSON.stringify(newContent, null, 2));
+
+    return newContent;
+  });
+};
+  const updatePart2Key = (
+  qId: number,
+  stmtKey: string,
+  value: string
+) => {
+
+  setEditKeys((prev: any) => ({
+    ...prev,
+    part2_key: {
+      ...prev.part2_key,
+      [qId]: {
+        ...prev.part2_key?.[qId],
+        [stmtKey]: value
+      }
+    }
+  }));
+
+  setEditContent((prev: any) => {
+    const newContent = {
+      ...prev,
+      part2: prev.part2.map((q: any) => {
+        if (q.id !== qId) return q;
+
+        return {
+          ...q,
+          correctAnswer: {
+            ...q.correctAnswer,
+            [stmtKey]: value
+          }
+        };
+      })
+    };
+
+    setJsonString(JSON.stringify(newContent, null, 2));
+
+    return newContent;
+  });
+};
 
   const findGroupIfFirst = (part: 'part1' | 'part2' | 'part3', qId: number): SharedContext | null => {
     const groups: SharedContext[] = editContent?.sharedContexts || [];
