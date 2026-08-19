@@ -8,41 +8,53 @@ import { InlineMath } from 'react-katex';
 // ==========================================
 const renderContent = (text: string) => {
   if (!text) return '';
-  
-  // 1. Tự động bọc $ cho các bảng (array, matrix) nếu AI quên
-  let safeText = text.replace(/(\\begin\{(array|matrix|cases|pmatrix|bmatrix)\}[\s\S]*?\\end\{\2\})/g, ' $ $1 $ ');
-  safeText = safeText.replace(/\$\$/g, '$');
 
+  // Dữ liệu sau JSON.parse đã tự xử lý escape JSON.
+  // Chỉ xử lý trường hợp AI trả về \\ thay vì \.
+  const safeText = String(text).replace(/\\\\/g, '\\');
+
+  // Tách nội dung thành text thường và công thức nằm trong $...$
   const parts = safeText.split('$');
+
   return parts.map((part, index) => {
-    if (index % 2 !== 0) {
-      let cleanMath = part.trim();
+    // index lẻ = nội dung toán học
+    if (index % 2 === 1) {
+      const math = part.trim();
 
-      // 2. KHÔI PHỤC KÝ TỰ BỊ HỎNG DO LỖI ESCAPE CỦA JAVASCRIPT
-      // Khi AI trả JSON thiếu gạch chéo, JS sẽ biến nó thành ký tự điều khiển
-      cleanMath = cleanMath.replace(/\x08/g, '\\b'); // Cứu \begin, \beta (Backspace)
-      cleanMath = cleanMath.replace(/\x09/g, '\\t'); // Cứu \tan, \text (Tab)
-      cleanMath = cleanMath.replace(/\x0A/g, '\\n'); // Cứu \ne, \n (Newline)
-      cleanMath = cleanMath.replace(/\x0B/g, '\\v'); // Cứu \vec, \v (Vertical Tab)
-      cleanMath = cleanMath.replace(/\x0C/g, '\\f'); // Cứu \frac, \f (Form Feed)
-      cleanMath = cleanMath.replace(/\x0D/g, '\\r'); // Cứu \rightarrow, \rho (Carriage Return)
-
-      // 3. Ép các lệnh thường bị AI double-escape về chuẩn 1 gạch chéo
-      cleanMath = cleanMath.replace(/\\\\/g, '\\');
+      // Không render công thức rỗng
+      if (!math) {
+        return null;
+      }
 
       return (
         <InlineMath
           key={index}
-          math={cleanMath}
+          math={math}
           renderError={(error) => (
-            <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'bold' }}>
-              ⚠️ Lỗi: {cleanMath} <br/>
-              <span style={{ fontSize: '10px', color: '#b91c1c' }}>({error.message})</span>
+            <span
+              style={{
+                color: '#ef4444',
+                fontSize: '13px',
+                fontWeight: 'bold'
+              }}
+            >
+              ⚠️ Lỗi công thức: {math}
+              <br />
+              <span
+                style={{
+                  fontSize: '11px',
+                  color: '#b91c1c'
+                }}
+              >
+                {error.message}
+              </span>
             </span>
           )}
         />
       );
     }
+
+    // index chẵn = text bình thường
     return <span key={index}>{part}</span>;
   });
 };
