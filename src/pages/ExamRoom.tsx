@@ -18,53 +18,57 @@ export interface SharedContext {
 const renderContent = (text: string) => {
   if (!text) return '';
 
-  // Dữ liệu sau JSON.parse đã tự xử lý escape JSON.
-  // Chỉ xử lý trường hợp AI trả về \\ thay vì \.
-  const safeText = String(text).replace(/\\\\/g, '\\');
+  let safeText = String(text);
 
-  // Tách nội dung thành text thường và công thức nằm trong $...$
+safeText = safeText
+  .replace(/\\{2,}/g, '\\')
+  .replace(/\\_/g, '_');
+
+  // =====================================================
+  // BƯỚC 2: Tách nội dung bằng dấu $
+  // =====================================================
+
   const parts = safeText.split('$');
 
   return parts.map((part, index) => {
-    // index lẻ = nội dung toán học
-    if (index % 2 === 1) {
-      const math = part.trim();
-
-      // Không render công thức rỗng
-      if (!math) {
-        return null;
-      }
-
-      return (
-        <InlineMath
-          key={index}
-          math={math}
-          renderError={(error) => (
-            <span
-              style={{
-                color: '#ef4444',
-                fontSize: '13px',
-                fontWeight: 'bold'
-              }}
-            >
-              ⚠️ Lỗi công thức: {math}
-              <br />
-              <span
-                style={{
-                  fontSize: '11px',
-                  color: '#b91c1c'
-                }}
-              >
-                {error.message}
-              </span>
-            </span>
-          )}
-        />
-      );
+    // Text thường
+    if (index % 2 === 0) {
+      return <span key={index}>{part}</span>;
     }
 
-    // index chẵn = text bình thường
-    return <span key={index}>{part}</span>;
+    // Công thức toán
+    const math = part.trim();
+
+    if (!math) {
+      return null;
+    }
+
+    return (
+      <InlineMath
+        key={index}
+        math={math}
+        renderError={(error) => (
+          <span
+            style={{
+              color: '#ef4444',
+              fontSize: '13px',
+              fontWeight: 'bold'
+            }}
+          >
+            ⚠️ Lỗi công thức: {math}
+            <br />
+            <span
+              style={{
+                fontSize: '11px',
+                color: '#b91c1c'
+              }}
+            >
+              {error.message}
+            </span>
+          </span>
+        )}
+      />
+    );
   });
 };
 
