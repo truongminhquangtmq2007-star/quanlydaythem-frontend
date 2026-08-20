@@ -11,28 +11,61 @@ const renderContent = (text: string) => {
 
   let safeText = String(text);
 
-safeText = safeText
-  .replace(/\\{2,}/g, '\\')
-  .replace(/\\_/g, '_');
+  // Chuẩn hóa nhiều dấu \ liên tiếp thành 1 dấu \
+  safeText = safeText.replace(/\\{2,}/g, '\\');
 
-  // =====================================================
-  // BƯỚC 2: Tách nội dung bằng dấu $
-  // =====================================================
+  // Sửa \_ thành _
+  safeText = safeText.replace(/\\_/g, '_');
 
   const parts = safeText.split('$');
 
   return parts.map((part, index) => {
-    // Text thường
+    // Text bình thường
     if (index % 2 === 0) {
       return <span key={index}>{part}</span>;
     }
 
-    // Công thức toán
-    const math = part.trim();
+    let math = part.trim();
 
-    if (!math) {
-      return null;
-    }
+    if (!math) return null;
+
+    // ==================================================
+    // QUAN TRỌNG:
+    // XÓA CÁC KÝ TỰ ẨN / CONTROL CHARACTER
+    // ==================================================
+
+    // Xóa ký tự Unicode vô hình
+    math = math.replace(
+      /[\u200B-\u200D\uFEFF\u00AD\u2060]/g,
+      ''
+    );
+
+    // Xóa các ký tự điều khiển ASCII
+    // nhưng giữ khoảng trắng thông thường
+    math = math.replace(
+      /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,
+      ''
+    );
+
+    // Loại bỏ CR/LF/TAB nằm bên trong công thức
+    math = math.replace(/[\r\n\t]/g, '');
+
+    // Chuẩn hóa lại nhiều dấu \ nếu còn
+    math = math.replace(/\\{2,}/g, '\\');
+
+    // \_ phải là _
+    math = math.replace(/\\_/g, '_');
+
+    // DEBUG: xem chính xác từng ký tự KaTeX nhận được
+    console.log(
+      'KATEX RAW:',
+      math,
+      [...math].map(char => ({
+        char,
+        code: char.charCodeAt(0),
+        hex: '0x' + char.charCodeAt(0).toString(16)
+      }))
+    );
 
     return (
       <InlineMath
