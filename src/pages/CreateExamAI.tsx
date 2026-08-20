@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import 'katex/dist/katex.min.css';
-import { InlineMath } from 'react-katex';
+import { InlineMath, BlockMath } from 'react-katex';
 
 // ==========================================
 // HÀM RENDER "BỌC THÉP" TỐI THƯỢNG (XỬ LÝ MỌI KÝ TỰ TÀNG HÌNH)
