@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 
 const TeacherSessionManager = () => {
   const [classes, setClasses] = useState<any[]>([]); // Chứa danh sách lớp
@@ -10,9 +10,7 @@ const TeacherSessionManager = () => {
   const fetchClasses = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/classes', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axiosClient.get(`/api/classes`);
       setClasses(res.data);
     } catch (error) {
       console.error("Lỗi tải danh sách lớp", error);
@@ -24,9 +22,7 @@ const TeacherSessionManager = () => {
     if (!selectedClassId) return; // Nếu chưa chọn lớp thì không tải
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/sessions?class_id=${selectedClassId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axiosClient.get(`/api/sessions?class_id=${selectedClassId}`);
       setSessions(res.data.length > 0 ? res.data : [{}]); 
     } catch (error) {
       console.error("Lỗi tải dữ liệu buổi học", error);
@@ -54,9 +50,7 @@ const TeacherSessionManager = () => {
     if (sessionId) {
       const token = localStorage.getItem('token');
       try {
-        await axios.delete(`https://quanlydaythem-api.onrender.com/api/sessions/${sessionId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axiosClient.delete(`/api/sessions/${sessionId}`);
       } catch (error) {
         alert("❌ Lỗi khi xóa!"); return;
       }
@@ -71,10 +65,10 @@ const TeacherSessionManager = () => {
     const token = localStorage.getItem('token');
     try {
       await Promise.all(sessions.map(session => {
-        return axios.post('https://quanlydaythem-api.onrender.com/api/sessions/upsert', {
+        return axiosClient.post(`/api/sessions/upsert`, {
           ...session,
           class_id: selectedClassId // Gắn đúng ID của lớp đang chọn
-        }, { headers: { Authorization: `Bearer ${token}` } });
+        });
       }));
       alert("✅ Đã lưu nháp lịch học!");
       fetchSessions(); 
@@ -88,9 +82,9 @@ const TeacherSessionManager = () => {
     if (!window.confirm("Học sinh sẽ nhận được lịch học này. Xác nhận công bố?")) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.post('https://quanlydaythem-api.onrender.com/api/sessions/publish', {
+      await axiosClient.post(`/api/sessions/publish`, {
         class_id: selectedClassId
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       alert("🚀 Đã công bố lịch học cho Phụ huynh!");
       fetchSessions(); 
     } catch (error) {

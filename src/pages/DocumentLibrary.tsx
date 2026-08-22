@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import type { DocumentInfo } from '../types/core';
 
 const DocumentLibrary = () => {
@@ -18,7 +18,7 @@ const DocumentLibrary = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/documents', { 
+      const res = await axiosClient.get('/api/documents', { 
         params: { search, type: typeFilter, grade: gradeFilter },
         headers: { Authorization: `Bearer ${token}` } 
       });
@@ -53,12 +53,7 @@ const DocumentLibrary = () => {
       formData.append('grade', newDoc.grade);
       formData.append('subject', newDoc.subject);
 
-      await axios.post('/api/documents', formData, { 
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        } 
-      });
+      await axiosClient.post('/api/documents', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setShowModal(false);
       setNewDoc({ title: '', description: '', type: 'REFERENCE', grade: '', subject: '' });
       setSelectedFile(null);

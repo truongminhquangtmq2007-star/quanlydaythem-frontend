@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 
 interface Teacher {
   id: number;
@@ -17,9 +17,7 @@ const TeacherManager = () => {
   const fetchTeachers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/auth/teachers', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axiosClient.get(`/api/auth/teachers`);
       setTeachers(res.data);
     } catch (error) {
       console.error("Lỗi lấy danh sách GV", error);
@@ -34,12 +32,10 @@ const TeacherManager = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://quanlydaythem-api.onrender.com/api/auth/teachers', {
+      await axiosClient.post(`/api/auth/teachers`, {
         username,
         password,
         full_name: fullName
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       
       setMessage('🎉 Tạo tài khoản Giáo viên thành công!');
@@ -57,9 +53,8 @@ const TeacherManager = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`https://quanlydaythem-api.onrender.com/api/auth/teachers/${teacherId}/reset-password`, 
-        { newPassword: newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await axiosClient.put(`/api/auth/teachers/${teacherId}/reset-password`, 
+        { newPassword: newPassword }
       );
       alert('✅ Đã cấp lại mật khẩu thành công!');
     } catch (error: any) {

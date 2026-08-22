@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 
 const ExamBank = () => {
@@ -11,7 +11,7 @@ const ExamBank = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/exams', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axiosClient.get('/api/exams');
       setExams(res.data);
     } catch (err) {
       console.error(err);

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 
 export interface User {
   id: number;
@@ -33,9 +33,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const res = await axios.get('/api/auth/me', {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const res = await axiosClient.get('/api/auth/me');
           setUser(res.data);
         } catch (err) {
           localStorage.removeItem('token');

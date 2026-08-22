@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import ReactMarkdown from 'react-markdown';
 import { AuthContext } from '../context/AuthContext';
 
@@ -15,9 +15,7 @@ const ParentReport = () => {
     const fetchReport = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`/api/reports/students/${id}/weekly`, { 
-          headers: { Authorization: `Bearer ${token}` } 
-        });
+        const res = await axiosClient.get(`/api/reports/students/${id}/weekly`);
         setReportData(res.data);
       } catch (err) {
         console.error(err);

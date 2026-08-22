@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 
 const StudentSchedule = () => {
   const [schedule, setSchedule] = useState<any[]>([]);
@@ -8,7 +8,7 @@ const StudentSchedule = () => {
     const fetchSchedule = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await axios.get('/api/student/schedule', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axiosClient.get('/api/student/schedule');
         setSchedule(res.data);
       } catch (err) {
         console.error(err);

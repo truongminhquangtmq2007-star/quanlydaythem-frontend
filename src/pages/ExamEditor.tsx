@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { useLocation, useNavigate } from 'react-router-dom';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
@@ -116,7 +116,7 @@ const ExamEditor = () => {
         });
       });
 
-      await axios.post('/api/exams/publish', {
+      await axiosClient.post('/api/exams/publish', {
         document_id: meta.document_id,
         title: meta.title || 'Đề thi mới',
         grade: meta.grade || '12',
@@ -124,7 +124,7 @@ const ExamEditor = () => {
         duration_minutes: meta.duration_minutes || 60,
         questions,
         contexts
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       
       alert('Xuất bản đề thi thành công!');
       navigate('/quan-ly-thi'); // Hoặc quay về ExamBank

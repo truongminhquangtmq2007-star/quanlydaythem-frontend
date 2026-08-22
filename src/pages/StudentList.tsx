@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 
 interface Student {
@@ -27,9 +27,7 @@ const StudentList = () => {
       return;
     }
     try {
-      const response = await axios.get('https://quanlydaythem-api.onrender.com/api/students', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axiosClient.get(`/api/students`);
       setStudents(response.data);
     } catch (error: any) {
       if (error.response?.status === 401 || error.response?.status === 403) {
@@ -50,20 +48,20 @@ const StudentList = () => {
     try {
       if (editingId) {
         // Nếu là Cập nhật (Sửa) thì không gửi password
-        await axios.put(`https://quanlydaythem-api.onrender.com/api/students/${editingId}`, {
+        await axiosClient.put(`/api/students/${editingId}`, {
           full_name: fullName,
           phone_number: phoneNumber,
           school_name: schoolName
-        }, { headers: { Authorization: `Bearer ${token}` } });
+        });
         setMessage('✅ Cập nhật thông tin thành công!');
       } else {
         // Nếu là Tạo mới thì gửi kèm password
-        await axios.post('https://quanlydaythem-api.onrender.com/api/students', {
+        await axiosClient.post(`/api/students`, {
           full_name: fullName,
           phone_number: phoneNumber,
           school_name: schoolName,
           password: password // Gắn mật khẩu vào đây
-        }, { headers: { Authorization: `Bearer ${token}` } });
+        });
         setMessage('✅ Thêm học sinh thành công!');
       }
 
@@ -92,9 +90,7 @@ const StudentList = () => {
 
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`https://quanlydaythem-api.onrender.com/api/students/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axiosClient.delete(`/api/students/${id}`);
       setMessage('✅ Đã xóa học sinh thành công!');
       fetchStudents();
     } catch (error) {
@@ -109,9 +105,8 @@ const StudentList = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`https://quanlydaythem-api.onrender.com/api/students/${studentId}/reset-password`, 
-        { newPassword: newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await axiosClient.put(`/api/students/${studentId}/reset-password`, 
+        { newPassword: newPassword }
       );
       alert('✅ Đã cấp lại mật khẩu thành công!');
     } catch (error: any) {

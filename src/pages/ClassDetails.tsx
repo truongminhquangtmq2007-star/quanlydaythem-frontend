@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 
 interface Student {
@@ -39,9 +39,7 @@ const ClassDetails = () => {
     
     // 1. Tải danh sách TẤT CẢ học sinh
     try {
-      const allStudentsRes = await axios.get('http://localhost:5000/api/students', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const allStudentsRes = await axiosClient.get('http://localhost:5000/api/students');
       setAllStudents(allStudentsRes.data);
     } catch (error) {
       console.error('Lỗi tải danh sách tất cả học sinh:', error);
@@ -49,9 +47,7 @@ const ClassDetails = () => {
 
     // 2. Tải danh sách học sinh ĐÃ GHI DANH
     try {
-      const enrolledRes = await axios.get(`http://localhost:5000/api/enrollments/${classId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const enrolledRes = await axiosClient.get(`http://localhost:5000/api/enrollments/${classId}`);
       setEnrolledStudents(enrolledRes.data);
     } catch (error) {
       console.error('Lỗi tải danh sách học sinh trong lớp:', error);
@@ -59,9 +55,7 @@ const ClassDetails = () => {
 
     // 3. Tải danh sách GIÁO VIÊN (Thêm mới)
     try {
-      const teachersRes = await axios.get('http://localhost:5000/api/teachers', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const teachersRes = await axiosClient.get('http://localhost:5000/api/teachers');
       setTeachers(teachersRes.data);
     } catch (error) {
       console.error('Lỗi tải danh sách giáo viên:', error);
@@ -79,11 +73,9 @@ const ClassDetails = () => {
 
     const token = localStorage.getItem('token');
     try {
-      await axios.post('http://localhost:5000/api/enrollments', {
+      await axiosClient.post('http://localhost:5000/api/enrollments', {
         student_id: Number(selectedStudentId),
         class_id: Number(classId)
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       
       setMessage('✅ Đã thêm học sinh vào lớp!');
@@ -101,10 +93,8 @@ const ClassDetails = () => {
 
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`http://localhost:5000/api/classes/${classId}/assign-teacher`, {
+      await axiosClient.put(`http://localhost:5000/api/classes/${classId}/assign-teacher`, {
         teacher_id: Number(selectedTeacherId)
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       
       setTeacherMessage('✅ Đã phân công giáo viên thành công!');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 
@@ -60,9 +60,7 @@ const ViewAnswers = () => {
     const fetchExamDetails = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/exams/key/${docId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axiosClient.get(`/api/exams/key/${docId}`);
         
         // Backend trả về key gồm exam_content và các bảng đáp án part1_key, part2_key, part3_key
         if (res.data) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
@@ -55,17 +55,6 @@ const renderContent = (text: string) => {
 
     // \_ phải là _
     math = math.replace(/\\_/g, '_');
-
-    // DEBUG: xem chính xác từng ký tự KaTeX nhận được
-    console.log(
-      'KATEX RAW:',
-      math,
-      [...math].map(char => ({
-        char,
-        code: char.charCodeAt(0),
-        hex: '0x' + char.charCodeAt(0).toString(16)
-      }))
-    );
 
     return (
       <InlineMath
@@ -155,9 +144,11 @@ const CreateExamAI = () => {
     const fetchClasses = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('https://quanlydaythem-api.onrender.com/api/classes', { headers: { Authorization: `Bearer ${token}` } });
+        const response = await axiosClient.get(`/api/classes`);
         setClassOptions(response.data);
-      } catch (err) {}
+      } catch (err) {
+      console.error(err);
+    }
     };
     fetchClasses();
   }, []);
@@ -175,10 +166,9 @@ const CreateExamAI = () => {
 
       // Truyền tạm document_id = 0 để qua cổng AI (vì AI không dùng id này, nó chỉ dùng để lưu)
       if (inputMode === 'text') {
-        response = await axios.post(
-          'https://quanlydaythem-api.onrender.com/api/exams/parse-ai-text',
-          { document_id: 0, class_id: Number(classId), durationMinutes: Number(duration), rawText },
-          { headers: { Authorization: `Bearer ${token}` } }
+        response = await axiosClient.post(
+          `/api/exams/parse-ai-text`,
+          { document_id: 0, class_id: Number(classId), durationMinutes: Number(duration), rawText }
         );
       } else {
         const formData = new FormData();
@@ -187,9 +177,9 @@ const CreateExamAI = () => {
         formData.append('durationMinutes', String(duration));
         formData.append('examFile', selectedFile as File);
 
-        response = await axios.post(
-          'https://quanlydaythem-api.onrender.com/api/exams/parse-ai-file',
-          formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+        response = await axiosClient.post(
+          `/api/exams/parse-ai-file`,
+          formData, { headers: { 'Content-Type': 'multipart/form-data' } }
         );
       }
 
@@ -273,10 +263,9 @@ if (invalidPart3) {
       formData.append('category', 'EXAM');
       formData.append('file', fileToUpload);
 
-      const uploadRes = await axios.post(
-        'https://quanlydaythem-api.onrender.com/api/documents/upload',
-        formData,
-        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+      const uploadRes = await axiosClient.post(
+        `/api/documents/upload`,
+        formData, { headers: { 'Content-Type': 'multipart/form-data' } }
       );
 
       const newDocumentId = uploadRes.data?.document?.id;
@@ -296,8 +285,8 @@ const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
   return acc;
 }, {});
       // BƯỚC 2: LƯU ĐÁP ÁN VÀO ĐÚNG ID VỪA TẠO
-      await axios.post(
-        'https://quanlydaythem-api.onrender.com/api/exams/key',
+      await axiosClient.post(
+        `/api/exams/key`,
         {
           document_id: newDocumentId, 
           class_id: classId, 
@@ -307,8 +296,7 @@ const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
           part2_key: editKeys.part2_key, 
           part3_key: editKeys.part3_key,
           exam_content: editContent,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
       alert('🎉 Đã tự động tạo tài liệu và lưu bộ đề thành công!');
     } catch (err: any) { 
@@ -325,7 +313,7 @@ const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
     formData.append('file', file);
     formData.append('category', 'EXAM_IMAGE');
     try {
-      const res = await axios.post('https://quanlydaythem-api.onrender.com/api/documents/upload', formData, { 
+      const res = await axiosClient.post(`/api/documents/upload`, formData, { 
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' } 
       });
       return res.data?.document?.file_url || res.data?.file_url || null;

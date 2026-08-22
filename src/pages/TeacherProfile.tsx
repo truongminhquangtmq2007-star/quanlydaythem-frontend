@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 
 const TeacherProfile = () => {
@@ -22,9 +22,8 @@ const TeacherProfile = () => {
     setMessage('');
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.put('/api/auth/profile', 
-        { full_name: fullName, title }, 
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await axiosClient.put('/api/auth/profile', 
+        { full_name: fullName, title }
       );
       updateUser({ full_name: fullName, title });
       setMessage('Cập nhật hồ sơ thành công!');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import moment from 'moment';
 
 const TuitionManager = () => {
@@ -15,7 +15,7 @@ const TuitionManager = () => {
   const fetchBills = useCallback(async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/bills', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axiosClient.get(`/api/bills`);
       const allBills = res.data;
       
       // LỌC HÓA ĐƠN THEO THÁNG ĐƯỢC CHỌN
@@ -40,7 +40,7 @@ const TuitionManager = () => {
     if (!confirm) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`https://quanlydaythem-api.onrender.com/api/bills/${id}/pay`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await axiosClient.put(`/api/bills/${id}/pay`, {});
       alert('✅ Đã ghi nhận doanh thu thành công! Học sinh đã được cấp tem.');
       fetchBills(); 
     } catch (error) { alert('❌ Lỗi hệ thống.'); }
@@ -50,7 +50,7 @@ const TuitionManager = () => {
     setAiRemarkModal({ show: true, studentId, studentName, text: '', loading: true });
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.post('/api/ai/generate-remark', { student_id: studentId }, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axiosClient.post('/api/ai/generate-remark', { student_id: studentId });
       setAiRemarkModal(prev => ({ ...prev, text: res.data.remark, loading: false }));
     } catch (err) {
       setAiRemarkModal(prev => ({ ...prev, text: 'Lỗi: Không thể sinh nhận xét lúc này.', loading: false }));

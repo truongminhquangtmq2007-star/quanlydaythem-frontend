@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface ClassData {
@@ -19,9 +19,7 @@ const ClassList = () => {
     const token = localStorage.getItem('token');
     if (!token) { navigate('/login'); return; }
     try {
-      const response = await axios.get('https://quanlydaythem-api.onrender.com/api/classes', { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
+      const response = await axiosClient.get(`/api/classes`);
       setClasses(response.data);
     } catch (error: any) {
       if (error.response?.status === 401 || error.response?.status === 403) { 
@@ -38,10 +36,10 @@ const ClassList = () => {
     const token = localStorage.getItem('token');
     try {
       if (editingId) {
-        await axios.put(`https://quanlydaythem-api.onrender.com/api/classes/${editingId}`, { class_name: className }, { headers: { Authorization: `Bearer ${token}` } });
+        await axiosClient.put(`/api/classes/${editingId}`, { class_name: className });
         setMessage('✅ Cập nhật thành công!');
       } else {
-        await axios.post('https://quanlydaythem-api.onrender.com/api/classes', { class_name: className }, { headers: { Authorization: `Bearer ${token}` } });
+        await axiosClient.post(`/api/classes`, { class_name: className });
         setMessage('✅ Thêm mới thành công!');
       }
       setClassName(''); setEditingId(null); fetchClasses();
@@ -59,9 +57,11 @@ const ClassList = () => {
     if (!window.confirm('Chắc chắn xóa? Các dữ liệu liên quan sẽ bị ảnh hưởng.')) return;
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`https://quanlydaythem-api.onrender.com/api/classes/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axiosClient.delete(`/api/classes/${id}`);
       fetchClasses();
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (

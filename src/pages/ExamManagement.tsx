@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 
 // 1. IMPORT GIAO DIỆN AI VÀO ĐÂY (Đảm bảo file ExamManagerAI.tsx nằm cùng thư mục)
 import CreateExamAI from './CreateExamAI';
@@ -47,19 +47,23 @@ const ExamManagement = () => {
   const fetchClasses = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get('https://quanlydaythem-api.onrender.com/api/classes', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axiosClient.get(`/api/classes`);
       setClasses(res.data);
       if (res.data.length > 0) setSelectedClassId(res.data[0].id.toString());
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const fetchExams = useCallback(async () => {
     if (!selectedClassId) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/folders/drive?category=EXAM&class_id=${selectedClassId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axiosClient.get(`/api/folders/drive?category=EXAM&class_id=${selectedClassId}`);
       setDocuments(res.data.documents || []);
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+    }
   }, [selectedClassId]);
 
   useEffect(() => { fetchClasses(); }, []);
@@ -73,7 +77,7 @@ const ExamManagement = () => {
     formData.append('category', 'EXAM'); formData.append('class_id', selectedClassId);
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://quanlydaythem-api.onrender.com/api/documents/upload', formData, { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } });
+      await axiosClient.post(`/api/documents/upload`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       alert(`✅ Đã tải thành công đề thi!`);
       setShowUploadModal(false); setSelectedFile(null); setDocumentTitle(''); fetchExams();
     } catch (error) { alert("❌ Lỗi khi tải tệp lên."); }
@@ -82,12 +86,12 @@ const ExamManagement = () => {
   const handleQuickToggle = async (doc: Document, newAllowView: boolean) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.post('https://quanlydaythem-api.onrender.com/api/exams/key', {
+      await axiosClient.post(`/api/exams/key`, {
         document_id: doc.id,
         class_id: Number(selectedClassId),
         allow_view_answers: newAllowView,
         duration_minutes: doc.duration_minutes || 50,
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
 
       setDocuments(documents.map(d => d.id === doc.id ? { ...d, allow_view_answers: newAllowView } : d));
     } catch (error) {
@@ -103,9 +107,7 @@ const ExamManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/exams/key/${doc.id}`, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
+      const res = await axiosClient.get(`/api/exams/key/${doc.id}`);
       
       if (res.data) {
         setAllowViewAnswers(res.data.allow_view_answers || false);
@@ -121,8 +123,8 @@ const ExamManagement = () => {
     const token = localStorage.getItem('token');
     try {
       const [resSubs, resKey] = await Promise.all([
-        axios.get(`https://quanlydaythem-api.onrender.com/api/exams/${doc.id}/submissions`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`https://quanlydaythem-api.onrender.com/api/exams/key/${doc.id}`, { headers: { Authorization: `Bearer ${token}` } })
+        axiosClient.get(`/api/exams/${doc.id}/submissions`),
+        axiosClient.get(`/api/exams/key/${doc.id}`)
       ]);
       setExamSubmissions(resSubs.data);
       setSubmissionsExamTitle(doc.title);
@@ -163,9 +165,7 @@ const ExamManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://quanlydaythem-api.onrender.com/api/bills/add-exam-scores', payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axiosClient.post(`/api/bills/add-exam-scores`, payload);
       alert(`✅ Đã lưu điểm ${selectedSubs.length} học sinh vào học phí!`);
       setSelectedForTuition([]);
     } catch (error) {
@@ -194,11 +194,11 @@ const ExamManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('https://quanlydaythem-api.onrender.com/api/exams/key', {
+      await axiosClient.post(`/api/exams/key`, {
         document_id: selectedDocForKey.id, class_id: Number(selectedClassId),
         part1_key: part1Key, part2_key: part2Key, part3_key: formattedPart3,
         allow_view_answers: allowViewAnswers, duration_minutes: examDuration
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       alert("✅ Đã lưu cấu hình ĐÁP ÁN CHUẨN & THỜI GIAN THI!");
       setSelectedDocForKey(null); fetchExams();
     } catch (error) { alert("❌ Lỗi khi lưu đáp án!"); }

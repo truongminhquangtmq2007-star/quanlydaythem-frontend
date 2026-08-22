@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { ClassInfo, ClassMember, Session, Attendance } from '../types/core';
 
@@ -30,19 +30,19 @@ const ClassDetail = () => {
 
   const fetchData = async () => {
     try {
-      const clsRes = await axios.get(`/api/classes/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      const clsRes = await axiosClient.get(`/api/classes/${id}`);
       setClassInfo(clsRes.data);
       
-      const membersRes = await axios.get(`/api/classes/${id}/members`, { headers: { Authorization: `Bearer ${token}` } });
+      const membersRes = await axiosClient.get(`/api/classes/${id}/members`);
       setMembers(membersRes.data);
 
-      const sessionsRes = await axios.get(`/api/classes/${id}/sessions`, { headers: { Authorization: `Bearer ${token}` } });
+      const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
       setSessions(sessionsRes.data);
 
-      const assignRes = await axios.get(`/api/classes/${id}/assignments`, { headers: { Authorization: `Bearer ${token}` } });
+      const assignRes = await axiosClient.get(`/api/classes/${id}/assignments`);
       setAssignments(assignRes.data);
       
-      const analyticsRes = await axios.get(`/api/analytics/classes/${id}/weak-topics`, { headers: { Authorization: `Bearer ${token}` } });
+      const analyticsRes = await axiosClient.get(`/api/analytics/classes/${id}/weak-topics`);
       setWeakTopics(analyticsRes.data);
     } catch (err) {
       console.error(err);
@@ -56,7 +56,7 @@ const ClassDetail = () => {
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`/api/classes/${id}/members`, { student_id: newStudentId }, { headers: { Authorization: `Bearer ${token}` } });
+      await axiosClient.post(`/api/classes/${id}/members`, { student_id: newStudentId });
       setShowAddMember(false);
       setNewStudentId('');
       fetchData(); // reload
@@ -69,7 +69,7 @@ const ClassDetail = () => {
     const session_date = prompt('Nhập ngày cho buổi học (YYYY-MM-DD)', new Date().toISOString().split('T')[0]);
     if (!session_date) return;
     try {
-      await axios.post(`/api/classes/${id}/sessions`, { session_date, start_time: '18:00', end_time: '19:30' }, { headers: { Authorization: `Bearer ${token}` } });
+      await axiosClient.post(`/api/classes/${id}/sessions`, { session_date, start_time: '18:00', end_time: '19:30' });
       fetchData();
     } catch (err) {
       alert('Lỗi tạo buổi học');
@@ -78,7 +78,7 @@ const ClassDetail = () => {
 
   const handleOpenAssignModal = async () => {
     try {
-      const res = await axios.get('/api/documents', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axiosClient.get('/api/documents');
       setAllDocs(res.data);
       setShowAssignModal(true);
     } catch (err) {
@@ -89,10 +89,10 @@ const ClassDetail = () => {
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post(`/api/assignments`, { 
+      await axiosClient.post(`/api/assignments`, { 
         ...newAssignment, 
         class_id: id 
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       setShowAssignModal(false);
       setNewAssignment({ title: '', document_id: '', due_at: '' });
       fetchData();
@@ -103,7 +103,7 @@ const ClassDetail = () => {
 
   const fetchAttendance = async (sessionId: number) => {
     try {
-      const res = await axios.get(`/api/classes/sessions/${sessionId}/attendance`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axiosClient.get(`/api/classes/sessions/${sessionId}/attendance`);
       setAttendanceList(res.data);
     } catch (err) {
       console.error(err);
@@ -119,9 +119,8 @@ const ClassDetail = () => {
     if (!activeSession) return;
     setAttendanceList(prev => prev.map(a => a.student_id === studentId ? { ...a, status: status as any } : a));
     try {
-      await axios.put(`/api/classes/sessions/${activeSession.id}/attendance`, 
-        { student_id: studentId, status }, 
-        { headers: { Authorization: `Bearer ${token}` } }
+      await axiosClient.put(`/api/classes/sessions/${activeSession.id}/attendance`, 
+        { student_id: studentId, status }
       );
     } catch (err) {
       alert('Lỗi cập nhật điểm danh');
@@ -165,7 +164,7 @@ const ClassDetail = () => {
               onClick={async () => {
                 if(window.confirm('Bạn có chắc chắn muốn xóa lớp học này không? Tất cả dữ liệu liên quan (học sinh, lịch học, điểm danh) sẽ bị xóa vĩnh viễn.')) {
                   try {
-                    await axios.delete(`/api/classes/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                    await axiosClient.delete(`/api/classes/${id}`);
                     alert('Đã xóa lớp học thành công.');
                     navigate('/classes');
                   } catch (err) {

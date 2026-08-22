@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 import type { ClassInfo } from '../types/core';
 
@@ -14,7 +14,7 @@ const ClassManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/classes', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axiosClient.get('/api/classes');
       setClasses(res.data);
     } catch (err) {
       console.error(err);
@@ -31,7 +31,7 @@ const ClassManagement = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/classes', newClass, { headers: { Authorization: `Bearer ${token}` } });
+      await axiosClient.post('/api/classes', newClass);
       setShowModal(false);
       setNewClass({ class_code: '', name: '', subject: '', max_students: 20, class_type: 'OFFLINE', meet_link: '' });
       fetchClasses();

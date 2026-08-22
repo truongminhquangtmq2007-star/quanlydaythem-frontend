@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 import ExamResult from './ExamResult';
@@ -141,13 +141,14 @@ const ExamRoom = () => {
   const [examData, setExamData] = useState<any>(null); 
   const [fontSize, setFontSize] = useState<number>(16);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [saveStatus, setSaveStatus] = useState<string>('');
 
   const fetchExams = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const classId = localStorage.getItem('classId') || '1';
-      const resDocs = await axios.get(`https://quanlydaythem-api.onrender.com/api/folders/drive?category=EXAM&class_id=${classId}`, { headers: { Authorization: `Bearer ${token}` } });
-      const resScores = await axios.get(`https://quanlydaythem-api.onrender.com/api/exams/my-submissions`, { headers: { Authorization: `Bearer ${token}` } });
+      const resDocs = await axiosClient.get(`/api/folders/drive?category=EXAM&class_id=${classId}`);
+      const resScores = await axiosClient.get(`/api/exams/my-submissions`);
       
       const historyMap: {[key: number]: any[]} = {};
       resScores.data.forEach((s: any) => { 
@@ -162,6 +163,59 @@ const ExamRoom = () => {
 
   useEffect(() => { if (viewState === 'LIST') fetchExams(); }, [viewState, fetchExams]);
 
+  const startExam = async () => {
+    setPart1Answers({});
+    setPart2Answers({});
+    setPart3Answers({});
+    setCheatWarnings(0);
+    setGradingResult(null);
+    setExamScore(null);
+    elapsedTimeRef.current = 0;
+    setSaveStatus('');
+    try {
+      const res = await axiosClient.get(`/api/exams/${selectedExam.id}/draft`);
+      if (res.data && res.data.draft) {
+        const draft = res.data.draft;
+        const answers = typeof draft.student_answers === 'string' ? JSON.parse(draft.student_answers) : draft.student_answers;
+        if (answers) {
+          if (answers.part1) setPart1Answers(answers.part1);
+          if (answers.part2) setPart2Answers(answers.part2);
+          if (answers.part3) setPart3Answers(answers.part3);
+        }
+        if (draft.time_taken_seconds) {
+          elapsedTimeRef.current = draft.time_taken_seconds;
+        }
+        if (draft.last_saved_at) {
+          const dt = new Date(draft.last_saved_at);
+          setSaveStatus(`Đã khôi phục nháp lúc ${dt.getHours()}:${dt.getMinutes() < 10 ? '0' : ''}${dt.getMinutes()}`);
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi lấy nháp', error);
+    }
+    setViewState('EXAM');
+  };
+
+  useEffect(() => {
+    if (viewState !== 'EXAM' || isSubmitting || !selectedExam) return;
+
+    setSaveStatus('Đang lưu...');
+    const timer = setTimeout(async () => {
+      try {
+        await axiosClient.post(`/api/exams/${selectedExam.id}/draft`, {
+          answers: { part1: part1Answers, part2: part2Answers, part3: part3Answers },
+          time_taken_seconds: elapsedTimeRef.current
+        });
+        const now = new Date();
+        setSaveStatus(`Đã lưu lúc ${now.getHours()}:${now.getMinutes() < 10 ? '0' : ''}${now.getMinutes()}`);
+      } catch (error) {
+        setSaveStatus('Lỗi kết nối. Đang thử lưu lại...');
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [part1Answers, part2Answers, part3Answers]);
+
   useEffect(() => {
     if (viewState === 'EXAM' && selectedExam) {
       const duration = selectedExam.duration_minutes ? selectedExam.duration_minutes * 60 : 50 * 60;
@@ -170,9 +224,7 @@ const ExamRoom = () => {
       const fetchExamContent = async () => {
         try {
           const token = localStorage.getItem('token');
-          const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/exams/key/${selectedExam.id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          const res = await axiosClient.get(`/api/exams/key/${selectedExam.id}`);
 
           if (res.data && res.data.exam_content) {
             setExamData(res.data.exam_content);
@@ -198,7 +250,9 @@ const ExamRoom = () => {
   // ANTI-CHEAT & TIMER HOOK
   useEffect(() => {
     if (viewState !== 'EXAM') return;
-    const requestFS = async () => { try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch (e) {} };
+    const requestFS = async () => { try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); } catch (e) {
+      console.error(e);
+    } };
     requestFS();
 
     const preventAction = (e: any) => e.preventDefault();
@@ -235,12 +289,12 @@ const ExamRoom = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post(`https://quanlydaythem-api.onrender.com/api/exams/${selectedExam.id}/submit`, {
+      const res = await axiosClient.post(`/api/exams/${selectedExam.id}/submit`, {
         document_id: selectedExam.id, 
         student_answers: { part1: part1Answers, part2: part2Answers, part3: part3Answers }, 
         cheat_count: cheatWarnings, 
         time_taken_seconds: timeTaken
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
 
       // Lưu cả object đầy đủ để truyền cho ExamResult
       setExamScore(res.data.score);
@@ -348,7 +402,7 @@ const ExamRoom = () => {
           <p style={{ color: '#475569', fontSize: '15px', lineHeight: '1.6', marginBottom: '30px' }}>Bạn chuẩn bị làm bài thi: <strong>{selectedExam?.title}</strong>.<br/>Thời gian làm bài: <strong>{selectedExam?.duration_minutes || 50} phút</strong>.<br/><br/>Hệ thống sẽ chuyển sang chế độ <strong>Toàn màn hình</strong>.</p>
           <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
             <button onClick={() => setViewState('LIST')} style={{ padding: '12px 25px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Quay lại</button>
-            <button onClick={() => { setPart1Answers({}); setPart2Answers({}); setPart3Answers({}); setCheatWarnings(0); setGradingResult(null); setExamScore(null); elapsedTimeRef.current = 0; setViewState('EXAM'); }} style={{ padding: '12px 25px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Bắt đầu thi</button>
+            <button onClick={startExam} style={{ padding: '12px 25px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Bắt đầu thi</button>
           </div>
         </div>
       </div>
@@ -434,7 +488,9 @@ const ExamRoom = () => {
             <h2 style={{ color: '#dc2626', marginTop: 0 }}>CẢNH BÁO GIAN LẬN</h2>
             <p style={{ fontWeight: 'bold' }}>{cheatReason}</p>
             <div style={{ backgroundColor: '#fef2f2', padding: '10px', borderRadius: '8px', color: '#b91c1c', fontWeight: 'bold', margin: '20px 0' }}>Số lần vi phạm: {cheatWarnings}</div>
-            <button onClick={() => { setShowCheatModal(false); try { document.documentElement.requestFullscreen(); }catch(e){} }} style={{ padding: '12px 40px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Tiếp tục làm bài</button>
+            <button onClick={() => { setShowCheatModal(false); try { document.documentElement.requestFullscreen(); }catch (e) {
+      console.error(e);
+    } }} style={{ padding: '12px 40px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Tiếp tục làm bài</button>
           </div>
         </div>
       )}
@@ -450,8 +506,11 @@ const ExamRoom = () => {
           </div>
         </div>
         <div style={examStyles.statusArea}>
-          <div style={examStyles.timer}>
-            <span>⏱</span> {formatTime(timeLeft)}
+          <div style={{...examStyles.timer, gap: '15px', display: 'flex'}}>
+            <span style={{ fontSize: '14px', color: '#cbd5e1', fontWeight: 'normal' }}>{saveStatus}</span>
+            <span>
+              <span>⏱</span> {formatTime(timeLeft)}
+            </span>
           </div>
           <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px', color: '#10b981' }}>
             <span style={{ display: 'inline-block', width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%' }}></span> Mạng ổn định

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 
 const StudentDashboard = () => {
   const [data, setData] = useState<any>(null);
@@ -8,7 +8,7 @@ const StudentDashboard = () => {
     const fetchData = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await axios.get('/api/student/dashboard', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axiosClient.get('/api/student/dashboard');
         setData(res.data);
       } catch (err) {
         console.error(err);

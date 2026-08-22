@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 
 const StudentDocuments = () => {
   const [docs, setDocs] = useState<any[]>([]);
@@ -8,7 +8,7 @@ const StudentDocuments = () => {
     const fetchDocs = async () => {
       const token = localStorage.getItem('token');
       try {
-        const res = await axios.get('/api/student/documents', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axiosClient.get('/api/student/documents');
         setDocs(res.data);
       } catch (err) {
         console.error(err);

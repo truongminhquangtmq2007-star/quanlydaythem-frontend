@@ -18,7 +18,7 @@ import ExamManagement from './pages/ExamManagement';
 import StudentDocuments from './pages/StudentDocuments'; 
 import ViewAnswers from './pages/ViewAnswers'; 
 import TeacherManager from './pages/TeacherManager';
-import axios from 'axios';
+import axiosClient from './api/axiosClient';
 import CreateExamAI from './pages/CreateExamAI';
 import ExamBank from './pages/ExamBank';
 import ExamEditor from './pages/ExamEditor';
@@ -28,7 +28,7 @@ import FinancialManagement from './pages/FinancialManagement';
 
 import { AuthProvider } from './context/AuthContext';
 
-axios.defaults.baseURL = 'https://quanlydaythem-api.onrender.com';
+
 
 function App() {
   return (

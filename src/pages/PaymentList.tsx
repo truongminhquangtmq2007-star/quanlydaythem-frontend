@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { useNavigate, Link } from 'react-router-dom';
 
 interface Payment {
@@ -36,14 +36,14 @@ const PaymentList = () => {
     if (!token) { navigate('/login'); return; }
 
     try {
-      const payRes = await axios.get('https://quanlydaythem-api.onrender.com/api/payments', { headers: { Authorization: `Bearer ${token}` } });
+      const payRes = await axiosClient.get(`/api/payments`);
       setPayments(payRes.data);
     } catch (error) {
       console.error('Lỗi tải lịch sử học phí', error);
     }
 
     try {
-      const stuRes = await axios.get('https://quanlydaythem-api.onrender.com/api/students', { headers: { Authorization: `Bearer ${token}` } });
+      const stuRes = await axiosClient.get(`/api/students`);
       setStudents(stuRes.data);
     } catch (error) {
       console.error('Lỗi tải danh sách học sinh', error);
@@ -64,9 +64,7 @@ const PaymentList = () => {
 
       const token = localStorage.getItem('token');
       try {
-        const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/enrollments/student/${studentId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axiosClient.get(`/api/enrollments/student/${studentId}`);
         setClasses(res.data);
         setClassId(''); 
       } catch (error) {
@@ -81,13 +79,13 @@ const PaymentList = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      await axios.post('https://quanlydaythem-api.onrender.com/api/payments', {
+      await axiosClient.post(`/api/payments`, {
         student_id: Number(studentId),
         class_id: Number(classId),
         amount: Number(amount),
         payment_method: paymentMethod,
         notes: notes
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       
       setMessage('✅ Thu học phí thành công!');
       setStudentId(''); setClassId(''); setAmount(''); setNotes('');

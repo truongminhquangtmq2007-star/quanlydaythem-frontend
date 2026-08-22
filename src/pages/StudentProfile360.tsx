@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { Student } from '../types/core';
 import ReactMarkdown from 'react-markdown';
@@ -34,9 +34,7 @@ const StudentProfile360 = () => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`/api/students/${id}/profile360`, { 
-          headers: { Authorization: `Bearer ${token}` } 
-        });
+        const res = await axiosClient.get(`/api/students/${id}/profile360`);
         setData(res.data);
         if (res.data.profile.learning_goals) {
           setLearningGoals(res.data.profile.learning_goals);
@@ -51,9 +49,7 @@ const StudentProfile360 = () => {
     const fetchTopics = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`/api/analytics/students/${id}/topics`, { 
-          headers: { Authorization: `Bearer ${token}` } 
-        });
+        const res = await axiosClient.get(`/api/analytics/students/${id}/topics`);
         setTopics(res.data);
       } catch (err) {
         console.error(err);
@@ -73,7 +69,7 @@ const StudentProfile360 = () => {
     setSavingGoals(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/students/${id}/goals`, { learning_goals: learningGoals }, { headers: { Authorization: `Bearer ${token}` } });
+      await axiosClient.put(`/api/students/${id}/goals`, { learning_goals: learningGoals });
       alert('Đã lưu mục tiêu ngắn hạn!');
     } catch (err) {
       alert('Lỗi khi lưu mục tiêu');
@@ -86,7 +82,7 @@ const StudentProfile360 = () => {
     setAiRemark({ text: '', loading: true });
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post(`/api/ai/generate-remark`, { student_id: id }, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axiosClient.post(`/api/ai/generate-remark`, { student_id: id });
       setAiRemark({ text: res.data.remark, loading: false });
     } catch (err) {
       alert('Lỗi tạo nhận xét AI');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 import type { Student } from '../types/core';
 
@@ -17,7 +17,7 @@ const StudentManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/students', { 
+      const res = await axiosClient.get('/api/students', { 
         params: { search, grade: gradeFilter },
         headers: { Authorization: `Bearer ${token}` } 
       });
@@ -41,7 +41,7 @@ const StudentManagement = () => {
     try {
       const token = localStorage.getItem('token');
       // Thêm default phone để pass qua validation cũ nếu có
-      await axios.post('/api/students', { ...newStudent, phone: newStudent.parent_phone }, { headers: { Authorization: `Bearer ${token}` } });
+      await axiosClient.post('/api/students', { ...newStudent, phone: newStudent.parent_phone });
       setShowModal(false);
       setNewStudent({ full_name: '', parent_phone: '', school: '', grade: '' });
       fetchStudents();

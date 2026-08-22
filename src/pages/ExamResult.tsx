@@ -5,7 +5,7 @@ import type { ExamGradingResult, QuestionGradingDetail, SharedContext } from '..
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import axios from 'axios';
+import axiosClient from '../api/axiosClient';
 
 // ==========================================
 // HÀM TIỆN ÍCH: Render LaTeX an toàn
@@ -124,10 +124,10 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
     try {
       setAiExplanations(prev => ({ ...prev, [questionId]: { loading: true, text: '' } }));
       const token = localStorage.getItem('token');
-      const res = await axios.post('/api/ai/explain-error', { 
+      const res = await axiosClient.post('/api/ai/explain-error', { 
         question_id: questionId, 
         student_answer: studentAnswer || 'Không chọn đáp án'
-      }, { headers: { Authorization: `Bearer ${token}` }});
+      });
       setAiExplanations(prev => ({ ...prev, [questionId]: { loading: false, text: res.data.explanation } }));
     } catch (err) {
       setAiExplanations(prev => ({ ...prev, [questionId]: { loading: false, text: 'Lỗi: Không thể gọi AI lúc này.' } }));
