@@ -309,7 +309,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                   {!isCorrect && (
                     <div style={{ marginTop: '15px' }}>
                       <button 
-                        onClick={() => handleExplainError(q.id, studentAns)}
+                        onClick={() => handleExplainError(q.id.toString(), studentAns)}
                         disabled={aiExplanations[q.id]?.loading}
                         style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                         {aiExplanations[q.id]?.loading ? '⏳ Đang phân tích...' : '✨ Nhờ AI Giải thích'}
@@ -457,7 +457,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                 {correctCount < 4 && (
                     <div style={{ marginTop: '15px' }}>
                       <button 
-                        onClick={() => handleExplainError(qId, stmtResults.map(s => `${s.statement}: ${s.student || 'trống'}`).join(', '))}
+                        onClick={() => handleExplainError(qId.toString(), stmtResults.map(s => `${s.statement}: ${s.student || 'trống'}`).join(', '))}
                         disabled={aiExplanations[qId]?.loading}
                         style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                         {aiExplanations[qId]?.loading ? '⏳ Đang phân tích...' : '✨ Nhờ AI Giải thích'}
@@ -555,7 +555,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                 {!isCorrect && (
                     <div style={{ marginTop: '15px' }}>
                       <button 
-                        onClick={() => handleExplainError(qId, studentAns)}
+                        onClick={() => handleExplainError(qId.toString(), studentAns)}
                         disabled={aiExplanations[qId]?.loading}
                         style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
                         {aiExplanations[qId]?.loading ? '⏳ Đang phân tích...' : '✨ Nhờ AI Giải thích'}

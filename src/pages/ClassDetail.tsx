@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ClassInfo, ClassMember, Session, Attendance } from '../types/core';
+import type { ClassInfo, ClassMember, Session, Attendance } from '../types/core';
 
 const ClassDetail = () => {
   const { id } = useParams<{ id: string }>();

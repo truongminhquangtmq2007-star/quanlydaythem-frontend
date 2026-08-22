@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DocumentInfo } from '../types/core';
+import type { DocumentInfo } from '../types/core';
 
 const DocumentLibrary = () => {
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);

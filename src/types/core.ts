@@ -8,6 +8,7 @@ export interface Student {
   grade?: string;
   current_level?: string;
   status: string;
+  learning_goals?: string;
   created_at: string;
 }
 
@@ -20,6 +21,8 @@ export interface ClassInfo {
   grade?: string;
   teacher_id?: number;
   max_students?: number;
+  class_type?: string;
+  meet_link?: string;
   status: string;
   created_at: string;
 }

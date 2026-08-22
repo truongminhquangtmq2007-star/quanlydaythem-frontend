@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ClassInfo } from '../types/core';
+import type { ClassInfo } from '../types/core';
 
 const ClassManagement = () => {
   const [classes, setClasses] = useState<ClassInfo[]>([]);
