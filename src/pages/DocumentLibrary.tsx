@@ -10,7 +10,9 @@ const DocumentLibrary = () => {
   const [gradeFilter, setGradeFilter] = useState('ALL');
   
   const [showModal, setShowModal] = useState(false);
-  const [newDoc, setNewDoc] = useState({ title: '', description: '', type: 'REFERENCE', file_url: '', grade: '', subject: '' });
+  const [newDoc, setNewDoc] = useState({ title: '', description: '', type: 'REFERENCE', grade: '', subject: '' });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const fetchDocuments = async () => {
     setLoading(true);
@@ -35,14 +37,36 @@ const DocumentLibrary = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedFile) {
+      alert('Vui lòng chọn file!');
+      return;
+    }
     try {
+      setIsUploading(true);
       const token = localStorage.getItem('token');
-      await axios.post('/api/documents', newDoc, { headers: { Authorization: `Bearer ${token}` } });
+      
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('title', newDoc.title);
+      formData.append('description', newDoc.description);
+      formData.append('type', newDoc.type);
+      formData.append('grade', newDoc.grade);
+      formData.append('subject', newDoc.subject);
+
+      await axios.post('/api/documents', formData, { 
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        } 
+      });
       setShowModal(false);
-      setNewDoc({ title: '', description: '', type: 'REFERENCE', file_url: '', grade: '', subject: '' });
+      setNewDoc({ title: '', description: '', type: 'REFERENCE', grade: '', subject: '' });
+      setSelectedFile(null);
       fetchDocuments();
     } catch (err) {
       alert('Lỗi thêm tài liệu');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -78,17 +102,26 @@ const DocumentLibrary = () => {
           onChange={(e) => setSearch(e.target.value)}
           style={{ flex: 1, padding: '12px 15px', borderRadius: '10px', border: '1px solid #cbd5e1', outline: 'none' }}
         />
-        <select 
-          value={typeFilter} 
-          onChange={(e) => setTypeFilter(e.target.value)}
-          style={{ width: '180px', padding: '12px 15px', borderRadius: '10px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: 'white' }}
-        >
-          <option value="ALL">Tất cả loại</option>
-          <option value="LECTURE">Bài giảng</option>
-          <option value="EXERCISE">Bài tập</option>
-          <option value="EXAM">Đề thi</option>
-          <option value="REFERENCE">Tham khảo</option>
-        </select>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {['ALL', 'LECTURE', 'EXAM'].map((type) => (
+            <button
+              key={type}
+              onClick={() => setTypeFilter(type)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: typeFilter === type ? '#3b82f6' : '#f1f5f9',
+                color: typeFilter === type ? 'white' : '#475569',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: '0.2s'
+              }}
+            >
+              {type === 'ALL' ? 'Tất cả' : type === 'LECTURE' ? 'Bài giảng' : 'Đề thi'}
+            </button>
+          ))}
+        </div>
         <select 
           value={gradeFilter} 
           onChange={(e) => setGradeFilter(e.target.value)}
@@ -136,8 +169,8 @@ const DocumentLibrary = () => {
                 <input required value={newDoc.title} onChange={e => setNewDoc({...newDoc, title: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', outline: 'none' }} placeholder="VD: Đề thi thử Hóa học" />
               </div>
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>Link File (Google Drive / Cloudinary)</label>
-                <input required value={newDoc.file_url} onChange={e => setNewDoc({...newDoc, file_url: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', outline: 'none' }} placeholder="https://..." />
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>File Tài Liệu</label>
+                <input type="file" accept=".pdf,.doc,.docx,.jpg,.png" required onChange={e => setSelectedFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#f8fafc' }} />
               </div>
               <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
                 <div style={{ flex: 1 }}>
@@ -164,9 +197,11 @@ const DocumentLibrary = () => {
                 <input value={newDoc.subject} onChange={e => setNewDoc({...newDoc, subject: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', outline: 'none' }} placeholder="VD: Hóa học" />
               </div>
               
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }}>
                 <button type="button" onClick={() => setShowModal(false)} style={{ padding: '12px 20px', borderRadius: '10px', border: 'none', backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 'bold', cursor: 'pointer' }}>Hủy</button>
-                <button type="submit" style={{ padding: '12px 24px', borderRadius: '10px', border: 'none', backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Lưu Tài Liệu</button>
+                <button type="submit" disabled={isUploading} style={{ padding: '12px 24px', borderRadius: '10px', border: 'none', backgroundColor: isUploading ? '#94a3b8' : '#3b82f6', color: 'white', fontWeight: 'bold', cursor: isUploading ? 'not-allowed' : 'pointer' }}>
+                  {isUploading ? 'Đang tải file lên...' : 'Lưu Tài Liệu'}
+                </button>
               </div>
             </form>
           </div>

@@ -237,6 +237,9 @@ const TeacherCalendar = () => {
             <button onClick={handlePublishClass} style={{ padding: '12px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>🚀 Gửi Lịch Báo Bài</button>
           )}
           <button onClick={() => setShowTuitionModal(true)} style={{ padding: '12px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>💰 Quản Lý Thu Tiền</button>
+          <button onClick={() => alert('Tính năng đồng bộ Calendar đang được cấu hình')} style={{ padding: '12px 20px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            📅 Tích hợp Google Calendar
+          </button>
         </div>
       </div>
 

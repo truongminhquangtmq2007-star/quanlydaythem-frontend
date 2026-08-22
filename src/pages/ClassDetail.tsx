@@ -155,11 +155,29 @@ const ClassDetail = () => {
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Sĩ số: <strong style={{ color: '#3b82f6' }}>{members.length}/{classInfo.max_students || 20}</strong></span>
             </div>
           </div>
-          {classInfo.class_type === 'ONLINE' && classInfo.meet_link && (
-            <a href={classInfo.meet_link} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(59,130,246,0.3)' }}>
-              🎥 Mở Link Meet
-            </a>
-          )}
+          <div style={{ display: 'flex', gap: '15px' }}>
+            {classInfo.class_type === 'ONLINE' && classInfo.meet_link && (
+              <a href={classInfo.meet_link} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(59,130,246,0.3)' }}>
+                🎥 Mở Link Meet
+              </a>
+            )}
+            <button 
+              onClick={async () => {
+                if(window.confirm('Bạn có chắc chắn muốn xóa lớp học này không? Tất cả dữ liệu liên quan (học sinh, lịch học, điểm danh) sẽ bị xóa vĩnh viễn.')) {
+                  try {
+                    await axios.delete(`/api/classes/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                    alert('Đã xóa lớp học thành công.');
+                    navigate('/classes');
+                  } catch (err) {
+                    alert('Lỗi khi xóa lớp học');
+                  }
+                }
+              }}
+              style={{ padding: '12px 24px', backgroundColor: '#ef4444', color: 'white', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(239,68,68,0.3)' }}
+            >
+              🗑️ Xóa lớp
+            </button>
+          </div>
         </div>
       </div>
 

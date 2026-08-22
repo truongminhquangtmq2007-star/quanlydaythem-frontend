@@ -24,6 +24,7 @@ import ExamBank from './pages/ExamBank';
 import ExamEditor from './pages/ExamEditor';
 import ParentReport from './pages/ParentReport';
 import TeacherProfile from './pages/TeacherProfile';
+import FinancialManagement from './pages/FinancialManagement';
 
 import { AuthProvider } from './context/AuthContext';
 
@@ -63,6 +64,8 @@ function App() {
           <Route path="/classes" element={<ClassManagement />} /> 
           <Route path="/classes/:id" element={<ClassDetail />} /> 
           <Route path="/quan-ly-tien-do" element={<TeacherCalendar />} />
+          <Route path="/quan-ly-tien-do" element={<TeacherCalendar />} />
+          <Route path="/quan-ly-tai-chinh" element={<FinancialManagement />} />
           <Route path="/quan-ly-hoc-phi" element={<TuitionManager />} />
           <Route path="/tai-lieu" element={<DocumentLibrary />} />
           <Route path="/exam-bank" element={<ExamBank />} />
