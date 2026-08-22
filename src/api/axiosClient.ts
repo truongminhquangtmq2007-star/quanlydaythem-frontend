@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL
+  baseURL: (import.meta.env.VITE_API_URL || 'https://quanlydaythem-api.onrender.com').replace(/\/+$/, '')
 });
 
 axiosClient.interceptors.request.use(
