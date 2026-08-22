@@ -262,8 +262,8 @@ const TeacherCalendar = () => {
           <button onClick={() => setShowTuitionModal(true)} style={{ padding: '12px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>💰 Quản Lý Thu Tiền</button>
           <button onClick={() => {
               const token = localStorage.getItem('token');
-              const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-              window.location.href = `${apiUrl}/api/calendar/auth?token=${token}`;
+              
+              window.location.href = `${import.meta.env.VITE_API_URL}/api/calendar/auth?token=${token}`;
             }} style={{ padding: '12px 20px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
             📅 Tích hợp Google Calendar
           </button>
