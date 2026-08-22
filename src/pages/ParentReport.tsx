@@ -122,7 +122,7 @@ const ParentReport = () => {
                         <strong style={{ color }}>{rate}%</strong>
                       </div>
                       <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ width: \`\${rate}%\`, height: '100%', backgroundColor: color }}></div>
+                        <div style={{ width: `${rate}%`, height: '100%', backgroundColor: color }}></div>
                       </div>
                     </div>
                   )
