@@ -33,7 +33,7 @@ const ClassManagement = () => {
       const token = localStorage.getItem('token');
       await axios.post('/api/classes', newClass, { headers: { Authorization: `Bearer ${token}` } });
       setShowModal(false);
-      setNewClass({ class_code: '', name: '', subject: '', max_students: 20 });
+      setNewClass({ class_code: '', name: '', subject: '', max_students: 20, class_type: 'OFFLINE', meet_link: '' });
       fetchClasses();
     } catch (err) {
       alert('Lỗi tạo lớp học');
