@@ -12,7 +12,7 @@ export interface SharedContext {
   content: string;
   image_url?: string;
   questionIds: number[];
-  part: 'part1' | 'part2' | 'part3';
+  part?: string;
 }
 
 // ==========================================
@@ -79,9 +79,9 @@ const ViewAnswers = () => {
   }, [docId]);
 
   // Tìm nhóm ngữ cảnh (câu hỏi chùm)
-  const findGroupIfFirst = (part: 'part1' | 'part2' | 'part3', qId: number): SharedContext | null => {
-    const groups: SharedContext[] = examData?.sharedContexts || [];
-    const group = groups.find((g) => g.part === part && g.questionIds.includes(qId));
+  const findGroupIfFirst = (part: string, qId: number): SharedContext | null => {
+    const groups: SharedContext[] = examData?.sharedContexts || examData?.shared_context || [];
+    const group = groups.find((g) => (g.part === part || (!g.part && part === 'part1')) && g.questionIds.includes(qId));
     if (!group) return null;
     const minId = Math.min(...group.questionIds);
     return qId === minId ? group : null;

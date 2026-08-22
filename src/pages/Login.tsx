@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 
+import { AuthContext } from '../context/AuthContext';
+
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const { login } = React.useContext(AuthContext);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault(); 
@@ -16,8 +19,8 @@ const Login = () => {
         password: password
       });
       
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('role', response.data.user.role);
+      login(response.data.token, response.data.user);
+      localStorage.setItem('role', response.data.user.role.toLowerCase());
       setMessage('🎉 Đăng nhập thành công!');
       
       navigate('/students'); 

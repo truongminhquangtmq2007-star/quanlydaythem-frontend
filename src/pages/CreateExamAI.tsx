@@ -104,8 +104,9 @@ interface SharedContext {
   content: string;
   image_url?: string;
   questionIds: number[];
-  part: 'part1' | 'part2' | 'part3';
+  part?: string;
 }
+
 
 const styles = {
   container: { maxWidth: '1200px', margin: '30px auto', fontFamily: 'Inter, Arial, sans-serif', color: '#333' },
@@ -129,7 +130,10 @@ const ImageBlock = ({ url, onRemove }: { url: string; onRemove: () => void }) =>
   </div>
 );
 
+import { useNavigate } from 'react-router-dom';
+
 const CreateExamAI = () => {
+  const navigate = useNavigate();
   // Thay thế documentId bằng examTitle
   const [examTitle, setExamTitle] = useState<string>(''); 
   const [classId, setClassId] = useState<number | string>('');
@@ -192,12 +196,21 @@ const CreateExamAI = () => {
       if (response?.data) {
         const content = response.data.examContent;
         if (!content.sharedContexts) content.sharedContexts = [];
-        setEditContent(content);
-        setEditKeys(response.data.examKey);
-        setJsonString(JSON.stringify(content, null, 2));
         
-        // Tự động gợi ý tên đề thi nếu chưa nhập
-        if (!examTitle) setExamTitle(`Đề thi AI - Lớp ${classOptions.find(c => c.id == classId)?.class_name || 'Mới'}`);
+        const finalTitle = examTitle || `Đề thi AI - Lớp ${classOptions.find(c => c.id == classId)?.class_name || 'Mới'}`;
+        const finalGrade = classOptions.find(c => c.id == classId)?.grade || '12';
+        const finalSubject = classOptions.find(c => c.id == classId)?.subject || 'Chung';
+
+        const meta = {
+            document_id: 0,
+            title: finalTitle,
+            grade: finalGrade,
+            subject: finalSubject,
+            duration_minutes: Number(duration)
+        };
+        
+        // Chuyển hướng sang màn hình ExamEditor (Phase 3)
+        navigate('/exam-editor', { state: { examContent: content, meta } });
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Có lỗi xảy ra khi bóc tách!');
@@ -404,11 +417,12 @@ const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
 };
 
   const findGroupIfFirst = (part: 'part1' | 'part2' | 'part3', qId: number): SharedContext | null => {
-    const groups: SharedContext[] = editContent?.sharedContexts || [];
-    const group = groups.find((g) => g.part === part && g.questionIds.includes(qId));
+    const groups: SharedContext[] = editContent?.sharedContexts || editContent?.shared_context || [];
+    const group = groups.find((g) => (g.part === part || (!g.part && part === 'part1')) && g.questionIds.includes(qId));
     if (!group) return null;
     return qId === Math.min(...group.questionIds) ? group : null;
   };
+
 
   return (
     <div style={styles.container}>

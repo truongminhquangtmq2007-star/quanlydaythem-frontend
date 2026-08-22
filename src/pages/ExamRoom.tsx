@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
+import ExamResult from './ExamResult';
+import type { ExamGradingResult } from '../types/exam';
 
 // ==========================================
 // CẤU TRÚC DỮ LIỆU
@@ -12,8 +14,9 @@ export interface SharedContext {
   content: string;
   image_url?: string;
   questionIds: number[];
-  part: 'part1' | 'part2' | 'part3';
+  part?: string;
 }
+
 
 const renderContent = (text: string) => {
   if (!text) return '';
@@ -121,6 +124,8 @@ const ExamRoom = () => {
   const [selectedExam, setSelectedExam] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [examScore, setExamScore] = useState<any>(null);
+  const [gradingResult, setGradingResult] = useState<ExamGradingResult | null>(null);
+  const elapsedTimeRef = useRef<number>(0);
   
   // Anti-cheat
   const [cheatWarnings, setCheatWarnings] = useState(0);
@@ -210,6 +215,7 @@ const ExamRoom = () => {
     window.addEventListener('keydown', handleKeyDown);
 
     const timer = setInterval(() => {
+      elapsedTimeRef.current += 1;
       setTimeLeft((prev) => { if (prev <= 1) { clearInterval(timer); forceSubmit(); return 0; } return prev - 1; });
     }, 1000);
 
@@ -225,18 +231,23 @@ const ExamRoom = () => {
     setIsSubmitting(true);
     if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
 
-    const timeTaken = ((selectedExam?.duration_minutes || 50) * 60) - timeLeft;
+    const timeTaken = elapsedTimeRef.current;
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post('https://quanlydaythem-api.onrender.com/api/exams/submit', {
+      const res = await axios.post(`https://quanlydaythem-api.onrender.com/api/exams/${selectedExam.id}/submit`, {
         document_id: selectedExam.id, 
         student_answers: { part1: part1Answers, part2: part2Answers, part3: part3Answers }, 
         cheat_count: cheatWarnings, 
         time_taken_seconds: timeTaken
       }, { headers: { Authorization: `Bearer ${token}` } });
+
+      // Lưu cả object đầy đủ để truyền cho ExamResult
       setExamScore(res.data.score);
-    } catch (error: any) { alert("Lỗi nộp bài!"); } finally {
+      setGradingResult(res.data as ExamGradingResult);
+    } catch (error: any) { 
+      alert("Lỗi nộp bài: " + (error?.response?.data?.message || error.message)); 
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -245,12 +256,13 @@ const ExamRoom = () => {
   // HÀM TÌM & HIỂN THỊ CÂU HỎI NHÓM
   // ==========================================
   const findGroupIfFirst = (part: 'part1' | 'part2' | 'part3', qId: number): SharedContext | null => {
-    const groups: SharedContext[] = examData?.sharedContexts || [];
-    const group = groups.find((g) => g.part === part && g.questionIds.includes(qId));
+    const groups: SharedContext[] = examData?.sharedContexts || examData?.shared_context || [];
+    const group = groups.find((g) => (g.part === part || (!g.part && part === 'part1')) && g.questionIds.includes(qId));
     if (!group) return null;
     const minId = Math.min(...group.questionIds);
     return qId === minId ? group : null;
   };
+
 
   const renderGroupBlock = (group: SharedContext) => (
     <div style={{ backgroundColor: '#fffbeb', border: '1px dashed #f59e0b', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
@@ -336,7 +348,7 @@ const ExamRoom = () => {
           <p style={{ color: '#475569', fontSize: '15px', lineHeight: '1.6', marginBottom: '30px' }}>Bạn chuẩn bị làm bài thi: <strong>{selectedExam?.title}</strong>.<br/>Thời gian làm bài: <strong>{selectedExam?.duration_minutes || 50} phút</strong>.<br/><br/>Hệ thống sẽ chuyển sang chế độ <strong>Toàn màn hình</strong>.</p>
           <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
             <button onClick={() => setViewState('LIST')} style={{ padding: '12px 25px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Quay lại</button>
-            <button onClick={() => { setPart1Answers({}); setPart2Answers({}); setPart3Answers({}); setCheatWarnings(0); setViewState('EXAM'); }} style={{ padding: '12px 25px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Bắt đầu thi</button>
+            <button onClick={() => { setPart1Answers({}); setPart2Answers({}); setPart3Answers({}); setCheatWarnings(0); setGradingResult(null); setExamScore(null); elapsedTimeRef.current = 0; setViewState('EXAM'); }} style={{ padding: '12px 25px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Bắt đầu thi</button>
           </div>
         </div>
       </div>
@@ -345,30 +357,30 @@ const ExamRoom = () => {
 
   // ================= VIEW 3: KẾT QUẢ THI =================
   if (viewState === 'RESULT') {
-    return (
-      <div style={{...wrapperStyle, display: 'flex', flexDirection: 'column'}}>
-        <div style={{ backgroundColor: '#1e40af', padding: '15px 30px', color: 'white', display: 'flex', justifyContent: 'center' }}><h1 style={{ margin: 0, fontSize: '24px' }}>KẾT QUẢ THI</h1></div>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ backgroundColor: 'white', border: '2px solid #1e40af', padding: '40px', width: '500px', textAlign: 'center', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-            <p style={{ color: '#10b981', fontWeight: 'bold', fontSize: '20px', marginBottom: '20px' }}>Nộp bài thành công!</p>
-            {examScore ? (
-              <div style={{ textAlign: 'left', marginBottom: '30px', marginLeft: '50px', fontSize: '16px', fontWeight: 'bold' }}>
-                <p style={{ color: '#475569' }}>Phần I: {examScore.p1Score}đ</p>
-                <p style={{ color: '#475569' }}>Phần II: {examScore.p2Score}đ</p>
-                <p style={{ color: '#475569' }}>Phần III: {examScore.p3Score}đ</p>
-                <h3 style={{ color: '#ea580c', fontSize: '26px', marginTop: '15px' }}>Tổng điểm: {examScore.totalScore} / 10</h3>
-                <div style={{ marginTop: '25px', textAlign: 'center', padding: '15px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                  {examScore.allow_view_answers ? (
-                <button onClick={() => navigate(`/student/view-answers/${selectedExam.id}`)} style={{ padding: '10px 20px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', width: '100%' }}>Xem chi tiết đáp án</button>
-              ) : (
-                    <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '14px' }}>Giáo viên chưa mở khóa đáp án chi tiết.</span>
-                  )}
-                </div>
-              </div>
-            ) : <p>Đang xử lý điểm...</p>}
-            <button onClick={() => { setViewState('LIST'); fetchExams(); }} style={{ padding: '12px 30px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' }}>Về danh sách đề</button>
+    // Đang xử lý hoặc chưa có kết quả
+    if (isSubmitting || !gradingResult) {
+      return (
+        <div style={{...wrapperStyle, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+          <div style={{ textAlign: 'center', color: '#475569' }}>
+            <div style={{ fontSize: '50px', marginBottom: '20px' }}>⏳</div>
+            <h2 style={{ margin: '0 0 10px 0' }}>Đang chấm điểm bài thi...</h2>
+            <p>Vui lòng chờ trong giây lát</p>
           </div>
         </div>
+      );
+    }
+
+    // Hiển thị kết quả đầy đủ
+    return (
+      <div style={wrapperStyle}>
+        <ExamResult
+          gradingResult={gradingResult}
+          examData={examData}
+          examTitle={selectedExam?.title || 'Kết quả thi'}
+          timeTakenSeconds={elapsedTimeRef.current}
+          onBackToList={() => { setViewState('LIST'); fetchExams(); }}
+          onViewAnswers={examScore?.allow_view_answers ? () => navigate(`/student/view-answers/${selectedExam.id}`) : undefined}
+        />
       </div>
     );
   }

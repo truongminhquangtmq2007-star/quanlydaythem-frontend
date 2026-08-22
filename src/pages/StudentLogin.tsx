@@ -2,18 +2,21 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom'; 
 
+import { AuthContext } from '../context/AuthContext';
+
 const StudentLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const { login } = React.useContext(AuthContext);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const res = await axios.post(`https://quanlydaythem-api.onrender.com/api/auth/student/login`, { username, password });
       
-      localStorage.setItem('token', res.data.token);
+      login(res.data.token, res.data.user);
       localStorage.setItem('role', 'STUDENT');
       localStorage.setItem('studentName', res.data.user.full_name || res.data.user.username);
       localStorage.setItem('studentId', res.data.user.id); 

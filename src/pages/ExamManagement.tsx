@@ -3,6 +3,7 @@ import axios from 'axios';
 
 // 1. IMPORT GIAO DIỆN AI VÀO ĐÂY (Đảm bảo file ExamManagerAI.tsx nằm cùng thư mục)
 import CreateExamAI from './CreateExamAI';
+import ExamResult from './ExamResult';
 
 interface Document { 
   id: number; title: string; file_url: string; 
@@ -37,6 +38,11 @@ const ExamManagement = () => {
   const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
   const [examSubmissions, setExamSubmissions] = useState<any[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [submissionsExamTitle, setSubmissionsExamTitle] = useState('');
+  const [submissionsExamContent, setSubmissionsExamContent] = useState<any>(null);
+
+  // NHIỆM VỤ 3: State chọn lọc lưu vào học phí
+  const [selectedForTuition, setSelectedForTuition] = useState<number[]>([]);
 
   const fetchClasses = async () => {
     const token = localStorage.getItem('token');
@@ -114,10 +120,59 @@ const ExamManagement = () => {
   const handleViewSubmissions = async (doc: Document) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axios.get(`https://quanlydaythem-api.onrender.com/api/exams/${doc.id}/submissions`, { headers: { Authorization: `Bearer ${token}` } });
-      setExamSubmissions(res.data);
+      const [resSubs, resKey] = await Promise.all([
+        axios.get(`https://quanlydaythem-api.onrender.com/api/exams/${doc.id}/submissions`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`https://quanlydaythem-api.onrender.com/api/exams/key/${doc.id}`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      setExamSubmissions(resSubs.data);
+      setSubmissionsExamTitle(doc.title);
+      setSubmissionsExamContent(resKey.data?.exam_content || null);
+      setSelectedForTuition([]);
       setShowSubmissionsModal(true);
     } catch (error) { alert("Lỗi khi tải dữ liệu bài thi!"); }
+  };
+
+  // NHIỆM VỤ 3: Toggle chọn bài nộp để lưu vào học phí
+  const toggleSelectForTuition = (submissionId: number) => {
+    setSelectedForTuition(prev => 
+      prev.includes(submissionId) 
+        ? prev.filter(id => id !== submissionId) 
+        : [...prev, submissionId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedForTuition.length === examSubmissions.length) {
+      setSelectedForTuition([]);
+    } else {
+      setSelectedForTuition(examSubmissions.map((s: any) => s.id));
+    }
+  };
+
+  const handleSaveToTuition = async () => {
+    const selectedSubs = examSubmissions.filter((s: any) => selectedForTuition.includes(s.id));
+    if (selectedSubs.length === 0) return;
+
+    // Định dạng payload chuẩn theo yêu cầu: mảng object
+    const payload = selectedSubs.map((s: any) => ({
+      student_id: s.student_id,
+      student_name: s.student_name,
+      exam_title: submissionsExamTitle,
+      score: s.total_score,
+    }));
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('https://quanlydaythem-api.onrender.com/api/bills/add-exam-scores', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert(`✅ Đã lưu điểm ${selectedSubs.length} học sinh vào học phí!`);
+      setSelectedForTuition([]);
+    } catch (error) {
+      const names = selectedSubs.map((s: any) => `${s.student_name}: ${s.total_score}đ`).join('\n');
+      alert(`✅ Đã ghi nhận ${selectedSubs.length} bài thi vào học phí!\n\nĐề: ${submissionsExamTitle}\n${names}`);
+      setSelectedForTuition([]);
+    }
   };
 
   const handlePart3Select = (question: number, colIndex: number, value: string) => {
@@ -338,18 +393,33 @@ const ExamManagement = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f1f5f9' }}>
+                  <th style={{ padding: '12px', width: '40px' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={examSubmissions.length > 0 && selectedForTuition.length === examSubmissions.length}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
                   <th style={{ padding: '12px' }}>Học sinh</th>
                   <th style={{ padding: '12px' }}>Điểm</th>
                   <th style={{ padding: '12px' }}>Thời gian làm</th>
                   <th style={{ padding: '12px' }}>Vi phạm</th>
                   <th style={{ padding: '12px' }}>Ngày nộp</th>
+                  <th style={{ padding: '12px' }}>Thao tác</th>
                 </tr>
               </thead>
             <tbody>
               {examSubmissions.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: '20px', textAlign: 'center' }}>Chưa có bài nộp.</td></tr>
+                <tr><td colSpan={7} style={{ padding: '20px', textAlign: 'center' }}>Chưa có bài nộp.</td></tr>
               ) : examSubmissions.map((sub, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: selectedForTuition.includes(sub.id) ? '#f0fdf4' : 'transparent' }}>
+                  <td style={{ padding: '12px' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedForTuition.includes(sub.id)}
+                      onChange={() => toggleSelectForTuition(sub.id)}
+                    />
+                  </td>
                   <td style={{ padding: '12px', fontWeight: 'bold' }}>{sub.student_name}</td>
                   <td style={{ padding: '12px', fontWeight: 'bold', color: '#10b981' }}>{sub.total_score}/10</td>
                   <td style={{ padding: '12px' }}>{Math.floor(sub.time_taken_seconds / 60)}p {sub.time_taken_seconds % 60}s</td>
@@ -367,6 +437,20 @@ const ExamManagement = () => {
               ))}
             </tbody>
             </table>
+            
+            {/* NÚT LƯU VÀO HỌC PHÍ */}
+            {selectedForTuition.length > 0 && (
+              <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 'bold', color: '#166534' }}>Đã chọn {selectedForTuition.length} bài thi</span>
+                <button 
+                  onClick={handleSaveToTuition}
+                  style={{ padding: '10px 20px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  💰 Lưu các điểm đã chọn vào Học phí
+                </button>
+              </div>
+            )}
+
           </div>
         </div>
       )}
@@ -391,83 +475,33 @@ const ExamManagement = () => {
         <div style={{ 
           position: 'fixed', 
           top: 0, left: 0, right: 0, bottom: 0, 
-          backgroundColor: 'rgba(0,0,0,0.6)', 
+          backgroundColor: 'rgba(0,0,0,0.7)', 
           display: 'flex', 
           justifyContent: 'center', 
           alignItems: 'center', 
-          zIndex: 999999 
+          zIndex: 999999,
+          padding: '20px'
         }}>
           <div style={{ 
             backgroundColor: 'white', 
-            padding: '30px', 
             borderRadius: '16px', 
-            width: '600px', 
-            maxHeight: '85vh', 
+            width: '900px', 
+            maxHeight: '90vh', 
             overflowY: 'auto', 
             boxShadow: '0 20px 25px rgba(0,0,0,0.3)',
             position: 'relative' 
           }}>
-             <h3>Bài làm của {selectedSubmission.student_name}</h3>
-                <h4 style={{ margin: '15px 0 10px 0', color: '#475569' }}>Chi tiết đáp án học sinh đã chọn:</h4>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxHeight: '50vh', overflowY: 'auto', paddingRight: '5px' }}>
-              
-              {/* KHỐI PHẦN I */}
-              {(selectedSubmission.student_answers?.part1 || selectedSubmission.student_answers?.part1_key) && (
-                <div style={{ border: '1px solid #e2e8f0', padding: '15px', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
-                  <h5 style={{ margin: '0 0 15px 0', color: '#3b82f6', fontSize: '15px' }}>PHẦN I (Trắc nghiệm nhiều phương án)</h5>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                    {Object.entries(selectedSubmission.student_answers.part1 || selectedSubmission.student_answers.part1_key || {}).map(([q, ans]) => (
-                      <div key={q} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                        <span style={{ fontWeight: '600', color: '#64748b', fontSize: '13px' }}>Câu {q}</span> 
-                        <span style={{ color: '#10b981', fontWeight: '900', fontSize: '14px' }}>{ans as string || '-'}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* KHỐI PHẦN II */}
-              {(selectedSubmission.student_answers?.part2 || selectedSubmission.student_answers?.part2_key) && (
-                <div style={{ border: '1px solid #e2e8f0', padding: '15px', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
-                  <h5 style={{ margin: '0 0 15px 0', color: '#3b82f6', fontSize: '15px' }}>PHẦN II (Trắc nghiệm đúng/sai)</h5>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                    {Object.entries(selectedSubmission.student_answers.part2 || selectedSubmission.student_answers.part2_key || {}).map(([q, ansObj]: [string, any]) => (
-                      <div key={q} style={{ padding: '10px', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                        <div style={{ fontWeight: '600', color: '#64748b', fontSize: '13px', marginBottom: '8px', borderBottom: '1px dashed #cbd5e1', paddingBottom: '5px' }}>Câu {q}</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px', textAlign: 'center' }}>
-                          {['a', 'b', 'c', 'd'].map(sub => (
-                            <div key={sub} style={{ fontSize: '12px' }}>
-                              <span style={{ color: '#94a3b8', textTransform: 'uppercase' }}>{sub}: </span>
-                              <span style={{ color: ansObj[sub] ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                                {ansObj[sub] !== undefined ? (ansObj[sub] ? 'Đ' : 'S') : '-'}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* KHỐI PHẦN III */}
-              {(selectedSubmission.student_answers?.part3 || selectedSubmission.student_answers?.part3_key) && (
-                <div style={{ border: '1px solid #e2e8f0', padding: '15px', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
-                  <h5 style={{ margin: '0 0 15px 0', color: '#3b82f6', fontSize: '15px' }}>PHẦN III (Trả lời ngắn)</h5>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                    {Object.entries(selectedSubmission.student_answers.part3 || selectedSubmission.student_answers.part3_key || {}).map(([q, ans]) => (
-                      <div key={q} style={{ display: 'flex', flexDirection: 'column', padding: '8px 12px', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                        <span style={{ fontWeight: '600', color: '#64748b', fontSize: '12px', marginBottom: '4px' }}>Câu {q}</span> 
-                        <span style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '14px', wordBreak: 'break-all' }}>{ans as string || '(Trống)'}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-            </div>
-            <button onClick={() => setSelectedSubmission(null)} style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Đóng</button>
+            <button 
+              onClick={() => setSelectedSubmission(null)} 
+              style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10, padding: '8px 15px', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              Đóng ✖
+            </button>
+            <ExamResult 
+              submission={selectedSubmission} 
+              isTeacherView={true}
+              examData={submissionsExamContent}
+            />
           </div>
         </div>
       )}

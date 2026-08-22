@@ -8,6 +8,10 @@ const TuitionManager = () => {
   const [selectedMonth, setSelectedMonth] = useState(moment().format('YYYY-MM'));
   const [stats, setStats] = useState({ totalExpected: 0, totalReceived: 0, totalPending: 0 });
 
+  const [aiRemarkModal, setAiRemarkModal] = useState<{ show: boolean, studentId: number | null, studentName: string, text: string, loading: boolean }>({
+    show: false, studentId: null, studentName: '', text: '', loading: false
+  });
+
   const fetchBills = useCallback(async () => {
     const token = localStorage.getItem('token');
     try {
@@ -40,6 +44,17 @@ const TuitionManager = () => {
       alert('✅ Đã ghi nhận doanh thu thành công! Học sinh đã được cấp tem.');
       fetchBills(); 
     } catch (error) { alert('❌ Lỗi hệ thống.'); }
+  };
+
+  const handleOpenAiRemark = async (studentId: number, studentName: string) => {
+    setAiRemarkModal({ show: true, studentId, studentName, text: '', loading: true });
+    const token = localStorage.getItem('token');
+    try {
+      const res = await axios.post('/api/ai/generate-remark', { student_id: studentId }, { headers: { Authorization: `Bearer ${token}` } });
+      setAiRemarkModal(prev => ({ ...prev, text: res.data.remark, loading: false }));
+    } catch (err) {
+      setAiRemarkModal(prev => ({ ...prev, text: 'Lỗi: Không thể sinh nhận xét lúc này.', loading: false }));
+    }
   };
 
   return (
@@ -92,6 +107,7 @@ const TuitionManager = () => {
                 <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Mã phiếu</th>
                 <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Học viên</th>
                 <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Giai đoạn tính tiền</th>
+                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Thành tích (Điểm thi)</th>
                 <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Tổng tiền</th>
                 <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9', textAlign: 'center' }}>Trạng thái</th>
                 <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9', textAlign: 'center' }}>Thao tác</th>
@@ -99,14 +115,38 @@ const TuitionManager = () => {
             </thead>
             <tbody>
               {bills.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Không có hóa đơn nào trong tháng này.</td></tr>
+                <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Không có hóa đơn nào trong tháng này.</td></tr>
               ) : (
-                bills.map((b) => (
+                bills.map((b) => {
+                  let parsedScores: any[] = [];
+                  if (b.exam_scores) {
+                    parsedScores = typeof b.exam_scores === 'string' ? JSON.parse(b.exam_scores) : b.exam_scores;
+                  }
+
+                  return (
                   <tr key={b.id} style={{ borderBottom: '1px solid #f1f5f9', transition: '0.2s', backgroundColor: b.is_paid ? 'white' : '#fef2f2' }}>
                     <td style={{ padding: '20px 25px', fontWeight: 'bold', color: '#64748b' }}>#{b.id}</td>
                     <td style={{ padding: '20px 25px', fontWeight: 'bold', color: '#0f172a' }}>{b.full_name}</td>
                     <td style={{ padding: '20px 25px', color: '#475569' }}>
                       {new Date(b.start_date).toLocaleDateString('vi-VN')} - {new Date(b.end_date).toLocaleDateString('vi-VN')}
+                    </td>
+                    <td style={{ padding: '20px 25px' }}>
+                      {parsedScores.length === 0 ? <span style={{ color: '#94a3b8' }}>-</span> : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {parsedScores.map((s: any, idx: number) => {
+                            const scoreNum = Number(s.score);
+                            let color = '#0369a1', bg = '#e0f2fe';
+                            if (scoreNum >= 8) { color = '#15803d'; bg = '#dcfce7'; }
+                            else if (scoreNum < 5) { color = '#b91c1c'; bg = '#fee2e2'; }
+                            
+                            return (
+                              <span key={idx} style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', color: color, backgroundColor: bg, border: `1px solid ${color}`, whiteSpace: 'nowrap' }}>
+                                {s.exam_title}: {s.score}đ
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '20px 25px', fontWeight: 'bold', color: '#1e293b' }}>
                       {b.total_amount.toLocaleString('vi-VN')}đ
@@ -119,21 +159,58 @@ const TuitionManager = () => {
                       )}
                     </td>
                     <td style={{ padding: '20px 25px', textAlign: 'center' }}>
+                      <button 
+                        onClick={() => handleOpenAiRemark(b.student_id, b.full_name)}
+                        style={{ padding: '8px 12px', border: 'none', backgroundColor: '#8b5cf6', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', marginBottom: '8px', width: '100%' }}>
+                        ✨ AI Nhận xét
+                      </button>
                       {!b.is_paid ? (
-                        <button onClick={() => handleConfirmPayment(b.id)} style={{ padding: '8px 15px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)' }}>
-                          ✅ Xác nhận thu
+                        <button 
+                          onClick={() => handleConfirmPayment(b.id)}
+                          style={{ padding: '8px 12px', border: 'none', backgroundColor: '#3b82f6', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', width: '100%' }}>
+                          Xác nhận Đã Thu
                         </button>
                       ) : (
-                        <span style={{ color: '#cbd5e1', fontWeight: 'bold' }}>Hoàn tất</span>
+                        <span style={{ color: '#cbd5e1', fontWeight: 'bold', fontSize: '13px' }}>Hoàn tất</span>
                       )}
                     </td>
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Modal AI Nhận xét */}
+      {aiRemarkModal.show && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '20px', width: '500px' }}>
+            <h2 style={{ marginTop: 0, color: '#1e293b' }}>✨ Nhận xét cho {aiRemarkModal.studentName}</h2>
+            {aiRemarkModal.loading ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#8b5cf6', fontWeight: 'bold' }}>⏳ AI đang viết nhận xét...</div>
+            ) : (
+              <div>
+                <textarea 
+                  value={aiRemarkModal.text}
+                  onChange={(e) => setAiRemarkModal(prev => ({...prev, text: e.target.value}))}
+                  style={{ width: '100%', height: '150px', padding: '15px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '15px', outline: 'none', resize: 'vertical' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                  <button onClick={() => setAiRemarkModal({ show: false, studentId: null, studentName: '', text: '', loading: false })} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: '#f1f5f9', cursor: 'pointer' }}>Hủy</button>
+                  <button onClick={() => {
+                    // Tương lai có thể gửi Zalo ở đây
+                    alert('Đã copy nhận xét vào Clipboard!');
+                    navigator.clipboard.writeText(aiRemarkModal.text);
+                    setAiRemarkModal({ show: false, studentId: null, studentName: '', text: '', loading: false });
+                  }} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Copy & Đóng</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,16 +1,17 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useContext(AuthContext);
   
-  // 1. LẤY ROLE TỪ LOCAL STORAGE ĐỂ PHÂN QUYỀN
-  const role = localStorage.getItem('role'); 
+  // 1. LẤY ROLE TỪ LOCAL STORAGE ĐỂ PHÂN QUYỀN (Vẫn dùng role localStorage để fallback)
+  const role = localStorage.getItem('role') || user?.role?.toLowerCase();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
+    logout();
     navigate('/login');
   };
 
@@ -26,6 +27,7 @@ const AdminLayout = () => {
     { path: '/quan-ly-thi', icon: '📊', label: 'Quản lý Thi & Điểm' }, 
     { path: '/quan-ly-tien-do', icon: '📅', label: 'Lịch Dạy & Điểm Danh' },
     { path: '/quan-ly-tai-chinh', icon: '💰', label: 'Quản lý Tài chính' }, 
+    { path: '/ho-so', icon: '⚙️', label: 'Hồ sơ cá nhân' }
   ];
 
   return (
@@ -38,7 +40,9 @@ const AdminLayout = () => {
           <div style={{ width: '60px', height: '60px', backgroundColor: '#3b82f6', borderRadius: '15px', display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '0 auto 15px auto', fontSize: '28px', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.4)' }}>
             ✨
           </div>
-          <h2 style={{ margin: 0, fontSize: '20px', letterSpacing: '0.5px', color: '#f8fafc' }}>Gia Sư Minh Quang</h2>
+          <h2 style={{ margin: 0, fontSize: '20px', letterSpacing: '0.5px', color: '#f8fafc' }}>
+            {user ? `${user.title || ''} ${user.full_name}` : 'Gia Sư Minh Quang'}
+          </h2>
           {/* Đổi chữ Admin Workspace thành Giáo viên nếu không phải Admin */}
           <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
             {role === 'admin' ? 'Admin Workspace' : 'Teacher Workspace'}
