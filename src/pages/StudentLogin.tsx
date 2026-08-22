@@ -23,6 +23,7 @@ const StudentLogin = () => {
       
       navigate('/student/dashboard');
     } catch (error: any) {
+      console.log(error.response);
       setMessage(error.response?.data?.message || 'Lỗi kết nối máy chủ');
     }
   };
@@ -35,7 +36,7 @@ const StudentLogin = () => {
       <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <input 
           type="text" 
-          placeholder="Tên đăng nhập" 
+          placeholder="Tên đăng nhập hoặc Số điện thoại" 
           value={username} 
           onChange={(e) => setUsername(e.target.value)} 
           style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }} 
