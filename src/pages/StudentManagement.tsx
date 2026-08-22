@@ -11,6 +11,9 @@ const StudentManagement = () => {
   
   const [showModal, setShowModal] = useState(false);
   const [newStudent, setNewStudent] = useState({ full_name: '', parent_phone: '', school: '', grade: '' });
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [newPassword, setNewPassword] = useState('');
   const navigate = useNavigate();
 
   const fetchStudents = async () => {
@@ -35,6 +38,20 @@ const StudentManagement = () => {
     }, 300); // debounce search
     return () => clearTimeout(delayDebounceFn);
   }, [search, gradeFilter]);
+
+  
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudentId) return;
+    try {
+      await axiosClient.put(`/api/students/${selectedStudentId}/reset-password`, { newPassword });
+      alert('Đổi mật khẩu thành công');
+      setShowPasswordModal(false);
+      setNewPassword('');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi khi đổi mật khẩu');
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +132,15 @@ const StudentManagement = () => {
                 </td>
                 <td style={{ padding: '18px 20px', color: '#475569' }}>{student.parent_phone || '---'}</td>
                 <td style={{ padding: '18px 20px', textAlign: 'right' }}>
-                  <button style={{ padding: '8px 16px', backgroundColor: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Xem Hồ Sơ</button>
+                                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setSelectedStudentId(student.id); setShowPasswordModal(true); }}
+                      style={{ padding: '8px 12px', backgroundColor: '#fef3c7', color: '#d97706', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      🔑 Đổi MK
+                    </button>
+                    <button style={{ padding: '8px 16px', backgroundColor: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Xem Hồ Sơ</button>
+                  </div>
                 </td>
               </tr>
             ))}

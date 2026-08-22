@@ -15,6 +15,19 @@ const TeacherCalendar = () => {
   const [showModal, setShowModal] = useState(false);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [showTuitionModal, setShowTuitionModal] = useState(false);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('sync') === 'success') {
+      alert('Đã liên kết Google Calendar thành công!');
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('sync') === 'error') {
+      alert('Liên kết Google Calendar thất bại!');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   
   const [formData, setFormData] = useState<any>({ id: null, session_date: '', start_time: '', content: '', homework: '' });
   const [students, setStudents] = useState<any[]>([]);
@@ -247,7 +260,11 @@ const TeacherCalendar = () => {
             <button onClick={handlePublishClass} style={{ padding: '12px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>🚀 Gửi Lịch Báo Bài</button>
           )}
           <button onClick={() => setShowTuitionModal(true)} style={{ padding: '12px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>💰 Quản Lý Thu Tiền</button>
-          <button onClick={() => alert('Tính năng đồng bộ Calendar đang được cấu hình')} style={{ padding: '12px 20px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={() => {
+              const token = localStorage.getItem('token');
+              const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+              window.location.href = `${apiUrl}/api/calendar/auth?token=${token}`;
+            }} style={{ padding: '12px 20px', background: '#f8fafc', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
             📅 Tích hợp Google Calendar
           </button>
         </div>
