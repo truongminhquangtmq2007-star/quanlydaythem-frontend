@@ -321,7 +321,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
   // RENDER PART 1 — Trắc nghiệm
   // ==========================================
   const renderPart1Review = () => {
-    const part1Details = details.filter(d => d.part === 'part1');
+    const part1Details = (Array.isArray(details) ? details : []).filter(d => d.part === 'part1');
     if (part1Details.length === 0) return null;
 
     // Nếu có examData, render đầy đủ đề; nếu không (teacher view), render dạng compact
@@ -460,7 +460,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
   // RENDER PART 2 — Đúng / Sai
   // ==========================================
   const renderPart2Review = () => {
-    const part2Details = details.filter(d => d.part === 'part2');
+    const part2Details = (Array.isArray(details) ? details : []).filter(d => d.part === 'part2');
     if (part2Details.length === 0) return null;
 
     return (
@@ -469,7 +469,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
         {part2Details.map(detail => {
           const qId = detail.question_id;
           const stmtResults = detail.statement_results || [];
-          const correctCount = detail.correct_statements_count ?? stmtResults.filter(s => s.is_correct).length;
+          const correctCount = detail.correct_statements_count ?? (Array.isArray(stmtResults) ? stmtResults : []).filter(s => s.is_correct).length;
           const qScore = detail.score_earned ?? 0;
           const q = examData?.part2?.find((x: any) => x.id === qId);
           const group = q ? findGroupIfFirst(examData, 'part2', qId) : null;
@@ -574,7 +574,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
   // RENDER PART 3 — Trả lời ngắn
   // ==========================================
   const renderPart3Review = () => {
-    const part3Details = details.filter(d => d.part === 'part3');
+    const part3Details = (Array.isArray(details) ? details : []).filter(d => d.part === 'part3');
     if (part3Details.length === 0) return null;
 
     return (

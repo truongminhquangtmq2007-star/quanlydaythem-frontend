@@ -93,7 +93,7 @@ const ExamManagement = () => {
         duration_minutes: doc.duration_minutes || 50,
       });
 
-      setDocuments(documents.map(d => d.id === doc.id ? { ...d, allow_view_answers: newAllowView } : d));
+      setDocuments((Array.isArray(documents) ? documents : []).map(d => d.id === doc.id ? { ...d, allow_view_answers: newAllowView } : d));
     } catch (error) {
       alert("❌ Lỗi khi lưu trạng thái!");
     }
@@ -138,7 +138,7 @@ const ExamManagement = () => {
   const toggleSelectForTuition = (submissionId: number) => {
     setSelectedForTuition(prev => 
       prev.includes(submissionId) 
-        ? prev.filter(id => id !== submissionId) 
+        ? (Array.isArray(prev) ? prev : []).filter(id => id !== submissionId) 
         : [...prev, submissionId]
     );
   };
@@ -147,16 +147,16 @@ const ExamManagement = () => {
     if (selectedForTuition.length === examSubmissions.length) {
       setSelectedForTuition([]);
     } else {
-      setSelectedForTuition(examSubmissions.map((s: any) => s.id));
+      setSelectedForTuition((Array.isArray(examSubmissions) ? examSubmissions : []).map((s: any) => s.id));
     }
   };
 
   const handleSaveToTuition = async () => {
-    const selectedSubs = examSubmissions.filter((s: any) => selectedForTuition.includes(s.id));
+    const selectedSubs = (Array.isArray(examSubmissions) ? examSubmissions : []).filter((s: any) => selectedForTuition.includes(s.id));
     if (selectedSubs.length === 0) return;
 
     // Định dạng payload chuẩn theo yêu cầu: mảng object
-    const payload = selectedSubs.map((s: any) => ({
+    const payload = (Array.isArray(selectedSubs) ? selectedSubs : []).map((s: any) => ({
       student_id: s.student_id,
       student_name: s.student_name,
       exam_title: submissionsExamTitle,
@@ -169,7 +169,7 @@ const ExamManagement = () => {
       alert(`✅ Đã lưu điểm ${selectedSubs.length} học sinh vào học phí!`);
       setSelectedForTuition([]);
     } catch (error) {
-      const names = selectedSubs.map((s: any) => `${s.student_name}: ${s.total_score}đ`).join('\n');
+      const names = (Array.isArray(selectedSubs) ? selectedSubs : []).map((s: any) => `${s.student_name}: ${s.total_score}đ`).join('\n');
       alert(`✅ Đã ghi nhận ${selectedSubs.length} bài thi vào học phí!\n\nĐề: ${submissionsExamTitle}\n${names}`);
       setSelectedForTuition([]);
     }
@@ -189,7 +189,7 @@ const ExamManagement = () => {
     const formattedPart3: {[key: number]: string} = {};
     Object.keys(part3Key).forEach(q => {
       const arr = part3Key[Number(q)];
-      formattedPart3[Number(q)] = arr.filter(v => v !== null).join('');
+      formattedPart3[Number(q)] = (Array.isArray(arr) ? arr : []).filter(v => v !== null).join('');
     });
 
     try {
@@ -215,7 +215,7 @@ const ExamManagement = () => {
         {activeTab === 'list' && (
           <select value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)} style={{ padding: '12px 20px', borderRadius: '12px', border: '1px solid #cbd5e1', fontWeight: 'bold' }}>
             <option value="">-- Chọn lớp học --</option>
-            {classes.map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
+            {(Array.isArray(classes) ? classes : []).map(c => <option key={c.id} value={c.id}>{c.class_name}</option>)}
           </select>
         )}
       </div>
@@ -263,7 +263,7 @@ const ExamManagement = () => {
               </div>
               
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '25px', minHeight: '300px' }}>
-                {documents.length === 0 ? <div style={{width:'100%', textAlign:'center', color:'#94a3b8', padding: '40px'}}>Chưa có đề thi nào.</div> : documents.map(doc => {
+                {documents.length === 0 ? <div style={{width:'100%', textAlign:'center', color:'#94a3b8', padding: '40px'}}>Chưa có đề thi nào.</div> : (Array.isArray(documents) ? documents : []).map(doc => {
                   const isAllow = doc.allow_view_answers || false;
                   return (
                     <div key={doc.id} style={{ width: '220px', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -411,7 +411,7 @@ const ExamManagement = () => {
             <tbody>
               {examSubmissions.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: '20px', textAlign: 'center' }}>Chưa có bài nộp.</td></tr>
-              ) : examSubmissions.map((sub, i) => (
+              ) : (Array.isArray(examSubmissions) ? examSubmissions : []).map((sub, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: selectedForTuition.includes(sub.id) ? '#f0fdf4' : 'transparent' }}>
                   <td style={{ padding: '12px' }}>
                     <input 
