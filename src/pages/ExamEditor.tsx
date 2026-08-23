@@ -128,9 +128,9 @@ const ExamEditor = () => {
       
       alert('Xuất bản đề thi thành công!');
       navigate('/quan-ly-thi'); // Hoặc quay về ExamBank
-    } catch (error) {
-      console.error(error);
-      alert('Lỗi xuất bản đề thi');
+    } catch (error: any) {
+      console.error("Publish Error:", error.response?.data || error);
+      alert('Lỗi xuất bản đề thi: ' + (error.response?.data?.message || error.response?.data?.error || JSON.stringify(error.response?.data) || 'Không xác định'));
     } finally {
       setLoading(false);
     }

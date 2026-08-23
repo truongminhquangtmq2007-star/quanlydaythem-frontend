@@ -84,14 +84,11 @@ const StudentProfile360 = () => {
   const handleGenerateAIEvaluation = async () => {
     setEvaluating(true);
     try {
-      const token = localStorage.getItem('token');
-      // Dummy API call or real if it exists. For now we just mock or call an endpoint.
       const res = await axiosClient.post(`/api/students/${id}/ai-evaluation`);
-      // Update data
-      setData(prev => prev ? { ...prev, profile: { ...prev.profile, ai_evaluation: res.data.ai_evaluation } } : null);
+      setData(prev => prev ? { ...prev, profile: { ...prev.profile, ai_evaluation: res.data.data } } : null);
       alert('Đã tạo phân tích AI thành công!');
     } catch (err) {
-      alert('Chức năng Phân tích & Định hướng AI đang được bảo trì hoặc lỗi API.');
+      alert('Chức năng Phân tích & Định hướng AI đang lỗi API.');
     } finally {
       setEvaluating(false);
     }
