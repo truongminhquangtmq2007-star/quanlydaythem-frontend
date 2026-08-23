@@ -14,7 +14,7 @@ interface DocumentInfo {
   folder_id: number | null;
 }
 
-const DocumentLibrary = () => {
+const DocumentManager = () => {
   const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [documents, setDocuments] = useState<DocumentInfo[]>([]);
@@ -214,4 +214,4 @@ const DocumentLibrary = () => {
   );
 };
 
-export default DocumentLibrary;
+export default DocumentManager;

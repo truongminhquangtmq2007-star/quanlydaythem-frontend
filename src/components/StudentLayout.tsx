@@ -31,8 +31,8 @@ const StudentLayout = () => {
           <div style={{ width: '70px', height: '70px', backgroundColor: '#3b82f6', color: 'white', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '32px', margin: '0 auto 15px auto', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)' }}>
             👨‍🎓
           </div>
-          <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#f8fafc' }}>
-            {user ? `${user.title === 'Em' ? '' : user.title} ${studentName}`.trim() : `Chào em, ${studentName}`}
+          <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: '#f8fafc', textTransform: 'capitalize' }}>
+            {studentName}
           </h3>
           <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Học viên trung tâm</p>
         </div>
