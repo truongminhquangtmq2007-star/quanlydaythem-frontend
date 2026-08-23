@@ -412,7 +412,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                     </div>
                   )}
                   <div style={{ clear: 'both' }} />
-                  {examId && <AITutorBlock examId={examId} questionId={typeof qId !== 'undefined' ? qId.toString() : q.id.toString()} />}
+                  {examId && <AITutorBlock examId={examId} questionId={q.id.toString()} />}
                 </div>
               </React.Fragment>
             );
@@ -561,7 +561,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                     </div>
                 )}
                 <div style={{ clear: 'both' }} />
-                  {examId && <AITutorBlock examId={examId} questionId={typeof qId !== 'undefined' ? qId.toString() : q.id.toString()} />}
+                  {examId && <AITutorBlock examId={examId} questionId={qId.toString()} />}
                 </div>
               </React.Fragment>
           );
@@ -660,7 +660,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                     </div>
                 )}
                 <div style={{ clear: 'both' }} />
-                  {examId && <AITutorBlock examId={examId} questionId={typeof qId !== 'undefined' ? qId.toString() : q.id.toString()} />}
+                  {examId && <AITutorBlock examId={examId} questionId={qId.toString()} />}
                 </div>
               </React.Fragment>
           );
