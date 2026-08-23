@@ -78,6 +78,25 @@ const StudentProfile360 = () => {
     }
   };
 
+  
+  const [evaluating, setEvaluating] = useState(false);
+
+  const handleGenerateAIEvaluation = async () => {
+    setEvaluating(true);
+    try {
+      const token = localStorage.getItem('token');
+      // Dummy API call or real if it exists. For now we just mock or call an endpoint.
+      const res = await axiosClient.post(`/api/students/${id}/ai-evaluation`);
+      // Update data
+      setData(prev => prev ? { ...prev, profile: { ...prev.profile, ai_evaluation: res.data.ai_evaluation } } : null);
+      alert('Đã tạo phân tích AI thành công!');
+    } catch (err) {
+      alert('Chức năng Phân tích & Định hướng AI đang được bảo trì hoặc lỗi API.');
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
   const handleGenerateRemark = async () => {
     setAiRemark({ text: '', loading: true });
     try {
@@ -98,6 +117,9 @@ const StudentProfile360 = () => {
         </button>
         <button onClick={() => navigate(`/students/${id}/report`)} style={{ padding: '10px 20px', borderRadius: '10px', border: 'none', backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(59,130,246,0.3)', transition: '0.2s' }}>
           ✨ Tạo Báo cáo Tuần (AI)
+        </button>
+        <button onClick={handleGenerateAIEvaluation} disabled={evaluating} style={{ padding: '10px 20px', borderRadius: '10px', border: 'none', backgroundColor: evaluating ? '#94a3b8' : '#8b5cf6', color: 'white', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(139,92,246,0.3)', transition: '0.2s' }}>
+          {evaluating ? '⏳ Đang phân tích...' : '✨ Phân tích & Định hướng AI'}
         </button>
       </div>
 
@@ -122,6 +144,19 @@ const StudentProfile360 = () => {
         </div>
       </div>
 
+      
+      {/* AI EVALUATION SECTION */}
+      {data.profile.ai_evaluation && Object.keys(data.profile.ai_evaluation).length > 0 && (
+        <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', border: '1px solid #8b5cf6', boxShadow: '0 4px 15px rgba(139,92,246,0.1)', marginBottom: '30px' }}>
+          <h3 style={{ margin: '0 0 15px 0', color: '#6d28d9', display: 'flex', alignItems: 'center', gap: '8px' }}>✨ Phân tích & Định hướng AI</h3>
+          <div style={{ color: '#334155', lineHeight: '1.6', fontSize: '15px' }}>
+            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+              {typeof data.profile.ai_evaluation === 'string' ? data.profile.ai_evaluation : JSON.stringify(data.profile.ai_evaluation)}
+            </ReactMarkdown>
+          </div>
+        </div>
+      )}
+  
       {/* QUICK STATS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '30px' }}>
         <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>

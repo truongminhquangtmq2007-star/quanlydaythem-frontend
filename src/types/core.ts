@@ -9,6 +9,7 @@ export interface Student {
   current_level?: string;
   status: string;
   learning_goals?: string;
+  ai_evaluation?: any;
   created_at: string;
 }
 
