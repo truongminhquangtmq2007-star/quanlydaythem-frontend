@@ -1,3 +1,4 @@
+import { useParams } from 'react-router-dom';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
@@ -118,6 +119,7 @@ const ImageBlock = ({ url }: { url: string }) => (
 );
 
 const ExamRoom = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [viewState, setViewState] = useState<'LIST' | 'CONFIRM' | 'EXAM' | 'RESULT'>('LIST');
   const [exams, setExams] = useState<any[]>([]);

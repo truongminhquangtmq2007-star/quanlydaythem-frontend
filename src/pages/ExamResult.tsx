@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 import type { ExamGradingResult, QuestionGradingDetail, SharedContext } from '../types/exam';
@@ -202,6 +203,8 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
   } = props;
 
   // State cho AI giải thích
+  const { id } = useParams();
+  const examId = props.examId || id;
   const [aiExplanations, setAiExplanations] = useState<Record<string, { loading: boolean, text: string }>>({});
 
   const handleExplainError = async (questionId: string, studentAnswer: string) => {
@@ -409,7 +412,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                     </div>
                   )}
                   <div style={{ clear: 'both' }} />
-                  {examId && <AITutorBlock examId={examId} questionId={(typeof qId !== 'undefined' ? qId : q.id).toString()} />}
+                  {examId && <AITutorBlock examId={examId} questionId={typeof qId !== 'undefined' ? qId.toString() : q.id.toString()} />}
                 </div>
               </React.Fragment>
             );
@@ -558,7 +561,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                     </div>
                 )}
                 <div style={{ clear: 'both' }} />
-                  {examId && <AITutorBlock examId={examId} questionId={(typeof qId !== 'undefined' ? qId : q.id).toString()} />}
+                  {examId && <AITutorBlock examId={examId} questionId={typeof qId !== 'undefined' ? qId.toString() : q.id.toString()} />}
                 </div>
               </React.Fragment>
           );
@@ -657,7 +660,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                     </div>
                 )}
                 <div style={{ clear: 'both' }} />
-                  {examId && <AITutorBlock examId={examId} questionId={(typeof qId !== 'undefined' ? qId : q.id).toString()} />}
+                  {examId && <AITutorBlock examId={examId} questionId={typeof qId !== 'undefined' ? qId.toString() : q.id.toString()} />}
                 </div>
               </React.Fragment>
           );
