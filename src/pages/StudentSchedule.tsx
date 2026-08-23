@@ -38,7 +38,7 @@ const StudentSchedule = () => {
                 <div>
                   <h3 style={{ margin: '0 0 5px 0', color: '#1e293b' }}>{s.class_name}</h3>
                   <div style={{ color: '#475569', fontSize: '14px', marginBottom: '5px' }}>
-                    Môn: {s.subject}
+                    Môn: 
                   </div>
                   <div style={{ color: '#ef4444', fontSize: '14px', fontWeight: 'bold' }}>
                     ⏰ {s.start_time?.slice(0, 5)}

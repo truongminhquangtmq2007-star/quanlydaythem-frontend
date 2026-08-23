@@ -428,7 +428,8 @@ const ExamRoom = () => {
     return (
       <div style={wrapperStyle}>
         <ExamResult
-          gradingResult={gradingResult}
+            examId={selectedExam?.id || id}
+            gradingResult={gradingResult}
           examData={examData}
           examTitle={selectedExam?.title || 'Kết quả thi'}
           timeTakenSeconds={elapsedTimeRef.current}
