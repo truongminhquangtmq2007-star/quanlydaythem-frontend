@@ -25,6 +25,7 @@ const StudentProfile360 = () => {
   const [data, setData] = useState<Profile360 | null>(null);
   const [loading, setLoading] = useState(true);
   const [topics, setTopics] = useState<any[]>([]);
+  const [evaluating, setEvaluating] = useState(false);
 
   const [learningGoals, setLearningGoals] = useState('');
   const [savingGoals, setSavingGoals] = useState(false);
@@ -79,7 +80,7 @@ const StudentProfile360 = () => {
   };
 
   
-  const [evaluating, setEvaluating] = useState(false);
+
 
   const handleGenerateAIEvaluation = async () => {
     setEvaluating(true);
