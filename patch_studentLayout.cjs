@@ -10,3 +10,4 @@ code = code.replace(
 
 fs.writeFileSync('src/components/StudentLayout.tsx', code);
 console.log('Patched StudentLayout.tsx');
+
