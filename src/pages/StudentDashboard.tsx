@@ -27,7 +27,7 @@ const StudentDashboard = () => {
         <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px' }}>👨‍🎓</div>
         <div>
           <h1 style={{ margin: '0 0 5px 0', color: '#0f172a' }}>Xin chào, {data.profile.full_name}! 👋</h1>
-          <p style={{ margin: 0, color: '#64748b' }}>Học sinh khối {data.profile.grade} | Trường {data.profile.school}</p>
+          <p style={{ margin: 0, color: '#64748b' }}>Trường {data.profile.school}</p>
         </div>
       </div>
 

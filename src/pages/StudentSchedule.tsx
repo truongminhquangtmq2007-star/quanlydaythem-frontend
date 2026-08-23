@@ -41,7 +41,7 @@ const StudentSchedule = () => {
                     Môn: {s.subject}
                   </div>
                   <div style={{ color: '#ef4444', fontSize: '14px', fontWeight: 'bold' }}>
-                    ⏰ {s.start_time.slice(0, 5)} - {s.end_time.slice(0, 5)}
+                    ⏰ {s.start_time?.slice(0, 5)}
                   </div>
                 </div>
               </div>
