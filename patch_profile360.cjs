@@ -14,3 +14,4 @@ code = code.replace(
 
 fs.writeFileSync('src/pages/StudentProfile360.tsx', code);
 console.log('Fixed StudentProfile360.tsx');
+
