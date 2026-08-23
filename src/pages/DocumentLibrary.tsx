@@ -147,7 +147,7 @@ const DocumentLibrary = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
         {folders.map(f => (
-          <div key={\`f-\${f.id}\`} style={{ padding: '20px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          <div key={`f-${f.id}`} style={{ padding: '20px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
             <div onClick={() => navigateTo(f.id, f.name)} style={{ fontSize: '40px', marginBottom: '10px' }}>📁</div>
             <div onClick={() => navigateTo(f.id, f.name)} style={{ fontWeight: 'bold', color: '#334155', textAlign: 'center', marginBottom: '10px', wordBreak: 'break-all' }}>{f.name}</div>
             <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f.id); }} style={{ padding: '4px 8px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Xóa</button>
@@ -155,7 +155,7 @@ const DocumentLibrary = () => {
         ))}
 
         {documents.map(d => (
-          <div key={\`d-\${d.id}\`} style={{ padding: '20px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+          <div key={`d-${d.id}`} style={{ padding: '20px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
             <div style={{ fontSize: '40px', marginBottom: '10px' }}>📄</div>
             <div style={{ fontWeight: 'bold', color: '#334155', textAlign: 'center', marginBottom: '15px', wordBreak: 'break-all' }}>{d.title}</div>
             <div style={{ display: 'flex', gap: '5px' }}>
