@@ -62,7 +62,7 @@ const DocumentLibrary = () => {
   const handleCreateFolder = async () => {
     if (!folderName.trim()) return;
     try {
-      await axiosClient.post('/api/folders', { name: folderName, parent_id: currentFolderId });
+      await axiosClient.post('/api/folders', { name: folderName, parent_id: currentFolderId, category: 'STORAGE' });
       setShowFolderModal(false);
       setFolderName('');
       fetchContents(currentFolderId);

@@ -113,12 +113,8 @@ const StudentProfile360 = () => {
         <button onClick={() => navigate('/students')} style={{ padding: '10px 20px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: 'white', color: '#475569', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: '0.2s' }}>
           ← Quay lại danh sách
         </button>
-        <button onClick={() => navigate(`/students/${id}/report`)} style={{ padding: '10px 20px', borderRadius: '10px', border: 'none', backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(59,130,246,0.3)', transition: '0.2s' }}>
-          ✨ Tạo Báo cáo Tuần (AI)
-        </button>
-        <button onClick={handleGenerateAIEvaluation} disabled={evaluating} style={{ padding: '10px 20px', borderRadius: '10px', border: 'none', backgroundColor: evaluating ? '#94a3b8' : '#8b5cf6', color: 'white', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(139,92,246,0.3)', transition: '0.2s' }}>
-          {evaluating ? '⏳ Đang phân tích...' : '✨ Phân tích & Định hướng AI'}
-        </button>
+        {/* NÚT ẨN DO LỖI DB: <button onClick={() => navigate(`/students/${id}/report`)} ...>✨ Tạo Báo cáo Tuần (AI)</button> */}
+        {/* NÚT ẨN DO LỖI DB: <button onClick={handleGenerateAIEvaluation}>✨ Phân tích & Định hướng AI</button> */}
       </div>
 
       {/* HEADER PROFILE */}
