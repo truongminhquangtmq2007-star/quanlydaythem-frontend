@@ -144,12 +144,13 @@ const ExamRoom = () => {
   const [fontSize, setFontSize] = useState<number>(16);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<string>('');
+  const [activeContext, setActiveContext] = useState<SharedContext | null>(null);
 
   const fetchExams = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const classId = localStorage.getItem('classId') || '1';
-      const resDocs = await axiosClient.get(`/api/folders/drive?category=EXAM&class_id=${classId}`);
+      // const classId = localStorage.getItem('classId') || '1';
+      const resDocs = await axiosClient.get(`/api/student/exams`);
       const resScores = await axiosClient.get(`/api/exams/my-submissions`);
       
       const historyMap: {[key: number]: any[]} = {};
@@ -158,7 +159,7 @@ const ExamRoom = () => {
           historyMap[s.document_id].push(s);
       });
       
-      setExams(resDocs.data.documents || []);
+      setExams(Array.isArray(resDocs.data) ? resDocs.data : (resDocs.data.documents || []));
       setMyScores(historyMap);
     } catch (error) { console.error("Lỗi lấy đề thi"); }
   }, []);
@@ -311,26 +312,11 @@ const ExamRoom = () => {
   // ==========================================
   // HÀM TÌM & HIỂN THỊ CÂU HỎI NHÓM
   // ==========================================
-  const findGroupIfFirst = (part: 'part1' | 'part2' | 'part3', qId: number): SharedContext | null => {
+  const findContext = (qId: number): SharedContext | null => {
     const groups: SharedContext[] = examData?.sharedContexts || examData?.shared_context || [];
-    const group = groups.find((g) => (g.part === part || (!g.part && part === 'part1')) && g.questionIds.includes(qId));
-    if (!group) return null;
-    const minId = Math.min(...group.questionIds);
-    return qId === minId ? group : null;
+    return groups.find((g) => g.questionIds.includes(qId)) || null;
   };
-
-
-  const renderGroupBlock = (group: SharedContext) => (
-    <div style={{ backgroundColor: '#fffbeb', border: '1px dashed #f59e0b', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
-      {group.image_url && <ImageBlock url={group.image_url} />}
-      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
-        📌 Sử dụng thông tin sau để trả lời các câu {group.questionIds.join(', ')}:
-      </div>
-      <div>{renderContent(group.content)}</div>
-      <div style={{ clear: 'both' }} />
-    </div>
-  );
-
+  
   const wrapperStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: '#f1f5f9', overflowY: 'auto' };
 
   // ================= VIEW 1: DANH SÁCH ĐỀ =================
@@ -555,11 +541,15 @@ const ExamRoom = () => {
               <div style={{ marginBottom: '50px' }}>
                 <div style={examStyles.sectionTitle}>PHẦN I. CÂU TRẮC NGHIỆM NHIỀU PHƯƠNG ÁN</div>
                 {examData.part1.map((q: any) => {
-                  const group = findGroupIfFirst('part1', q.id);
-                  return (
-                    <React.Fragment key={q.id}>
-                      {group && renderGroupBlock(group)}
-                      <div id={`q-${q.id}`} style={examStyles.questionBox}>
+                  const ctx = findContext(q.id);
+  return (
+    <React.Fragment key={q.id}>
+      {ctx && (
+        <div style={{ marginBottom: '10px' }}>
+          <button onClick={() => setActiveContext(ctx)} style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', color: '#b45309', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>📖 Xem dữ liệu chung (Context)</button>
+        </div>
+      )}
+      <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))} onClick={() => setActiveContext(findContext(q.id))}>
                         <div>
                           {q.image_url && <ImageBlock url={q.image_url} />}
                           <div style={examStyles.questionText}>
@@ -587,11 +577,15 @@ const ExamRoom = () => {
               <div style={{ marginBottom: '50px' }}>
                 <div style={examStyles.sectionTitle}>PHẦN II. CÂU TRẮC NGHIỆM ĐÚNG/SAI</div>
                 {examData.part2.map((q: any) => {
-                  const group = findGroupIfFirst('part2', q.id);
-                  return (
-                    <React.Fragment key={q.id}>
-                      {group && renderGroupBlock(group)}
-                      <div id={`q-${q.id}`} style={examStyles.questionBox}>
+                  const ctx = findContext(q.id);
+  return (
+    <React.Fragment key={q.id}>
+      {ctx && (
+        <div style={{ marginBottom: '10px' }}>
+          <button onClick={() => setActiveContext(ctx)} style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', color: '#b45309', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>📖 Xem dữ liệu chung (Context)</button>
+        </div>
+      )}
+      <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))} onClick={() => setActiveContext(findContext(q.id))}>
                         <div>
                           {q.image_url && <ImageBlock url={q.image_url} />}
                           <div style={examStyles.questionText}>
@@ -630,11 +624,15 @@ const ExamRoom = () => {
               <div style={{ marginBottom: '10px' }}>
                 <div style={examStyles.sectionTitle}>PHẦN III. CÂU TRẮC NGHIỆM TRẢ LỜI NGẮN</div>
                 {examData.part3.map((q: any) => {
-                  const group = findGroupIfFirst('part3', q.id);
-                  return (
-                    <React.Fragment key={q.id}>
-                      {group && renderGroupBlock(group)}
-                      <div id={`q-${q.id}`} style={examStyles.questionBox}>
+                  const ctx = findContext(q.id);
+  return (
+    <React.Fragment key={q.id}>
+      {ctx && (
+        <div style={{ marginBottom: '10px' }}>
+          <button onClick={() => setActiveContext(ctx)} style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', color: '#b45309', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>📖 Xem dữ liệu chung (Context)</button>
+        </div>
+      )}
+      <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))} onClick={() => setActiveContext(findContext(q.id))}>
                         <div>
                           {q.image_url && <ImageBlock url={q.image_url} />}
                           <div style={examStyles.questionText}>
@@ -658,6 +656,22 @@ const ExamRoom = () => {
                 })}
               </div>
             )}
+          </div>
+        )}
+      </div>
+
+      
+      {/* 5. SIDE PANEL (CONTEXT) */}
+      <div style={{ position: 'fixed', right: '0', top: '130px', bottom: '80px', width: '350px', backgroundColor: 'white', borderLeft: '2px solid #e2e8f0', boxShadow: '-5px 0 20px rgba(0,0,0,0.1)', padding: '20px', overflowY: 'auto', zIndex: 90, transition: 'transform 0.3s ease-in-out', transform: activeContext ? 'translateX(0)' : 'translateX(100%)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+          <h3 style={{ margin: 0, color: '#1e3a8a', fontSize: '16px' }}>📖 Dữ liệu chung</h3>
+          <button onClick={() => setActiveContext(null)} style={{ border: 'none', background: '#f1f5f9', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✖</button>
+        </div>
+        {activeContext && (
+          <div style={{ lineHeight: '1.6', color: '#334155', fontSize: '15px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '15px', color: '#b45309', backgroundColor: '#fffbeb', padding: '8px', borderRadius: '5px', fontSize: '13px' }}>📌 Dùng cho các câu: {activeContext.questionIds.join(', ')}</div>
+            {activeContext.image_url && <img src={activeContext.image_url} alt="Minh họa" style={{ width: '100%', marginBottom: '15px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />}
+            <div>{renderContent(activeContext.content)}</div>
           </div>
         )}
       </div>

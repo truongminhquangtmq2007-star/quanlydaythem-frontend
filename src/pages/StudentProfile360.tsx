@@ -272,9 +272,9 @@ const StudentProfile360 = () => {
           <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e2e8f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
               <h3 style={{ margin: 0, color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '8px' }}>✨ Nhận xét AI (Coach)</h3>
-              <button onClick={handleGenerateRemark} disabled={aiRemark.loading} style={{ padding: '8px 15px', backgroundColor: aiRemark.loading ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s', fontSize: '13px' }}>
-                {aiRemark.loading ? 'Đang tạo...' : (aiRemark.text ? '🔄 Tái tạo nhận xét' : '✨ Tạo nhận xét')}
-              </button>
+              {/* <button onClick={handleGenerateRemark} disabled={aiRemark.loading} style={{ padding: '8px 15px', backgroundColor: aiRemark.loading ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s', fontSize: '13px' }}>
+                  {aiRemark.loading ? 'Đang tạo...' : (aiRemark.text ? 'Tái tạo nhận xét' : 'Tạo nhận xét')}
+                </button> */}
             </div>
             
             {aiRemark.text && (
