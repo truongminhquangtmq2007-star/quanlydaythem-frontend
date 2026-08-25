@@ -34,6 +34,26 @@ const ExamEditor = () => {
     });
   };
 
+  
+  const handleImageUpload = async (part: 'part1' | 'part2' | 'part3', index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const res = await axiosClient.post('/api/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.url) {
+        handleUpdateContent(part, index, 'image_url', res.data.url);
+      }
+    } catch (error: any) {
+      alert('Lỗi tải ảnh: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
   const handleUpdateContent = (partKey: string, qIndex: number, field: string, value: string) => {
     const newData = { ...examData };
     newData[partKey][qIndex][field] = value;
@@ -166,6 +186,7 @@ const ExamEditor = () => {
         {examData.part1?.map((q: any, i: number) => (
           <div key={`p1-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
+  {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div style={{ color: q.correctAnswer === 'A' ? '#16a34a' : 'inherit', fontWeight: q.correctAnswer === 'A' ? 'bold' : 'normal' }}>A. {renderMathText(q.options?.A)}</div>
               <div style={{ color: q.correctAnswer === 'B' ? '#16a34a' : 'inherit', fontWeight: q.correctAnswer === 'B' ? 'bold' : 'normal' }}>B. {renderMathText(q.options?.B)}</div>
@@ -179,6 +200,7 @@ const ExamEditor = () => {
         {examData.part2?.map((q: any, i: number) => (
           <div key={`p2-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
+  {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
             {['a', 'b', 'c', 'd'].map(opt => (
               <div key={opt} style={{ display: 'flex', gap: '10px', padding: '5px 0' }}>
                 <strong style={{ color: q.correctAnswer?.[opt] === 'Đ' ? '#16a34a' : q.correctAnswer?.[opt] === 'S' ? '#dc2626' : 'inherit' }}>
@@ -194,6 +216,7 @@ const ExamEditor = () => {
         {examData.part3?.map((q: any, i: number) => (
           <div key={`p3-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
+  {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
             <div style={{ color: '#16a34a', fontWeight: 'bold' }}>Đáp án: {q.correctAnswer}</div>
           </div>
         ))}
@@ -212,6 +235,13 @@ const ExamEditor = () => {
           <div key={`edit-p1-${i}`} style={{ marginBottom: '25px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
             <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>P1 - Câu {q.id || i+1}:</label>
             <textarea value={q.questionText} onChange={e => handleUpdateContent('part1', i, 'questionText', e.target.value)} style={{ width: '100%', padding: '10px', minHeight: '60px', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '10px' }} />
+  <div style={{ marginBottom: '10px' }}>
+    <label style={{ display: 'inline-block', padding: '6px 12px', backgroundColor: '#e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
+      📷 Tải ảnh lên
+      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleImageUpload('part1', i, e)} />
+    </label>
+    {q.image_url && <div style={{ marginTop: '10px' }}><img src={q.image_url} alt="Minh họa" style={{ maxWidth: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
+  </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               {['A','B','C','D'].map(opt => (
                 <div key={opt}><label>{opt}:</label><input value={q.options?.[opt] || ''} onChange={e => handleUpdateOption('part1', i, opt, e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} /></div>
@@ -230,6 +260,13 @@ const ExamEditor = () => {
           <div key={`edit-p2-${i}`} style={{ marginBottom: '25px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
             <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>P2 - Câu {q.id || i+1}:</label>
             <textarea value={q.questionText} onChange={e => handleUpdateContent('part2', i, 'questionText', e.target.value)} style={{ width: '100%', padding: '10px', minHeight: '60px', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '10px' }} />
+  <div style={{ marginBottom: '10px' }}>
+    <label style={{ display: 'inline-block', padding: '6px 12px', backgroundColor: '#e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
+      📷 Tải ảnh lên
+      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleImageUpload('part2', i, e)} />
+    </label>
+    {q.image_url && <div style={{ marginTop: '10px' }}><img src={q.image_url} alt="Minh họa" style={{ maxWidth: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
+  </div>
             {['a','b','c','d'].map(opt => (
               <div key={opt} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                 <select value={q.correctAnswer?.[opt] || ''} onChange={e => updatePart2Answer(i, opt, e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', width: '60px' }}>
@@ -245,6 +282,13 @@ const ExamEditor = () => {
           <div key={`edit-p3-${i}`} style={{ marginBottom: '25px', padding: '20px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
             <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>P3 - Câu {q.id || i+1}:</label>
             <textarea value={q.questionText} onChange={e => handleUpdateContent('part3', i, 'questionText', e.target.value)} style={{ width: '100%', padding: '10px', minHeight: '60px', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '10px' }} />
+  <div style={{ marginBottom: '10px' }}>
+    <label style={{ display: 'inline-block', padding: '6px 12px', backgroundColor: '#e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>
+      📷 Tải ảnh lên
+      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleImageUpload('part3', i, e)} />
+    </label>
+    {q.image_url && <div style={{ marginTop: '10px' }}><img src={q.image_url} alt="Minh họa" style={{ maxWidth: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
+  </div>
             <div>
               <label style={{ fontWeight: 'bold' }}>Đáp án:</label>
               <input value={q.correctAnswer || ''} onChange={e => handleUpdateContent('part3', i, 'correctAnswer', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '5px' }} />
