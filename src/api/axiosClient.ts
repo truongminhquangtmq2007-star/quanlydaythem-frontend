@@ -19,12 +19,15 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('role');
+      window.location.href = '/login';
     } else if (error.response && error.response.status === 403) {
+      alert('Lỗi: Bạn không có quyền truy cập hoặc thao tác dữ liệu này!');
+    }
     return Promise.reject(error);
   }
 );
 
 export default axiosClient;
-
