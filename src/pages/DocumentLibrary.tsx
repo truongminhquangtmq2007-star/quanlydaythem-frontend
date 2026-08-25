@@ -26,6 +26,8 @@ const DocumentLibrary = () => {
   
   const [showDocModal, setShowDocModal] = useState(false);
   const [docForm, setDocForm] = useState({ title: '', file_url: '' });
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
 
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [itemToMove, setItemToMove] = useState<{type: 'FOLDER'|'DOC', id: number} | null>(null);
@@ -72,14 +74,31 @@ const DocumentLibrary = () => {
   };
 
   const handleAddDoc = async () => {
-    if (!docForm.title || !docForm.file_url) return;
+    if (!docForm.title || (!docForm.file_url && !docFile)) return;
+    
+    setUploadingDoc(true);
+    let finalUrl = docForm.file_url;
+    
     try {
-      await axiosClient.post('/api/documents', { ...docForm, folder_id: currentFolderId });
+      if (docFile) {
+        const formData = new FormData();
+        formData.append('file', docFile);
+        
+        const uploadRes = await axiosClient.post('/api/upload/document', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        finalUrl = uploadRes.data.secure_url;
+      }
+      
+      await axiosClient.post('/api/documents', { title: docForm.title, file_url: finalUrl, folder_id: currentFolderId });
       setShowDocModal(false);
       setDocForm({ title: '', file_url: '' });
+      setDocFile(null);
       fetchContents(currentFolderId);
-    } catch (err) {
-      alert('Lỗi thêm tài liệu');
+    } catch (err: any) {
+      alert('Lỗi thêm tài liệu: ' + (err?.response?.data?.message || err.message));
+    } finally {
+      setUploadingDoc(false);
     }
   };
 
@@ -185,15 +204,22 @@ const DocumentLibrary = () => {
 
       {showDocModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', width: '400px' }}>
-            <h3 style={{ margin: '0 0 20px 0' }}>Thêm tài liệu</h3>
-            <input value={docForm.title} onChange={e => setDocForm({...docForm, title: e.target.value})} placeholder="Tên tài liệu..." style={{ width: '100%', padding: '10px', marginBottom: '15px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-            <input value={docForm.file_url} onChange={e => setDocForm({...docForm, file_url: e.target.value})} placeholder="URL tài liệu (VD: https://...)" style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => setShowDocModal(false)} style={{ padding: '10px 15px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Hủy</button>
-              <button onClick={handleAddDoc} style={{ padding: '10px 15px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Lưu</button>
+            <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', width: '400px' }}>
+              <h3 style={{ margin: '0 0 20px 0' }}>Thêm tài liệu</h3>
+              <input value={docForm.title} onChange={e => setDocForm({...docForm, title: e.target.value})} placeholder="Tên tài liệu..." style={{ width: '100%', padding: '10px', marginBottom: '15px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Tải file lên (PDF, Word...):</label>
+                <input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }} />
+              </div>
+              <div style={{ textAlign: 'center', marginBottom: '10px', color: '#64748b' }}>Hoặc nhập URL trực tiếp:</div>
+              <input value={docForm.file_url} onChange={e => setDocForm({...docForm, file_url: e.target.value})} placeholder="URL tài liệu (VD: https://...)" style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button onClick={() => setShowDocModal(false)} disabled={uploadingDoc} style={{ padding: '10px 15px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Hủy</button>
+                <button onClick={handleAddDoc} disabled={uploadingDoc} style={{ padding: '10px 15px', backgroundColor: uploadingDoc ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: uploadingDoc ? 'not-allowed' : 'pointer' }}>
+                  {uploadingDoc ? 'Đang tải lên...' : 'Lưu'}
+                </button>
+              </div>
             </div>
-          </div>
         </div>
       )}
 
