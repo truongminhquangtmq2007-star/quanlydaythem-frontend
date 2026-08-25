@@ -24,7 +24,8 @@ axiosClient.interceptors.response.use(
       localStorage.removeItem('role');
       window.location.href = '/login';
     } else if (error.response && error.response.status === 403) {
-      alert('Lỗi: Bạn không có quyền truy cập hoặc thao tác dữ liệu này!');
+      // Bỏ alert đi, để component tự xử lý lỗi UI rỗng
+      console.warn('Truy cập bị chặn (403 Forbidden)');
     }
     return Promise.reject(error);
   }
