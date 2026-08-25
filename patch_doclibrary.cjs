@@ -67,3 +67,4 @@ code = code.replace(
 
 fs.writeFileSync('src/pages/DocumentLibrary.tsx', code);
 console.log('Patched DocumentLibrary');
+

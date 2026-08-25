@@ -19,15 +19,9 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('role');
-      window.location.href = '/login';
     } else if (error.response && error.response.status === 403) {
-      alert('Lỗi: Bạn không có quyền truy cập hoặc thao tác dữ liệu này!');
-      // Tùy chọn: window.location.href = '/admin' hoặc '/' 
-      // Nhưng theo yêu cầu, chỉ cảnh báo và giữ ở trang hiện tại.
-    }
     return Promise.reject(error);
   }
 );
