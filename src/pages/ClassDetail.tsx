@@ -110,6 +110,17 @@ const ClassDetail = () => {
     }
   };
 
+  
+  const handleSyncCalendar = async () => {
+    if (!activeSession) return;
+    try {
+      await axiosClient.post(`/api/sessions/${activeSession.id}/sync-calendar`);
+      alert('Đồng bộ lại lịch Google thành công!');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi đồng bộ lịch');
+    }
+  };
+
   const selectSession = (sess: Session) => {
     setActiveSession(sess);
     fetchAttendance(sess.id);
@@ -293,7 +304,10 @@ const ClassDetail = () => {
               <div>
                 <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <h2 style={{ margin: '0 0 8px 0', color: '#0f172a', fontSize: '24px' }}>Bảng Điểm Danh - {new Date(activeSession.session_date).toLocaleDateString('vi-VN')}</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                      <h2 style={{ margin: '0 0 8px 0', color: '#0f172a', fontSize: '24px' }}>Bảng Điểm Danh - {new Date(activeSession.session_date).toLocaleDateString('vi-VN')}</h2>
+                      <button onClick={handleSyncCalendar} style={{ padding: '6px 12px', backgroundColor: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>🔄 Đồng bộ Calendar</button>
+                    </div>
                     <div style={{ color: '#64748b', fontSize: '15px' }}>Dữ liệu điểm danh được <strong style={{color: '#10b981'}}>lưu tự động ngay lập tức</strong> khi bạn click vào trạng thái.</div>
                   </div>
                   <div style={{ padding: '8px 16px', backgroundColor: '#f1f5f9', borderRadius: '8px', color: '#475569', fontWeight: 'bold' }}>

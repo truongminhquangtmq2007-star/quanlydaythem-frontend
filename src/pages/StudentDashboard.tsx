@@ -3,13 +3,31 @@ import axiosClient from '../api/axiosClient';
 
 const StudentDashboard = () => {
   const [data, setData] = useState<any>(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+
+  
+  const handleUpdateEmail = async () => {
+    try {
+      await axiosClient.put('/api/student/email', { email: emailInput });
+      alert('Cập nhật email thành công!');
+      setShowEmailModal(false);
+      // Reload page to fetch new data instead of calling undefined fetchData
+      window.location.reload();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi cập nhật email');
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem('token');
       try {
         const res = await axiosClient.get('/api/student/dashboard');
-        setData(res.data);
+                setData(res.data);
+        if (res.data.profile?.email) {
+            setEmailInput(res.data.profile.email);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -28,6 +46,10 @@ const StudentDashboard = () => {
         <div>
           <h1 style={{ margin: '0 0 5px 0', color: '#0f172a' }}>Xin chào, {data.profile.full_name}! 👋</h1>
           <p style={{ margin: 0, color: '#64748b' }}>Trường {data.profile.school}</p>
+          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '14px', color: '#334155' }}>Email: {data.profile.email || 'Chưa cập nhật'}</span>
+            <button onClick={() => setShowEmailModal(true)} style={{ padding: '4px 10px', fontSize: '12px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Cập nhật</button>
+          </div>
         </div>
       </div>
 
