@@ -132,6 +132,7 @@ const CreateExamAI = () => {
   const [rawText, setRawText] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [classOptions, setClassOptions] = useState<any[]>([]);
 
@@ -158,24 +159,34 @@ const CreateExamAI = () => {
     if (inputMode === 'text' && !rawText) return setError('Vui lòng dán nội dung đề thi!');
     if (inputMode === 'file' && !selectedFile) return setError('Vui lòng chọn file PDF/Ảnh!');
 
-    setIsLoading(true); setError(''); setEditContent(null); setEditKeys(null); setJsonString(''); setJsonError('');
+          setIsLoading(true); setLoadingMessage('Đang tải dữ liệu lên...'); setError(''); setEditContent(null); setEditKeys(null); setJsonString(''); setJsonError('');
 
     try {
-      const token = localStorage.getItem('token');
       let response;
+      const t1 = setTimeout(() => setLoadingMessage('AI đang đọc đề thi (Có thể mất 1-2 phút, vui lòng không tắt trang)...'), 3000);
+      const t2 = setTimeout(() => setLoadingMessage('Đang xử lý dữ liệu...'), 45000);
 
-      // Truyền tạm document_id = 0 để qua cổng AI (vì AI không dùng id này, nó chỉ dùng để lưu)
       if (inputMode === 'text') {
-        const t1 = setTimeout(() => setLoadingMessage('AI đang đọc đề thi (Có thể mất 1-2 phút, vui lòng không tắt trang)...'), 3000);
-        const t2 = setTimeout(() => setLoadingMessage('Đang xử lý dữ liệu...'), 45000);
+        response = await axiosClient.post(
+          `/api/exams/parse-ai-text`,
+          { document_id: 0, class_id: Number(classId), durationMinutes: Number(duration), rawText },
+          { timeout: 120000 }
+        );
+      } else {
+        const formData = new FormData();
+        formData.append('document_id', '0');
+        formData.append('class_id', String(classId));
+        formData.append('durationMinutes', String(duration));
+        formData.append('examFile', selectedFile as File);
 
         response = await axiosClient.post(
           `/api/exams/parse-ai-file`,
           formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }
         );
-        clearTimeout(t1);
-        clearTimeout(t2);
       }
+      
+      clearTimeout(t1);
+      clearTimeout(t2);
 
       if (response?.data) {
         const content = response.data.examContent;

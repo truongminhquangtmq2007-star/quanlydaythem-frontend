@@ -8,6 +8,7 @@ interface Student {
   full_name: string;
   phone_number: string;
   school_name: string;
+  email?: string;
 }
 
 const StudentList = () => {
