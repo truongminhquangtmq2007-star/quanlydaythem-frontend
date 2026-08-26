@@ -423,8 +423,8 @@ const ClassDetail = () => {
                 <tr key={a.id} style={{ borderBottom: '1px solid #f1f5f9', transition: '0.2s' }}>
                   <td style={{ padding: '18px 20px', fontWeight: 'bold', color: '#0f172a' }}>{a.title}</td>
                   <td style={{ padding: '18px 20px', color: '#475569' }}>
-                    <span style={{ padding: '4px 8px', backgroundColor: '#eff6ff', color: '#3b82f6', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', marginRight: '8px' }}>{a.document_type}</span>
-                    {a.document_title}
+                    <span style={{ padding: '4px 8px', backgroundColor: '#eff6ff', color: '#3b82f6', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', marginRight: '8px' }}>{a.category || 'Tài liệu'}</span>
+                    {a.folder_name ? `Thư mục: ${a.folder_name}` : 'Không có thư mục'}
                   </td>
                   <td style={{ padding: '18px 20px', color: '#475569' }}>{new Date(a.created_at).toLocaleDateString('vi-VN')}</td>
                   <td style={{ padding: '18px 20px' }}>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import axiosClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,6 +15,7 @@ const StudentList = () => {
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [schoolName, setSchoolName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('123456'); // Thêm state lưu mật khẩu mặc định
   const [message, setMessage] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -53,21 +55,23 @@ const StudentList = () => {
           phone_number: phoneNumber,
           school_name: schoolName
         });
-        setMessage('✅ Cập nhật thông tin thành công!');
+        toast.success('Cập nhật thông tin thành công!');
       } else {
         // Nếu là Tạo mới thì gửi kèm password
         await axiosClient.post(`/api/students`, {
           full_name: fullName,
           phone_number: phoneNumber,
           school_name: schoolName,
+            email: email,
           password: password // Gắn mật khẩu vào đây
         });
-        setMessage('✅ Thêm học sinh thành công!');
+        toast.success('Thêm học sinh thành công!');
       }
 
       setFullName('');
       setPhoneNumber('');
       setSchoolName('');
+        setEmail('');
       setPassword('123456'); // Reset lại mật khẩu mặc định trên ô input
       setEditingId(null);
       fetchStudents();
@@ -81,6 +85,7 @@ const StudentList = () => {
     setFullName(student.full_name);
     setPhoneNumber(student.phone_number);
     setSchoolName(student.school_name || '');
+      setEmail(student.email || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -91,10 +96,10 @@ const StudentList = () => {
     const token = localStorage.getItem('token');
     try {
       await axiosClient.delete(`/api/students/${id}`);
-      setMessage('✅ Đã xóa học sinh thành công!');
+      toast.success('Đã xóa học sinh thành công!');
       fetchStudents();
     } catch (error) {
-      setMessage('❌ Không thể xóa học sinh này.');
+      toast.error('Không thể xóa học sinh này.');
     }
   };
 
@@ -108,9 +113,9 @@ const StudentList = () => {
       await axiosClient.put(`/api/students/${studentId}/reset-password`, 
         { newPassword: newPassword }
       );
-      alert('✅ Đã cấp lại mật khẩu thành công!');
+      toast.success('Đã cấp lại mật khẩu thành công!');
     } catch (error: any) {
-      alert('❌ Lỗi: Không thể cấp lại mật khẩu.');
+      toast.error('Lỗi: Không thể cấp lại mật khẩu.');
     }
   };
 
@@ -169,7 +174,14 @@ const StudentList = () => {
             />
           )}
           
-          <button type="submit" style={{ padding: '14px 25px', backgroundColor: editingId ? '#3b82f6' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', boxShadow: editingId ? '0 4px 10px rgba(59, 130, 246, 0.2)' : '0 4px 10px rgba(16, 185, 129, 0.2)', transition: '0.2s' }}>
+          <input 
+              type="email" 
+              placeholder="Email (Không bắt buộc)" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              style={{ flex: 1, minWidth: '200px', padding: '14px 15px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#f8fafc' }} 
+            />
+            <button type="submit" style={{ padding: '14px 25px', backgroundColor: editingId ? '#3b82f6' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', boxShadow: editingId ? '0 4px 10px rgba(59, 130, 246, 0.2)' : '0 4px 10px rgba(16, 185, 129, 0.2)', transition: '0.2s' }}>
             {editingId ? 'Cập Nhật' : 'Lưu Mới'}
           </button>
           

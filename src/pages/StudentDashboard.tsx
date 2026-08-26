@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import axiosClient from '../api/axiosClient';
 
 const StudentDashboard = () => {
@@ -10,12 +11,12 @@ const StudentDashboard = () => {
   const handleUpdateEmail = async () => {
     try {
       await axiosClient.put('/api/student/email', { email: emailInput });
-      alert('Cập nhật email thành công!');
+      toast.success('Cập nhật email thành công!');
       setShowEmailModal(false);
       // Reload page to fetch new data instead of calling undefined fetchData
       window.location.reload();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi cập nhật email');
+      toast.error(err.response?.data?.message || 'Lỗi cập nhật email');
     }
   };
 
