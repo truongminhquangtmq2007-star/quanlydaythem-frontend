@@ -10,3 +10,4 @@ code = code.replace("alert(err.response?.data?.message || 'Lỗi cập nhật em
 
 fs.writeFileSync('src/pages/StudentDashboard.tsx', code);
 console.log("Patched StudentDashboard.tsx");
+

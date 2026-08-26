@@ -66,3 +66,4 @@ if (!code.includes("toast.success")) {
 
 fs.writeFileSync('src/pages/StudentList.tsx', code);
 console.log("Patched StudentList.tsx");
+
