@@ -8,3 +8,4 @@ if (!code.includes('ToastContainer')) {
 
 fs.writeFileSync('src/App.tsx', code);
 console.log("Patched App.tsx with ToastContainer");
+

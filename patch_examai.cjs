@@ -59,3 +59,4 @@ code = code.replace(/setIsLoading\(true\); setError\(''\);[\s\S]*?clearTimeout\(
 
 fs.writeFileSync('src/pages/CreateExamAI.tsx', code);
 console.log("Patched CreateExamAI.tsx states and functions");
+
