@@ -75,3 +75,4 @@ const modalUI = `
 code = code.replace("</div>\n    </div>\n  );\n}", modalUI + "\n</div>\n    </div>\n  );\n}");
 fs.writeFileSync('src/pages/StudentDashboard.tsx', code);
 console.log("Patched StudentDashboard");
+

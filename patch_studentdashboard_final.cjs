@@ -29,3 +29,4 @@ code = code.replace(
 
 fs.writeFileSync('src/pages/StudentDashboard.tsx', code);
 console.log("Patched StudentDashboard properly.");
+

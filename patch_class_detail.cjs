@@ -29,3 +29,4 @@ code = code.replace(
 
 fs.writeFileSync('src/pages/ClassDetail.tsx', code);
 console.log("Patched ClassDetail");
+
