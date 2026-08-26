@@ -87,3 +87,4 @@ if (code.includes('Đang phân tích bằng AI...')) {
 
 fs.writeFileSync('src/pages/CreateExamAI.tsx', code);
 console.log("Patched CreateExamAI frontend");
+
