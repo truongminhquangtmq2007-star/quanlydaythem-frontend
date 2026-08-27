@@ -202,9 +202,21 @@ const CreateExamAI = () => {
       clearTimeout(t2);
 
       if (response?.data?.status === 'success') {
-        setIsLoading(false);
-        setExamData(response.data.data);
-      }
+          setIsLoading(false);
+          setExamData(response.data.data);
+          setEditContent(response.data.data.examContent);
+          setEditKeys(response.data.data.examKey);
+          setJsonString(JSON.stringify(response.data.data.examContent, null, 2));
+        } else if (response?.data?.examContent) {
+          setIsLoading(false);
+          setExamData(response.data);
+          setEditContent(response.data.examContent);
+          setEditKeys(response.data.examKey);
+          setJsonString(JSON.stringify(response.data.examContent, null, 2));
+        } else {
+          setIsLoading(false);
+          toast.error("Không nhận được dữ liệu hợp lệ từ AI.");
+        }
     } catch (error: any) {
         setIsLoading(false);
         if (error.code === 'ECONNABORTED' || error.response?.status === 504) {
