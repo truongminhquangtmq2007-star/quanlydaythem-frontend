@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 
-const PreviewExamComponent = ({ data }: { data: any }) => {
-  return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h2 style={{ color: '#10b981' }}>🎉 Xem Trước Đề Thi (Mock Preview Component)</h2>
-      <p>ID Tài liệu: {data.document_id}</p>
-      <p>Số câu hỏi (Part 1): {data.questions?.part1?.length || 0}</p>
-    </div>
-  );
-};
+
 
 import axiosClient from '../api/axiosClient';
 import 'katex/dist/katex.min.css';
@@ -201,22 +193,28 @@ const CreateExamAI = () => {
       clearTimeout(t1);
       clearTimeout(t2);
 
-      if (response?.data?.status === 'success') {
-          setIsLoading(false);
-          setExamData(response.data.data);
-          setEditContent(response.data.data.examContent);
-          setEditKeys(response.data.data.examKey);
-          setJsonString(JSON.stringify(response.data.data.examContent, null, 2));
-        } else if (response?.data?.examContent) {
-          setIsLoading(false);
-          setExamData(response.data);
-          setEditContent(response.data.examContent);
-          setEditKeys(response.data.examKey);
-          setJsonString(JSON.stringify(response.data.examContent, null, 2));
-        } else {
-          setIsLoading(false);
-          toast.error("Không nhận được dữ liệu hợp lệ từ AI.");
-        }
+      const responseData = response?.data?.status === 'success' ? response.data.data : response?.data;
+      if (responseData && responseData.examContent) {
+        const content = responseData.examContent;
+        if (!content.sharedContexts) content.sharedContexts = [];
+        
+        const finalTitle = examTitle || `Đề thi AI - Lớp ${classOptions.find((c: any) => c.id == classId)?.class_name || 'Mới'}`;
+        const finalGrade = classOptions.find((c: any) => c.id == classId)?.grade || '12';
+        const finalSubject = classOptions.find((c: any) => c.id == classId)?.subject || 'Chung';
+
+        const meta = {
+            document_id: responseData.document_id || 0,
+            title: finalTitle,
+            grade: finalGrade,
+            subject: finalSubject,
+            duration_minutes: Number(duration)
+        };
+        
+        // Chuyển hướng sang màn hình ExamEditor (Phase 3)
+        navigate('/exam-editor', { state: { examContent: content, meta } });
+      } else {
+        toast.error("Không nhận được dữ liệu hợp lệ từ AI.");
+      }
     } catch (error: any) {
         setIsLoading(false);
         if (error.code === 'ECONNABORTED' || error.response?.status === 504) {
