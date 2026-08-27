@@ -1,4 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
+const PreviewExamComponent = ({ data }: { data: any }) => {
+  return (
+    <div style={{ padding: '20px', textAlign: 'center' }}>
+      <h2 style={{ color: '#10b981' }}>🎉 Xem Trước Đề Thi (Mock Preview Component)</h2>
+      <p>ID Tài liệu: {data.document_id}</p>
+      <p>Số câu hỏi (Part 1): {data.questions?.part1?.length || 0}</p>
+    </div>
+  );
+};
+
 import axiosClient from '../api/axiosClient';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
@@ -133,6 +145,7 @@ const CreateExamAI = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [loadingMessage, setLoadingMessage] = useState<string>('');
+  const [examData, setExamData] = useState<any>(null);
   const [error, setError] = useState<string>('');
   const [classOptions, setClassOptions] = useState<any[]>([]);
 
@@ -170,7 +183,7 @@ const CreateExamAI = () => {
         response = await axiosClient.post(
           `/api/exams/parse-ai-text`,
           { document_id: 0, class_id: Number(classId), durationMinutes: Number(duration), rawText },
-          { timeout: 120000 }
+          { timeout: 180000 }
         );
       } else {
         const formData = new FormData();
@@ -181,37 +194,25 @@ const CreateExamAI = () => {
 
         response = await axiosClient.post(
           `/api/exams/parse-ai-file`,
-          formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }
+          formData, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 180000 }
         );
       }
       
       clearTimeout(t1);
       clearTimeout(t2);
 
-      if (response?.data) {
-        const content = response.data.examContent;
-        if (!content.sharedContexts) content.sharedContexts = [];
-        
-        const finalTitle = examTitle || `Đề thi AI - Lớp ${classOptions.find(c => c.id == classId)?.class_name || 'Mới'}`;
-        const finalGrade = classOptions.find(c => c.id == classId)?.grade || '12';
-        const finalSubject = classOptions.find(c => c.id == classId)?.subject || 'Chung';
-
-        const meta = {
-            document_id: 0,
-            title: finalTitle,
-            grade: finalGrade,
-            subject: finalSubject,
-            duration_minutes: Number(duration)
-        };
-        
-        // Chuyển hướng sang màn hình ExamEditor (Phase 3)
-        navigate('/exam-editor', { state: { examContent: content, meta } });
+      if (response?.data?.status === 'success') {
+        setIsLoading(false);
+        setExamData(response.data.data);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra khi bóc tách!');
-    } finally {
-      setIsLoading(false);
-    }
+    } catch (error: any) {
+        setIsLoading(false);
+        if (error.code === 'ECONNABORTED' || error.response?.status === 504) {
+            toast.error("Hệ thống AI đang quá tải và mất nhiều thời gian. Vui lòng thử lại sau.");
+        } else {
+            toast.error(error.response?.data?.message || "Có lỗi xảy ra khi bóc tách đề thi!");
+        }
+      }
   };
 
   // ==========================================
