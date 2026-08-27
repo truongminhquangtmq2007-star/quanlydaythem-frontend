@@ -282,11 +282,17 @@ if (invalidPart3) {
       formData.append('file', fileToUpload);
 
       const uploadRes = await axiosClient.post(
-        `/api/documents/upload`,
-        formData, { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
-
-      const newDocumentId = uploadRes.data?.document?.id;
+          `/api/upload/document`,
+          formData, { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        
+        const docRes = await axiosClient.post(`/api/documents`, {
+            title: examTitle,
+            category: 'EXAM',
+            file_url: uploadRes.data?.secure_url
+        });
+        
+        const newDocumentId = docRes.data?.id;
       if (!newDocumentId) throw new Error("Không thể khởi tạo mã tài liệu gốc.");
       const finalPart1Key = editContent.part1.reduce((acc: any, q: any) => {
   acc[q.id] = q.correctAnswer || editKeys.part1_key?.[q.id] || '';
@@ -331,10 +337,10 @@ const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
     formData.append('file', file);
     formData.append('category', 'EXAM_IMAGE');
     try {
-      const res = await axiosClient.post(`/api/documents/upload`, formData, { 
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' } 
-      });
-      return res.data?.document?.file_url || res.data?.file_url || null;
+      const res = await axiosClient.post(`/api/upload/image`, formData, { 
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' } 
+        });
+        return res.data?.url || null;
     } catch (err) { alert('Lỗi tải ảnh!'); return null; }
   };
 

@@ -77,7 +77,12 @@ const ExamManagement = () => {
     formData.append('category', 'EXAM'); formData.append('class_id', selectedClassId);
     try {
       const token = localStorage.getItem('token');
-      await axiosClient.post(`/api/documents/upload`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const uploadRes = await axiosClient.post(`/api/upload/document`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        await axiosClient.post(`/api/documents`, {
+            title: documentTitle,
+            category: 'EXAM',
+            file_url: uploadRes.data?.secure_url
+        });
       alert(`✅ Đã tải thành công đề thi!`);
       setShowUploadModal(false); setSelectedFile(null); setDocumentTitle(''); fetchExams();
     } catch (error) { alert("❌ Lỗi khi tải tệp lên."); }
