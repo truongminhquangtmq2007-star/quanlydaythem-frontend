@@ -18,3 +18,4 @@ if (code.match(oldCode)) {
 } else {
     console.log("Failed to match regex for patch");
 }
+

@@ -29,3 +29,4 @@ const replacementStr = `        if (response?.data?.status === 'success') {
 code = code.replace(targetStr, replacementStr);
 fs.writeFileSync('src/pages/CreateExamAI.tsx', code);
 console.log("Patched CreateExamAI to handle all response formats");
+
