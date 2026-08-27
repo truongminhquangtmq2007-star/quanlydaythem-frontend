@@ -48,3 +48,4 @@ if (returnIndex !== -1 && !code.includes('if (examData) { return <PreviewExamCom
 
 fs.writeFileSync('src/pages/CreateExamAI.tsx', code);
 console.log("Patched CreateExamAI.tsx properly");
+

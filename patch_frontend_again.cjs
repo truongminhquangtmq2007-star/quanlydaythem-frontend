@@ -62,3 +62,4 @@ code = code.replace(mainReturnRegex, `if (examData) { return <PreviewExamCompone
 
 fs.writeFileSync('src/pages/CreateExamAI.tsx', code);
 console.log("Patched CreateExamAI again");
+
