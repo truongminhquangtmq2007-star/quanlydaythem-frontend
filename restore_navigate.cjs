@@ -33,3 +33,4 @@ if (code.match(targetRegex)) {
 } else {
     console.log("Failed to match targetRegex");
 }
+

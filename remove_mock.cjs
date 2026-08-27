@@ -10,3 +10,4 @@ if (code.match(targetRegex)) {
 } else {
     console.log("Failed to remove PreviewExamComponent");
 }
+

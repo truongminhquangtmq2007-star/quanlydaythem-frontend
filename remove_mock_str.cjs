@@ -18,3 +18,4 @@ if (code.includes(targetStr)) {
 } else {
     console.log("Failed to remove PreviewExamComponent string");
 }
+

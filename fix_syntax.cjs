@@ -27,3 +27,4 @@ code = code.replace(`        toast.error("KhA'ng nh-n \`c d_ liu hp l t AI.");\n
 
 fs.writeFileSync('src/pages/CreateExamAI.tsx', code);
 console.log("Fixed syntax");
+
