@@ -142,9 +142,11 @@ const ExamEditor = () => {
         grade: meta.grade || '12',
         subject: meta.subject || 'Chung',
         duration_minutes: meta.duration_minutes || 60,
-        questions,
-        contexts
-      });
+          questions,
+          contexts,
+          class_id: meta.class_id,
+          exam_content: examData
+        });
       
       alert('Xuất bản đề thi thành công!');
       navigate('/quan-ly-thi'); // Hoặc quay về ExamBank

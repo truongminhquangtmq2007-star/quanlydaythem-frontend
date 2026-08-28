@@ -207,7 +207,8 @@ const CreateExamAI = () => {
             title: finalTitle,
             grade: finalGrade,
             subject: finalSubject,
-            duration_minutes: Number(duration)
+            duration_minutes: Number(duration),
+            class_id: Number(classId)
         };
         
         // Chuyển hướng sang màn hình ExamEditor (Phase 3)
