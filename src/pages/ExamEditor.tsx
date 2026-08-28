@@ -207,41 +207,44 @@ const ExamEditor = () => {
           })}
 
         <h3 style={{ color: '#2563eb' }}>Phần 2: Đúng / Sai</h3>
-        {examData.part2?.map((q: any, i: number) => {
-            const ctx = q.context_id && (i === 0 || examData.part2[i - 1].context_id !== q.context_id) ? (examData.sharedContexts || examData.shared_context)?.find((c:any) => String(c.id) === String(q.context_id)) : null;
-            return (
-              <React.Fragment key={`p2-frag-${i}`}>
-                {ctx && (
-                  <div style={{ marginBottom: '15px', padding: '15px', backgroundColor: '#fef3c7', borderRadius: '10px', border: '1px dashed #f59e0b' }}>
-                    <strong>📖 Ngữ cảnh chung:</strong> {renderMathText(ctx.content)}
-                    {ctx.image_url && <div style={{ marginTop: '10px' }}><img src={ctx.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} /></div>}
-                  </div>
-                )}
-                <div key={`p2-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
-  {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
-            {['a', 'b', 'c', 'd'].map(opt => (
-              <div key={opt} style={{ display: 'flex', gap: '10px', padding: '5px 0' }}>
-                <strong style={{ color: q.correctAnswer?.[opt] === 'Đ' ? '#16a34a' : q.correctAnswer?.[opt] === 'S' ? '#dc2626' : 'inherit' }}>
-                  [{q.correctAnswer?.[opt] || '?'}] {opt})
-                </strong> 
-                {renderMathText(q.statements?.[opt])}
-              </div>
-            ))}
+{examData.part2?.map((q: any, i: number) => {
+  const ctx = q.context_id && (i === 0 || examData.part2[i - 1].context_id !== q.context_id) 
+    ? (examData.sharedContexts || examData.shared_context)?.find((c:any) => String(c.id) === String(q.context_id)) 
+    : null;
+    
+  return (
+    <React.Fragment key={`p2-frag-${i}`}>
+      {ctx && (
+        <div style={{ marginBottom: '15px', padding: '15px', backgroundColor: '#fef3c7', borderRadius: '10px', border: '1px dashed #f59e0b' }}>
+          <strong>📖 Ngữ cảnh chung:</strong> {renderMathText(ctx.content)}
+          {ctx.image_url && <div style={{ marginTop: '10px' }}><img src={ctx.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} /></div>}
+        </div>
+      )}
+      <div key={`p2-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
+        <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
+        {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
+        {['a', 'b', 'c', 'd'].map(opt => (
+          <div key={opt} style={{ display: 'flex', gap: '10px', padding: '5px 0' }}>
+            <strong style={{ color: q.correctAnswer?.[opt] === 'Đ' ? '#16a34a' : q.correctAnswer?.[opt] === 'S' ? '#dc2626' : 'inherit' }}>
+              [{q.correctAnswer?.[opt] || '?'}] {opt})
+            </strong> 
+            {renderMathText(q.statements?.[opt])}
           </div>
         ))}
+      </div>
+    </React.Fragment>
+  ); // <-- SỬA: Đóng return của Phần 2 tại đây
+})}  //  SỬA: Đóng vòng lặp map của Phần 2 tại đây
 
-        <h3 style={{ color: '#2563eb' }}>Phần 3: Trả lời ngắn</h3>
-        {examData.part3?.map((q: any, i: number) => (
-          <div key={`p3-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
-  {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
-            <div style={{ color: '#16a34a', fontWeight: 'bold' }}>Đáp án: {q.correctAnswer}</div>
-          </div>
-        
-              </React.Fragment>
-            );
-          })}
+<h3 style={{ color: '#2563eb' }}>Phần 3: Trả lời ngắn</h3>
+{examData.part3?.map((q: any, i: number) => (
+  <div key={`p3-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
+    <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
+    {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
+    <div style={{ color: '#16a34a', fontWeight: 'bold' }}>Đáp án: {q.correctAnswer}</div>
+  </div>
+))}
+{/* XÓA thẻ </React.Fragment> thừa bị rớt xuống đây */}
       </div>
 
       {/* PHẢI: EDIT FORM (50%) */}
