@@ -178,15 +178,20 @@ const ExamEditor = () => {
       <div style={{ flex: 1, padding: '20px', overflowY: 'auto', borderRight: '2px solid #e2e8f0', backgroundColor: 'white' }}>
         <h2 style={{ color: '#1e293b', borderBottom: '2px solid #3b82f6', paddingBottom: '10px' }}>👁️ Bản xem trước Đề thi</h2>
         
-        {examData.sharedContexts?.map((ctx: any, i: number) => (
-          <div key={`ctx-${i}`} style={{ marginBottom: '15px', padding: '15px', backgroundColor: '#fef3c7', borderRadius: '10px', border: '1px dashed #f59e0b' }}>
-            <strong>📌 Ngữ cảnh chung:</strong> {renderMathText(ctx.content)}
-          </div>
-        ))}
+        
 
         <h3 style={{ color: '#2563eb' }}>Phần 1: Trắc nghiệm</h3>
-        {examData.part1?.map((q: any, i: number) => (
-          <div key={`p1-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
+        {examData.part1?.map((q: any, i: number) => {
+            const ctx = q.context_id && (i === 0 || examData.part1[i - 1].context_id !== q.context_id) ? (examData.sharedContexts || examData.shared_context)?.find((c:any) => String(c.id) === String(q.context_id)) : null;
+            return (
+              <React.Fragment key={`p1-frag-${i}`}>
+                {ctx && (
+                  <div style={{ marginBottom: '15px', padding: '15px', backgroundColor: '#fef3c7', borderRadius: '10px', border: '1px dashed #f59e0b' }}>
+                    <strong>📖 Ngữ cảnh chung:</strong> {renderMathText(ctx.content)}
+                    {ctx.image_url && <div style={{ marginTop: '10px' }}><img src={ctx.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} /></div>}
+                  </div>
+                )}
+                <div key={`p1-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
   {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -196,11 +201,23 @@ const ExamEditor = () => {
               <div style={{ color: q.correctAnswer === 'D' ? '#16a34a' : 'inherit', fontWeight: q.correctAnswer === 'D' ? 'bold' : 'normal' }}>D. {renderMathText(q.options?.D)}</div>
             </div>
           </div>
-        ))}
+        
+              </React.Fragment>
+            );
+          })}
 
         <h3 style={{ color: '#2563eb' }}>Phần 2: Đúng / Sai</h3>
-        {examData.part2?.map((q: any, i: number) => (
-          <div key={`p2-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
+        {examData.part2?.map((q: any, i: number) => {
+            const ctx = q.context_id && (i === 0 || examData.part2[i - 1].context_id !== q.context_id) ? (examData.sharedContexts || examData.shared_context)?.find((c:any) => String(c.id) === String(q.context_id)) : null;
+            return (
+              <React.Fragment key={`p2-frag-${i}`}>
+                {ctx && (
+                  <div style={{ marginBottom: '15px', padding: '15px', backgroundColor: '#fef3c7', borderRadius: '10px', border: '1px dashed #f59e0b' }}>
+                    <strong>📖 Ngữ cảnh chung:</strong> {renderMathText(ctx.content)}
+                    {ctx.image_url && <div style={{ marginTop: '10px' }}><img src={ctx.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }} /></div>}
+                  </div>
+                )}
+                <div key={`p2-${i}`} style={{ marginBottom: '25px', padding: '15px', backgroundColor: '#f1f5f9', borderRadius: '10px' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '10px', fontSize: '16px' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
   {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
             {['a', 'b', 'c', 'd'].map(opt => (
@@ -221,7 +238,10 @@ const ExamEditor = () => {
   {q.image_url && <div style={{ marginBottom: '10px' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', border: '1px solid #cbd5e1' }} /></div>}
             <div style={{ color: '#16a34a', fontWeight: 'bold' }}>Đáp án: {q.correctAnswer}</div>
           </div>
-        ))}
+        
+              </React.Fragment>
+            );
+          })}
       </div>
 
       {/* PHẢI: EDIT FORM (50%) */}
