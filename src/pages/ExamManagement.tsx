@@ -170,7 +170,7 @@ const ExamManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axiosClient.post(`/api/bills/add-exam-scores`, payload);
+      await axiosClient.post(`/api/payments/add-exam-scores`, payload);
       alert(`✅ Đã lưu điểm ${selectedSubs.length} học sinh vào học phí!`);
       setSelectedForTuition([]);
     } catch (error) {

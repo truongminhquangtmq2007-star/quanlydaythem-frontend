@@ -226,7 +226,7 @@ const TeacherCalendar = () => {
     window.print();
     const token = localStorage.getItem('token');
     try {
-      await axiosClient.post(`/api/bills/create`, {
+      await axiosClient.post(`/api/payments/create`, {
         student_id: tuitionStudentId, 
         start_date: startDate, 
         end_date: endDate,

@@ -20,21 +20,16 @@ import ViewAnswers from './pages/ViewAnswers';
 import TeacherManager from './pages/TeacherManager';
 import axiosClient from './api/axiosClient';
 import CreateExamAI from './pages/CreateExamAI';
-import ExamBank from './pages/ExamBank';
 import ExamEditor from './pages/ExamEditor';
 import ParentReport from './pages/ParentReport';
 import TeacherProfile from './pages/TeacherProfile';
-
-
 import { AuthProvider } from './context/AuthContext';
-import { ToastContainer } from 'react-toastify';
 
 
 
 function App() {
   return (
     <AuthProvider>
-      <ToastContainer />
       <BrowserRouter>
         <Routes>
         {/* ĐÃ SỬA Ở ĐÂY: Đặt trang Học sinh làm trang chủ mặc định (Public) */}
@@ -66,11 +61,9 @@ function App() {
           <Route path="/classes" element={<ClassManagement />} /> 
           <Route path="/classes/:id" element={<ClassDetail />} /> 
           <Route path="/quan-ly-tien-do" element={<TeacherCalendar />} />
-          <Route path="/quan-ly-tien-do" element={<TeacherCalendar />} />
           <Route path="/quan-ly-tai-chinh" element={<TuitionManager />} />
           <Route path="/quan-ly-hoc-phi" element={<TuitionManager />} />
           <Route path="/tai-lieu" element={<DocumentLibrary />} />
-          <Route path="/exam-bank" element={<ExamBank />} />
           <Route path="/exam-editor" element={<ExamEditor />} />
           <Route path="/quan-ly-thi" element={<ExamManagement />} />
           <Route path="/quan-ly-giao-vien" element={<TeacherManager />} />

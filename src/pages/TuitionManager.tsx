@@ -15,7 +15,7 @@ const TuitionManager = () => {
   const fetchBills = useCallback(async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await axiosClient.get(`/api/bills`);
+      const res = await axiosClient.get(`/api/payments`);
       const allBills = res.data;
       
       // LỌC HÓA ĐƠN THEO THÁNG ĐƯỢC CHỌN
@@ -40,7 +40,7 @@ const TuitionManager = () => {
     if (!confirm) return;
     const token = localStorage.getItem('token');
     try {
-      await axiosClient.put(`/api/bills/${id}/pay`, {});
+      await axiosClient.put(`/api/payments/${id}/pay`, {});
       alert('✅ Đã ghi nhận doanh thu thành công! Học sinh đã được cấp tem.');
       fetchBills(); 
     } catch (error) { alert('❌ Lỗi hệ thống.'); }
