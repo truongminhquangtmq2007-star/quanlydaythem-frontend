@@ -24,12 +24,14 @@ import ExamEditor from './pages/ExamEditor';
 import ParentReport from './pages/ParentReport';
 import TeacherProfile from './pages/TeacherProfile';
 import { AuthProvider } from './context/AuthContext';
+import { ToastContainer } from 'react-toastify';
 
 
 
 function App() {
   return (
     <AuthProvider>
+      <ToastContainer />
       <BrowserRouter>
         <Routes>
         {/* ĐÃ SỬA Ở ĐÂY: Đặt trang Học sinh làm trang chủ mặc định (Public) */}
