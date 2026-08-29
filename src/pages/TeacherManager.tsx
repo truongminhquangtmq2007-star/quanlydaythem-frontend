@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { EmptyState } from '../components/ui/EmptyState';
 
 interface Teacher {
   id: number;
@@ -46,10 +50,9 @@ const TeacherManager = () => {
     }
   };
 
-  // HÀM XỬ LÝ CẤP LẠI MẬT KHẨU
   const handleResetPassword = async (teacherId: number, teacherName: string) => {
     const newPassword = window.prompt(`Nhập mật khẩu MỚI cho giáo viên ${teacherName}:`);
-    if (!newPassword) return; // Hủy nếu không nhập gì
+    if (!newPassword) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -63,71 +66,72 @@ const TeacherManager = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h2 style={{ color: '#0f172a', marginBottom: '20px' }}>Quản Lý Giáo Viên</h2>
+    <div style={{ padding: 'var(--spacing-5)', fontFamily: 'sans-serif' }}>
+      <h2 style={{ color: 'var(--color-text)', marginBottom: 'var(--spacing-5)' }}>Quản Lý Giáo Viên</h2>
       
-      {/* KHỐI TẠO GIÁO VIÊN */}
-      <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', marginBottom: '30px', maxWidth: '600px' }}>
-        <h3 style={{ marginTop: 0, color: '#3b82f6' }}>Thêm Giáo viên mới</h3>
-        <form onSubmit={handleCreateTeacher} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <input 
-            type="text" placeholder="Tên hiển thị (VD: Cô Lan Hóa)" required
+      <Card style={{ marginBottom: 'var(--spacing-8)', maxWidth: '600px' }}>
+        <h3 style={{ marginTop: 0, color: 'var(--color-primary)' }}>Thêm Giáo viên mới</h3>
+        <form onSubmit={handleCreateTeacher} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+          <Input 
+            required
+            placeholder="Tên hiển thị (VD: Cô Lan Hóa)"
             value={fullName} onChange={(e) => setFullName(e.target.value)}
-            style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
           />
-          <input 
-            type="text" placeholder="Tên đăng nhập (Username)" required
+          <Input 
+            required
+            placeholder="Tên đăng nhập (Username)"
             value={username} onChange={(e) => setUsername(e.target.value)}
-            style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
           />
-          <input 
-            type="password" placeholder="Mật khẩu" required
+          <Input 
+            type="password"
+            required
+            placeholder="Mật khẩu"
             value={password} onChange={(e) => setPassword(e.target.value)}
-            style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
           />
-          <button type="submit" style={{ padding: '10px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer' }}>
+          <Button type="submit" variant="primary">
             + Tạo Tài Khoản
-          </button>
+          </Button>
         </form>
-        {message && <p style={{ marginTop: '15px', fontWeight: 'bold', color: message.includes('❌') ? 'red' : 'green' }}>{message}</p>}
-      </div>
+        {message && <p style={{ marginTop: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: message.includes('❌') ? 'red' : 'green' }}>{message}</p>}
+      </Card>
 
-      {/* DANH SÁCH GIÁO VIÊN */}
-      <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <h3 style={{ marginTop: 0, color: '#475569' }}>Danh sách Giáo viên</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-              <th style={{ padding: '12px' }}>ID</th>
-              <th style={{ padding: '12px' }}>Tên hiển thị</th>
-              <th style={{ padding: '12px' }}>Username</th>
-              <th style={{ padding: '12px', textAlign: 'center' }}>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teachers.map(t => (
-              <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '12px' }}>#{t.id}</td>
-                <td style={{ padding: '12px', fontWeight: 'bold', color: '#0f172a' }}>{t.full_name}</td>
-                <td style={{ padding: '12px', color: '#64748b' }}>{t.username}</td>
-                <td style={{ padding: '12px', textAlign: 'center' }}>
-                  <button 
-                    onClick={() => handleResetPassword(t.id, t.full_name)}
-                    style={{ padding: '6px 12px', backgroundColor: '#fef3c7', color: '#b45309', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
-                  >
-                    🔑 Cấp lại Mật khẩu
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {teachers.length === 0 && (
-              <tr>
-                <td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>Chưa có giáo viên nào.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        <h3 style={{ marginTop: 0, color: 'var(--color-text-secondary)' }}>Danh sách Giáo viên</h3>
+        
+        {teachers.length === 0 ? (
+          <EmptyState title="Chưa có giáo viên nào" />
+        ) : (
+          <div className="overflow-x-auto">
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ backgroundColor: 'var(--color-background)', borderBottom: '2px solid var(--color-border)' }}>
+                  <th style={{ padding: 'var(--spacing-3)' }}>ID</th>
+                  <th style={{ padding: 'var(--spacing-3)' }}>Tên hiển thị</th>
+                  <th style={{ padding: 'var(--spacing-3)' }}>Username</th>
+                  <th style={{ padding: 'var(--spacing-3)', textAlign: 'center' }}>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teachers.map(t => (
+                  <tr key={t.id} style={{ borderBottom: '1px solid var(--color-background)' }}>
+                    <td style={{ padding: 'var(--spacing-3)' }}>#{t.id}</td>
+                    <td style={{ padding: 'var(--spacing-3)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>{t.full_name}</td>
+                    <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)' }}>{t.username}</td>
+                    <td style={{ padding: 'var(--spacing-3)', textAlign: 'center' }}>
+                      <Button 
+                        onClick={() => handleResetPassword(t.id, t.full_name)}
+                        variant="outline" size="sm"
+                      >
+                        🔑 Cấp lại Mật khẩu
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
   );
 };

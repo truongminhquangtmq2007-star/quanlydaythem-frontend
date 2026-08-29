@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import axiosClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { EmptyState } from '../components/ui/EmptyState';
 
 interface Student {
   id: number;
@@ -121,109 +125,117 @@ const StudentList = () => {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: 'var(--spacing-6)', maxWidth: '100%', boxSizing: 'border-box' }}>
       
       {/* 1. TIÊU ĐỀ TRANG */}
-      <div style={{ marginBottom: '35px', paddingBottom: '15px' }}>
-        <h1 style={{ margin: '0 0 8px 0', color: '#1e293b', fontSize: '30px' }}>Danh Sách Học Sinh</h1>
-        <p style={{ margin: 0, color: '#64748b', fontSize: '15px' }}>Quản lý thông tin cá nhân và tài khoản đăng nhập của học viên.</p>
+      <div style={{ marginBottom: 'var(--spacing-6)' }}>
+        <h1 style={{ margin: '0 0 var(--spacing-2) 0', color: 'var(--color-text)', fontSize: '30px' }}>Danh Sách Học Sinh</h1>
+        <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '15px' }}>Quản lý thông tin cá nhân và tài khoản đăng nhập của học viên.</p>
       </div>
 
       {/* 2. KHUNG THÊM / SỬA HỌC SINH MỚI */}
-      <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', marginBottom: '35px' }}>
-        <h3 style={{ marginTop: 0, color: '#1e293b', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: editingId ? '#3b82f6' : '#8b5cf6', fontSize: '20px' }}>
+      <Card style={{ marginBottom: 'var(--spacing-6)', padding: 'var(--spacing-6)' }}>
+        <h3 style={{ marginTop: 0, color: 'var(--color-text)', marginBottom: 'var(--spacing-5)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+          <span style={{ color: editingId ? 'var(--color-primary)' : '#8b5cf6', fontSize: 'var(--font-size-xl)' }}>
             {editingId ? '✏️' : '➕'}
           </span> 
           {editingId ? 'Cập Nhật Thông Tin' : 'Thêm Học Sinh Mới'}
         </h3>
         
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-          <input 
-            type="text" 
-            placeholder="Họ và Tên" 
-            value={fullName} 
-            onChange={(e) => setFullName(e.target.value)} 
-            style={{ flex: 1, minWidth: '200px', padding: '14px 15px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#f8fafc' }} 
-            required
-          />
-          <input 
-            type="text" 
-            placeholder="Số điện thoại (Dùng làm Tên đăng nhập)" 
-            value={phoneNumber} 
-            onChange={(e) => setPhoneNumber(e.target.value)} 
-            style={{ flex: 1, minWidth: '200px', padding: '14px 15px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#f8fafc' }} 
-            required
-          />
-          <input 
-            type="text" 
-            placeholder="Trường học (Không bắt buộc)" 
-            value={schoolName} 
-            onChange={(e) => setSchoolName(e.target.value)} 
-            style={{ flex: 1, minWidth: '200px', padding: '14px 15px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#f8fafc' }} 
-          />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 'var(--spacing-4)', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <Input 
+              placeholder="Họ và Tên" 
+              value={fullName} 
+              onChange={(e) => setFullName(e.target.value)} 
+              required
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <Input 
+              placeholder="Số điện thoại (Dùng làm Tên đăng nhập)" 
+              value={phoneNumber} 
+              onChange={(e) => setPhoneNumber(e.target.value)} 
+              required
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <Input 
+              placeholder="Trường học (Không bắt buộc)" 
+              value={schoolName} 
+              onChange={(e) => setSchoolName(e.target.value)} 
+            />
+          </div>
           
           {/* Ô Nhập Mật Khẩu (Chỉ hiện khi tạo mới, ẩn đi khi đang sửa) */}
           {!editingId && (
-            <input 
-              type="text" 
-              placeholder="Mật khẩu" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              style={{ width: '120px', padding: '14px 15px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#f8fafc' }} 
-              required
-            />
+            <div style={{ width: '120px' }}>
+              <Input 
+                placeholder="Mật khẩu" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required
+              />
+            </div>
           )}
           
-          <input 
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <Input 
               type="email" 
               placeholder="Email (Không bắt buộc)" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
-              style={{ flex: 1, minWidth: '200px', padding: '14px 15px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', backgroundColor: '#f8fafc' }} 
             />
-            <button type="submit" style={{ padding: '14px 25px', backgroundColor: editingId ? '#3b82f6' : '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', boxShadow: editingId ? '0 4px 10px rgba(59, 130, 246, 0.2)' : '0 4px 10px rgba(16, 185, 129, 0.2)', transition: '0.2s' }}>
-            {editingId ? 'Cập Nhật' : 'Lưu Mới'}
-          </button>
+          </div>
           
-          {editingId && (
-            <button type="button" onClick={() => { setEditingId(null); setFullName(''); setPhoneNumber(''); setSchoolName(''); }} style={{ padding: '14px 20px', backgroundColor: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' }}>
-              Hủy
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+            <Button type="submit" variant={editingId ? 'primary' : 'primary'}>
+              {editingId ? 'Cập Nhật' : 'Lưu Mới'}
+            </Button>
+            
+            {editingId && (
+              <Button type="button" variant="ghost" onClick={() => { setEditingId(null); setFullName(''); setPhoneNumber(''); setSchoolName(''); }}>
+                Hủy
+              </Button>
+            )}
+          </div>
         </form>
-        {message && <p style={{ marginTop: '15px', fontWeight: 'bold', color: message.includes('❌') ? '#ef4444' : '#10b981' }}>{message}</p>}
-      </div>
+        {message && <p style={{ marginTop: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: message.includes('❌') ? 'var(--color-danger)' : 'var(--color-success)' }}>{message}</p>}
+      </Card>
       
       {/* 3. BẢNG DANH SÁCH HỌC SINH */}
-      <div style={{ backgroundColor: 'white', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', overflow: 'hidden', marginBottom: '40px' }}>
-        <div style={{ overflowX: 'auto' }}>
+      <Card style={{ overflow: 'hidden', padding: 0 }}>
+        <div className="overflow-x-auto">
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f8fafc' }}>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>ID</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Họ và Tên</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Tài khoản (SĐT)</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Trường</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9', textAlign: 'center' }}>Thao tác</th>
+              <tr style={{ backgroundColor: 'var(--color-background)' }}>
+                <th style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-background)' }}>ID</th>
+                <th style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-background)' }}>Họ và Tên</th>
+                <th style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-background)' }}>Tài khoản (SĐT)</th>
+                <th style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-background)' }}>Trường</th>
+                <th style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-background)', textAlign: 'center' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {students.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Chưa có dữ liệu học sinh.</td>
+                  <td colSpan={5} style={{ padding: 'var(--spacing-10)' }}>
+                    <EmptyState title="Chưa có dữ liệu học sinh" />
+                  </td>
                 </tr>
               ) : (
                 students.map((student) => (
-                  <tr key={student.id} style={{ borderBottom: '1px solid #f1f5f9', transition: '0.2s', backgroundColor: editingId === student.id ? '#eff6ff' : 'white' }}>
-                    <td style={{ padding: '20px 25px', color: '#64748b', fontWeight: 'bold' }}>#{student.id}</td>
-                    <td style={{ padding: '20px 25px', color: '#0f172a', fontWeight: 'bold' }}>{student.full_name}</td>
-                    <td style={{ padding: '20px 25px', color: '#0ea5e9', fontWeight: '600' }}>{student.phone_number}</td>
-                    <td style={{ padding: '20px 25px', color: '#475569' }}>{student.school_name || '-'}</td>
-                    <td style={{ padding: '20px 25px', textAlign: 'center' }}>
-                      <button onClick={() => handleEditClick(student)} style={{ marginRight: '8px', padding: '8px 16px', backgroundColor: '#fef3c7', color: '#d97706', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: '0.2s' }}>Sửa</button>
-                      <button onClick={() => handleDelete(student.id)} style={{ marginRight: '8px', padding: '8px 16px', backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: '0.2s' }}>Xóa</button>
-                      <button onClick={() => handleResetPassword(student.id, student.full_name)} style={{ padding: '8px 16px', backgroundColor: '#e0e7ff', color: '#4338ca', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: '0.2s' }}>🔑 Reset MK</button>
+                  <tr key={student.id} style={{ borderBottom: '1px solid var(--color-background)', transition: '0.2s', backgroundColor: editingId === student.id ? 'var(--color-background)' : 'var(--color-surface)' }}>
+                    <td style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-bold)' }}>#{student.id}</td>
+                    <td style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text)', fontWeight: 'var(--font-weight-bold)' }}>{student.full_name}</td>
+                    <td style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-primary)', fontWeight: 'var(--font-weight-semibold)' }}>{student.phone_number}</td>
+                    <td style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text-secondary)' }}>{student.school_name || '-'}</td>
+                    <td style={{ padding: 'var(--spacing-4) var(--spacing-5)', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', justifyContent: 'center' }}>
+                        <Button variant="outline" size="sm" onClick={() => handleEditClick(student)}>Sửa</Button>
+                        <Button variant="danger" size="sm" onClick={() => handleDelete(student.id)}>Xóa</Button>
+                        <Button variant="secondary" size="sm" onClick={() => handleResetPassword(student.id, student.full_name)}>🔑 Reset MK</Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -231,7 +243,7 @@ const StudentList = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
       
     </div>
   );

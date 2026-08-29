@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { ClassInfo, ClassMember, Session, Attendance } from '../types/core';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Input } from '../components/ui/Input';
 
 const ClassDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -153,39 +158,40 @@ const ClassDetail = () => {
     }
   };
 
-  if (!classInfo) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Đang tải dữ liệu lớp học...</div>;
+  if (!classInfo) return <div style={{ padding: 'var(--spacing-10)' }}><EmptyState title="Đang tải dữ liệu lớp học..." /></div>;
 
   return (
-    <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto' }}>
-      <button onClick={() => navigate('/classes')} style={{ marginBottom: '20px', padding: '10px 20px', borderRadius: '10px', border: '1px solid #cbd5e1', backgroundColor: 'white', color: '#475569', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: '0.2s' }}>
+    <div style={{ padding: 'var(--spacing-8)', maxWidth: '1200px', margin: '0 auto' }}>
+      <Button onClick={() => navigate('/classes')} variant="outline" style={{ marginBottom: 'var(--spacing-5)' }}>
         ← Quay lại danh sách
-      </button>
+      </Button>
 
       {/* HEADER CARD */}
-      <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '20px', marginBottom: '30px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
+      <Card style={{ marginBottom: 'var(--spacing-8)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', margin: '0 0 15px 0' }}>
-              <h1 style={{ margin: 0, fontSize: '32px', color: '#0f172a' }}>{classInfo.name || classInfo.class_name}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', margin: '0 0 15px 0' }}>
+              <h1 style={{ margin: 0, fontSize: 'var(--font-size-3xl)', color: 'var(--color-text)' }}>{classInfo.name || classInfo.class_name}</h1>
               {classInfo.class_type === 'ONLINE' ? (
-                <span style={{ backgroundColor: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' }}>📡 LỚP ONLINE</span>
+                <Badge variant="info">📡 LỚP ONLINE</Badge>
               ) : (
-                <span style={{ backgroundColor: '#fff7ed', color: '#f97316', border: '1px solid #fed7aa', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' }}>🏫 LỚP OFFLINE</span>
+                <Badge variant="warning">🏫 LỚP OFFLINE</Badge>
               )}
             </div>
-            <div style={{ display: 'flex', gap: '30px', color: '#64748b', fontSize: '15px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Mã lớp: <strong style={{ color: '#334155', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: '6px' }}>{classInfo.class_code || '---'}</strong></span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Môn học: <strong style={{ color: '#334155' }}>{classInfo.subject || '---'}</strong></span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>Sĩ số: <strong style={{ color: '#3b82f6' }}>{members.length}/{classInfo.max_students || 20}</strong></span>
+            <div style={{ display: 'flex', gap: 'var(--spacing-8)', color: 'var(--color-text-secondary)', fontSize: '15px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>Mã lớp: <strong style={{ color: '#334155', backgroundColor: 'var(--color-background)', padding: '4px 10px', borderRadius: '6px' }}>{classInfo.class_code || '---'}</strong></span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>Môn học: <strong style={{ color: '#334155' }}>{classInfo.subject || '---'}</strong></span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>Sĩ số: <strong style={{ color: 'var(--color-primary)' }}>{members.length}/{classInfo.max_students || 20}</strong></span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '15px' }}>
+          <div style={{ display: 'flex', gap: 'var(--spacing-4)' }}>
             {classInfo.class_type === 'ONLINE' && classInfo.meet_link && (
-              <a href={classInfo.meet_link} target="_blank" rel="noreferrer" style={{ textDecoration: 'none', padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(59,130,246,0.3)' }}>
-                🎥 Mở Link Meet
+              <a href={classInfo.meet_link} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                <Button variant="primary">🎥 Mở Link Meet</Button>
               </a>
             )}
-            <button 
+            <Button 
+              variant="danger"
               onClick={async () => {
                 if(window.confirm('Bạn có chắc chắn muốn xóa lớp học này không? Tất cả dữ liệu liên quan (học sinh, lịch học, điểm danh) sẽ bị xóa vĩnh viễn.')) {
                   try {
@@ -197,280 +203,244 @@ const ClassDetail = () => {
                   }
                 }
               }}
-              style={{ padding: '12px 24px', backgroundColor: '#ef4444', color: 'white', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(239,68,68,0.3)' }}
             >
               🗑️ Xóa lớp
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* TAB NAVIGATION */}
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '25px' }}>
-        <button 
-          onClick={() => setActiveTab('MEMBERS')}
-          style={{ padding: '14px 28px', borderRadius: '12px', border: 'none', backgroundColor: activeTab === 'MEMBERS' ? '#3b82f6' : 'white', color: activeTab === 'MEMBERS' ? 'white' : '#64748b', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', transition: '0.2s', boxShadow: activeTab === 'MEMBERS' ? '0 4px 10px rgba(59,130,246,0.3)' : '0 2px 5px rgba(0,0,0,0.02)' }}
-        >
-          👥 Danh sách Học sinh
-        </button>
-        <button 
-          onClick={() => setActiveTab('SESSIONS')}
-          style={{ padding: '14px 28px', borderRadius: '12px', border: 'none', backgroundColor: activeTab === 'SESSIONS' ? '#3b82f6' : 'white', color: activeTab === 'SESSIONS' ? 'white' : '#64748b', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', transition: '0.2s', boxShadow: activeTab === 'SESSIONS' ? '0 4px 10px rgba(59,130,246,0.3)' : '0 2px 5px rgba(0,0,0,0.02)' }}
-        >
-          📅 Quản lý Buổi học & Điểm danh
-        </button>
-        <button 
-          onClick={() => setActiveTab('ASSIGNMENTS')}
-          style={{ padding: '14px 28px', borderRadius: '12px', border: 'none', backgroundColor: activeTab === 'ASSIGNMENTS' ? '#3b82f6' : 'white', color: activeTab === 'ASSIGNMENTS' ? 'white' : '#64748b', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', transition: '0.2s', boxShadow: activeTab === 'ASSIGNMENTS' ? '0 4px 10px rgba(59,130,246,0.3)' : '0 2px 5px rgba(0,0,0,0.02)' }}
-        >
-          📝 Tài liệu & Bài tập
-        </button>
-        <button 
-          onClick={() => setActiveTab('ANALYTICS')}
-          style={{ padding: '14px 28px', borderRadius: '12px', border: 'none', backgroundColor: activeTab === 'ANALYTICS' ? '#3b82f6' : 'white', color: activeTab === 'ANALYTICS' ? 'white' : '#64748b', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', transition: '0.2s', boxShadow: activeTab === 'ANALYTICS' ? '0 4px 10px rgba(59,130,246,0.3)' : '0 2px 5px rgba(0,0,0,0.02)' }}
-        >
-          📊 Phân tích Lớp học
-        </button>
+      <div style={{ display: 'flex', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+        <Button onClick={() => setActiveTab('MEMBERS')} variant={activeTab === 'MEMBERS' ? 'primary' : 'outline'}>👥 Danh sách Học sinh</Button>
+        <Button onClick={() => setActiveTab('SESSIONS')} variant={activeTab === 'SESSIONS' ? 'primary' : 'outline'}>📅 Quản lý Buổi học</Button>
+        <Button onClick={() => setActiveTab('ASSIGNMENTS')} variant={activeTab === 'ASSIGNMENTS' ? 'primary' : 'outline'}>📝 Tài liệu & Bài tập</Button>
+        <Button onClick={() => setActiveTab('ANALYTICS')} variant={activeTab === 'ANALYTICS' ? 'primary' : 'outline'}>📊 Phân tích Lớp học</Button>
       </div>
 
       {/* TAB CONTENT: MEMBERS */}
       {activeTab === 'MEMBERS' && (
-        <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-            <h2 style={{ margin: 0, color: '#1e293b' }}>Học sinh trong lớp ({members.length})</h2>
-            <button onClick={() => setShowAddMember(true)} style={{ padding: '10px 20px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 10px rgba(16,185,129,0.3)' }}>+ Thêm học sinh</button>
+        <Card>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
+            <h2 style={{ margin: 0, color: 'var(--color-text)' }}>Học sinh trong lớp ({members.length})</h2>
+            <Button onClick={() => setShowAddMember(true)} variant="primary">+ Thêm học sinh</Button>
           </div>
           
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8fafc' }}>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0', borderTopLeftRadius: '10px' }}>Mã HS</th>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>Họ Tên</th>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>Số điện thoại</th>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>Ngày tham gia</th>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0', borderTopRightRadius: '10px' }}>Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Lớp chưa có học sinh nào. Bấm "Thêm học sinh" để xếp lớp.</td></tr>
-              ) : members.map(m => (
-                <tr key={m.id} style={{ borderBottom: '1px solid #f1f5f9', transition: '0.2s' }}>
-                  <td style={{ padding: '18px 20px', color: '#64748b', fontWeight: 'bold' }}>{m.student_code || `HS${m.student_id}`}</td>
-                  <td style={{ padding: '18px 20px', fontWeight: 'bold', color: '#0f172a' }}>{m.full_name}</td>
-                  <td style={{ padding: '18px 20px', color: '#475569' }}>{m.phone || '---'}</td>
-                  <td style={{ padding: '18px 20px', color: '#475569' }}>{new Date(m.enroll_date).toLocaleDateString('vi-VN')}</td>
-                  <td style={{ padding: '18px 20px' }}>
-                    <span style={{ padding: '6px 12px', backgroundColor: m.status === 'ACTIVE' ? '#dcfce7' : '#f1f5f9', color: m.status === 'ACTIVE' ? '#166534' : '#64748b', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
-                      {m.status}
-                    </span>
-                  </td>
+          <div className="overflow-x-auto">
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ backgroundColor: 'var(--color-background)' }}>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', borderTopLeftRadius: '10px' }}>Mã HS</th>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Họ Tên</th>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Số điện thoại</th>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Ngày tham gia</th>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', borderTopRightRadius: '10px' }}>Trạng thái</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {members.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: 'var(--spacing-10)' }}><EmptyState title="Lớp chưa có học sinh nào." description="Bấm Thêm học sinh để xếp lớp." /></td></tr>
+                ) : members.map(m => (
+                  <tr key={m.id} style={{ borderBottom: '1px solid var(--color-background)', transition: '0.2s' }}>
+                    <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-bold)' }}>{m.student_code || `HS${m.student_id}`}</td>
+                    <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>{m.full_name}</td>
+                    <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>{m.phone || '---'}</td>
+                    <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>{new Date(m.enroll_date).toLocaleDateString('vi-VN')}</td>
+                    <td style={{ padding: 'var(--spacing-4)' }}>
+                      <Badge variant={m.status === 'ACTIVE' ? 'primary' : 'neutral'}>
+                        {m.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
 
       {/* TAB CONTENT: SESSIONS */}
       {activeTab === 'SESSIONS' && (
-        <div style={{ display: 'flex', gap: '25px', minHeight: '600px' }}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-6)', minHeight: '600px' }}>
           
           {/* Cột trái: Danh sách buổi học */}
-          <div style={{ width: '320px', backgroundColor: 'white', padding: '25px', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-              <h3 style={{ margin: 0, color: '#1e293b' }}>Lịch sử Buổi học</h3>
-              <button onClick={handleCreateSession} style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', boxShadow: '0 4px 6px rgba(59,130,246,0.2)' }}>+ Tạo buổi</button>
+          <Card style={{ width: '320px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
+              <h3 style={{ margin: 0, color: 'var(--color-text)' }}>Lịch sử Buổi học</h3>
+              <Button onClick={handleCreateSession} variant="primary" size="sm">+ Tạo buổi</Button>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1, paddingRight: '5px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)', overflowY: 'auto', flex: 1, paddingRight: 'var(--spacing-1)' }}>
               {sessions.length === 0 ? (
-                <div style={{ color: '#94a3b8', textAlign: 'center', padding: '40px 0' }}>Chưa có buổi học nào được tạo.</div>
+                <EmptyState title="Chưa có buổi học nào" />
               ) : sessions.map(sess => (
                 <div 
                   key={sess.id} 
                   onClick={() => selectSession(sess)}
                   style={{ 
-                    padding: '16px', borderRadius: '12px', cursor: 'pointer', border: '2px solid', transition: '0.2s',
-                    borderColor: activeSession?.id === sess.id ? '#3b82f6' : '#f1f5f9', 
-                    backgroundColor: activeSession?.id === sess.id ? '#eff6ff' : 'white' 
+                    padding: 'var(--spacing-4)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', border: '2px solid', transition: '0.2s',
+                    borderColor: activeSession?.id === sess.id ? 'var(--color-primary)' : 'var(--color-background)', 
+                    backgroundColor: activeSession?.id === sess.id ? '#eff6ff' : 'var(--color-surface)' 
                   }}
                 >
-                  <div style={{ fontWeight: 'bold', fontSize: '15px', color: activeSession?.id === sess.id ? '#1d4ed8' : '#334155' }}>
+                  <div style={{ fontWeight: 'var(--font-weight-bold)', fontSize: '15px', color: activeSession?.id === sess.id ? 'var(--color-primary)' : '#334155' }}>
                     Ngày {new Date(sess.session_date).toLocaleDateString('vi-VN')}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', marginTop: '6px', fontWeight: '500' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: '6px', fontWeight: 'var(--font-weight-medium)' }}>
                     🕒 {sess.start_time ? sess.start_time.substring(0,5) : '18:00'} - {sess.end_time ? sess.end_time.substring(0,5) : '19:30'}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
           {/* Cột phải: Chi tiết Điểm danh */}
-          <div style={{ flex: 1, backgroundColor: 'white', padding: '30px', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
+          <Card style={{ flex: 1 }}>
             {!activeSession ? (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-                <div style={{ fontSize: '40px', marginBottom: '15px' }}>👈</div>
-                <div style={{ fontSize: '18px', fontWeight: '500' }}>Chọn một buổi học bên trái để xem và điểm danh</div>
-              </div>
+              <EmptyState title="Chọn một buổi học bên trái để xem và điểm danh" />
             ) : (
               <div>
-                <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ marginBottom: 'var(--spacing-8)', paddingBottom: 'var(--spacing-5)', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                      <h2 style={{ margin: '0 0 8px 0', color: '#0f172a', fontSize: '24px' }}>Bảng Điểm Danh - {new Date(activeSession.session_date).toLocaleDateString('vi-VN')}</h2>
-                      <button onClick={handleSyncCalendar} style={{ padding: '6px 12px', backgroundColor: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>🔄 Đồng bộ Calendar</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
+                      <h2 style={{ margin: '0 0 8px 0', color: 'var(--color-text)', fontSize: 'var(--font-size-2xl)' }}>Bảng Điểm Danh - {new Date(activeSession.session_date).toLocaleDateString('vi-VN')}</h2>
+                      <Button onClick={handleSyncCalendar} variant="secondary" size="sm">🔄 Đồng bộ</Button>
                     </div>
-                    <div style={{ color: '#64748b', fontSize: '15px' }}>Dữ liệu điểm danh được <strong style={{color: '#10b981'}}>lưu tự động ngay lập tức</strong> khi bạn click vào trạng thái.</div>
+                    <div style={{ color: 'var(--color-text-secondary)', fontSize: '15px' }}>Dữ liệu điểm danh được <strong style={{color: 'var(--color-success)'}}>lưu tự động ngay lập tức</strong>.</div>
                   </div>
-                  <div style={{ padding: '8px 16px', backgroundColor: '#f1f5f9', borderRadius: '8px', color: '#475569', fontWeight: 'bold' }}>
+                  <div style={{ padding: '8px 16px', backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius-md)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-bold)' }}>
                     Sĩ số tham gia: {attendanceList.length}
                   </div>
                 </div>
 
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #f1f5f9', width: '35%' }}>Học sinh</th>
-                      <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #f1f5f9' }}>Trạng thái Điểm danh nhanh</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attendanceList.length === 0 ? (
-                      <tr><td colSpan={2} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Không có dữ liệu điểm danh cho buổi này.</td></tr>
-                    ) : attendanceList.map(a => (
-                      <tr key={a.id} style={{ borderBottom: '1px solid #f8fafc' }}>
-                        <td style={{ padding: '20px', fontWeight: 'bold', color: '#1e293b', fontSize: '16px' }}>
-                          {a.full_name} <br/>
-                          <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 'normal' }}>ID: {a.student_code || a.student_id}</span>
-                        </td>
-                        <td style={{ padding: '20px' }}>
-                          <div style={{ display: 'flex', gap: '10px' }}>
-                            <button 
-                              onClick={() => handleUpdateAttendance(a.student_id, 'PRESENT')}
-                              style={{ 
-                                padding: '10px 16px', borderRadius: '8px', border: '2px solid', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s',
-                                backgroundColor: a.status === 'PRESENT' ? '#10b981' : 'white', 
-                                color: a.status === 'PRESENT' ? 'white' : '#10b981', 
-                                borderColor: '#10b981',
-                                opacity: a.status === 'PRESENT' ? 1 : 0.6
-                              }}>✅ Có mặt</button>
-                            
-                            <button 
-                              onClick={() => handleUpdateAttendance(a.student_id, 'LATE')}
-                              style={{ 
-                                padding: '10px 16px', borderRadius: '8px', border: '2px solid', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s',
-                                backgroundColor: a.status === 'LATE' ? '#f59e0b' : 'white', 
-                                color: a.status === 'LATE' ? 'white' : '#f59e0b', 
-                                borderColor: '#f59e0b',
-                                opacity: a.status === 'LATE' ? 1 : 0.6
-                              }}>⏰ Đi muộn</button>
-                            
-                            <button 
-                              onClick={() => handleUpdateAttendance(a.student_id, 'ABSENT_EXCUSED')}
-                              style={{ 
-                                padding: '10px 16px', borderRadius: '8px', border: '2px solid', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s',
-                                backgroundColor: a.status === 'ABSENT_EXCUSED' ? '#f97316' : 'white', 
-                                color: a.status === 'ABSENT_EXCUSED' ? 'white' : '#f97316', 
-                                borderColor: '#f97316',
-                                opacity: a.status === 'ABSENT_EXCUSED' ? 1 : 0.6
-                              }}>📝 Vắng phép</button>
-                            
-                            <button 
-                              onClick={() => handleUpdateAttendance(a.student_id, 'ABSENT_UNEXCUSED')}
-                              style={{ 
-                                padding: '10px 16px', borderRadius: '8px', border: '2px solid', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s',
-                                backgroundColor: a.status === 'ABSENT_UNEXCUSED' ? '#ef4444' : 'white', 
-                                color: a.status === 'ABSENT_UNEXCUSED' ? 'white' : '#ef4444', 
-                                borderColor: '#ef4444',
-                                opacity: a.status === 'ABSENT_UNEXCUSED' ? 1 : 0.6
-                              }}>❌ Vắng K/P</button>
-                          </div>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-background)', width: '35%' }}>Học sinh</th>
+                        <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-background)' }}>Trạng thái Điểm danh nhanh</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {attendanceList.length === 0 ? (
+                        <tr><td colSpan={2} style={{ padding: 'var(--spacing-10)' }}><EmptyState title="Không có dữ liệu điểm danh cho buổi này." /></td></tr>
+                      ) : attendanceList.map(a => (
+                        <tr key={a.id} style={{ borderBottom: '1px solid var(--color-background)' }}>
+                          <td style={{ padding: 'var(--spacing-5)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', fontSize: 'var(--font-size-base)' }}>
+                            {a.full_name} <br/>
+                            <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', fontWeight: 'normal' }}>ID: {a.student_code || a.student_id}</span>
+                          </td>
+                          <td style={{ padding: 'var(--spacing-5)' }}>
+                            <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                              <Button 
+                                onClick={() => handleUpdateAttendance(a.student_id, 'PRESENT')}
+                                variant={a.status === 'PRESENT' ? 'primary' : 'outline'}
+                              >✅ Có mặt</Button>
+                              
+                              <Button 
+                                onClick={() => handleUpdateAttendance(a.student_id, 'LATE')}
+                                variant={a.status === 'LATE' ? 'secondary' : 'outline'}
+                              >⏰ Đi muộn</Button>
+                              
+                              <Button 
+                                onClick={() => handleUpdateAttendance(a.student_id, 'ABSENT_EXCUSED')}
+                                variant={a.status === 'ABSENT_EXCUSED' ? 'danger' : 'outline'}
+                              >📝 Vắng phép</Button>
+                              
+                              <Button 
+                                onClick={() => handleUpdateAttendance(a.student_id, 'ABSENT_UNEXCUSED')}
+                                variant={a.status === 'ABSENT_UNEXCUSED' ? 'danger' : 'outline'}
+                              >❌ Vắng K/P</Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
-          </div>
+          </Card>
         </div>
       )}
 
       {/* TAB CONTENT: ASSIGNMENTS */}
       {activeTab === 'ASSIGNMENTS' && (
-        <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-            <h2 style={{ margin: 0, color: '#1e293b' }}>Bài tập đã giao ({assignments.length})</h2>
-            <button onClick={handleOpenAssignModal} style={{ padding: '10px 20px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 10px rgba(139,92,246,0.3)' }}>+ Giao bài tập mới</button>
+        <Card>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
+            <h2 style={{ margin: 0, color: 'var(--color-text)' }}>Bài tập đã giao ({assignments.length})</h2>
+            <Button onClick={handleOpenAssignModal} variant="primary">+ Giao bài tập mới</Button>
           </div>
           
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8fafc' }}>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0', borderTopLeftRadius: '10px' }}>Tiêu đề Giao bài</th>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>Tài liệu gốc</th>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>Ngày Giao</th>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>Hạn chót (Due Date)</th>
-                <th style={{ padding: '15px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0', borderTopRightRadius: '10px', textAlign: 'right' }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assignments.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Chưa có bài tập nào được giao cho lớp này.</td></tr>
-              ) : assignments.map(a => (
-                <tr key={a.id} style={{ borderBottom: '1px solid #f1f5f9', transition: '0.2s' }}>
-                  <td style={{ padding: '18px 20px', fontWeight: 'bold', color: '#0f172a' }}>{a.title}</td>
-                  <td style={{ padding: '18px 20px', color: '#475569' }}>
-                    <span style={{ padding: '4px 8px', backgroundColor: '#eff6ff', color: '#3b82f6', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', marginRight: '8px' }}>{a.category || 'Tài liệu'}</span>
-                    {a.folder_name ? `Thư mục: ${a.folder_name}` : 'Không có thư mục'}
-                  </td>
-                  <td style={{ padding: '18px 20px', color: '#475569' }}>{new Date(a.created_at).toLocaleDateString('vi-VN')}</td>
-                  <td style={{ padding: '18px 20px' }}>
-                    {a.due_at ? (
-                      <span style={{ padding: '6px 12px', backgroundColor: new Date(a.due_at) < new Date() ? '#fef2f2' : '#fefce8', color: new Date(a.due_at) < new Date() ? '#ef4444' : '#b45309', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold' }}>
-                        {new Date(a.due_at).toLocaleDateString('vi-VN')} {new Date(a.due_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
-                      </span>
-                    ) : 'Không có hạn'}
-                  </td>
-                  <td style={{ padding: '18px 20px', textAlign: 'right' }}>
-                    <a href={a.file_url} target="_blank" rel="noreferrer" style={{ padding: '8px 16px', backgroundColor: '#f1f5f9', color: '#475569', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px' }}>Mở Đề</a>
-                  </td>
+          <div className="overflow-x-auto">
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ backgroundColor: 'var(--color-background)' }}>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', borderTopLeftRadius: '10px' }}>Tiêu đề Giao bài</th>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Tài liệu gốc</th>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Ngày Giao</th>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Hạn chót (Due Date)</th>
+                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', borderTopRightRadius: '10px', textAlign: 'right' }}>Thao tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {assignments.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: 'var(--spacing-10)' }}><EmptyState title="Chưa có bài tập nào được giao cho lớp này." /></td></tr>
+                ) : assignments.map(a => (
+                  <tr key={a.id} style={{ borderBottom: '1px solid var(--color-background)', transition: '0.2s' }}>
+                    <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>{a.title}</td>
+                    <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>
+                      <Badge variant="info" style={{ marginRight: 'var(--spacing-2)' }}>{a.category || 'Tài liệu'}</Badge>
+                      {a.folder_name ? `Thư mục: ${a.folder_name}` : 'Không có thư mục'}
+                    </td>
+                    <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>{new Date(a.created_at).toLocaleDateString('vi-VN')}</td>
+                    <td style={{ padding: 'var(--spacing-4)' }}>
+                      {a.due_at ? (
+                        <Badge variant={new Date(a.due_at) < new Date() ? 'danger' : 'warning'}>
+                          {new Date(a.due_at).toLocaleDateString('vi-VN')} {new Date(a.due_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
+                        </Badge>
+                      ) : 'Không có hạn'}
+                    </td>
+                    <td style={{ padding: 'var(--spacing-4)', textAlign: 'right' }}>
+                      <a href={a.file_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                        <Button variant="secondary" size="sm">Mở Đề</Button>
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
 
       {/* TAB CONTENT: ANALYTICS */}
       {activeTab === 'ANALYTICS' && (
-        <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
-          <h2 style={{ margin: '0 0 20px 0', color: '#1e293b' }}>📊 Phân Tích Những Chuyên Đề Yếu Nhất Lớp</h2>
+        <Card>
+          <h2 style={{ margin: '0 0 20px 0', color: 'var(--color-text)' }}>📊 Phân Tích Những Chuyên Đề Yếu Nhất Lớp</h2>
           {weakTopics.length === 0 ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Chưa có đủ dữ liệu bài làm để phân tích lớp.</div>
+            <EmptyState title="Chưa có đủ dữ liệu bài làm để phân tích lớp." />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)' }}>
               {weakTopics.map((t, idx) => {
                 const rate = Number(t.accuracy_rate);
-                let color = '#10b981'; // Green
+                let color = 'var(--color-success)'; // Green
                 let icon = '✅';
                 if (rate < 50) {
-                  color = '#ef4444'; // Red
+                  color = 'var(--color-danger)'; // Red
                   icon = '⚠️';
                 } else if (rate < 80) {
-                  color = '#f59e0b'; // Yellow
+                  color = 'var(--color-warning)'; // Yellow
                   icon = '⚡';
                 }
 
                 return (
                   <div key={idx}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontWeight: 'bold', color: '#334155' }}>{icon} {t.topic}</span>
-                      <span style={{ fontWeight: 'bold', color }}>{rate}% ({t.total_corrects}/{t.total_attempts})</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-2)' }}>
+                      <span style={{ fontWeight: 'var(--font-weight-bold)', color: '#334155' }}>{icon} {t.topic}</span>
+                      <span style={{ fontWeight: 'var(--font-weight-bold)', color }}>{rate}% ({t.total_corrects}/{t.total_attempts})</span>
                     </div>
-                    <div style={{ width: '100%', height: '12px', backgroundColor: '#f1f5f9', borderRadius: '6px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '12px', backgroundColor: 'var(--color-background)', borderRadius: '6px', overflow: 'hidden' }}>
                       <div style={{ width: `${rate}%`, height: '100%', backgroundColor: color, borderRadius: '6px', transition: 'width 0.5s' }}></div>
                     </div>
                   </div>
@@ -478,36 +448,36 @@ const ClassDetail = () => {
               })}
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Modal Thêm Học Sinh */}
       {showAddMember && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div style={{ backgroundColor: 'white', padding: '35px', borderRadius: '20px', width: '450px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            <h2 style={{ margin: '0 0 25px 0', color: '#0f172a' }}>Thêm Học Sinh Vào Lớp</h2>
+          <Card style={{ width: '450px' }}>
+            <h2 style={{ margin: '0 0 25px 0', color: 'var(--color-text)' }}>Thêm Học Sinh Vào Lớp</h2>
             <form onSubmit={handleAddMember}>
               <div style={{ marginBottom: '25px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569', fontSize: '14px' }}>ID Học sinh</label>
-                <input required value={newStudentId} onChange={e => setNewStudentId(e.target.value)} type="number" placeholder="Nhập ID học sinh (Ví dụ: 1, 2, 3...)" style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none', fontSize: '15px' }} />
-                <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: '#64748b' }}>*Bạn có thể xem ID học sinh ở menu Học viên.</p>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>ID Học sinh</label>
+                <Input required value={newStudentId} onChange={(e: any) => setNewStudentId(e.target.value)} type="number" placeholder="Nhập ID học sinh (Ví dụ: 1, 2, 3...)" />
+                <p style={{ margin: '8px 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>*Bạn có thể xem ID học sinh ở menu Học viên.</p>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button type="button" onClick={() => setShowAddMember(false)} style={{ padding: '12px 20px', borderRadius: '10px', border: 'none', backgroundColor: '#f1f5f9', color: '#475569', cursor: 'pointer', fontWeight: 'bold' }}>Hủy</button>
-                <button type="submit" style={{ padding: '12px 24px', borderRadius: '10px', border: 'none', backgroundColor: '#10b981', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Thêm Học Sinh</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
+                <Button type="button" onClick={() => setShowAddMember(false)} variant="ghost">Hủy</Button>
+                <Button type="submit" variant="primary">Thêm Học Sinh</Button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Modal Giao Bài Tập */}
       {showAssignModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div style={{ backgroundColor: 'white', padding: '35px', borderRadius: '20px', width: '500px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            <h2 style={{ margin: '0 0 25px 0', color: '#0f172a' }}>Gán Tài Liệu / Đề Thi Vào Lớp</h2>
+          <Card style={{ width: '500px' }}>
+            <h2 style={{ margin: '0 0 25px 0', color: 'var(--color-text)' }}>Gán Tài Liệu / Đề Thi Vào Lớp</h2>
             <form onSubmit={handleCreateAssignment}>
-                <div style={{ marginBottom: '20px', maxHeight: '60vh', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '15px', backgroundColor: '#f8fafc' }}>
+                <div style={{ marginBottom: 'var(--spacing-5)', maxHeight: '60vh', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-4)', backgroundColor: 'var(--color-background)' }}>
                   {Object.values(
                     allDocs.reduce((acc, doc) => {
                       const key = doc.folder_id ? `${doc.folder_id}_${doc.folder_name}` : 'null_Chưa phân loại';
@@ -519,8 +489,8 @@ const ClassDetail = () => {
                     const allSelected = group.docs.length > 0 && group.docs.every((d: any) => selectedDocIds.includes(d.id));
                     const someSelected = group.docs.some((d: any) => selectedDocIds.includes(d.id));
                     return (
-                      <div key={group.folder_id || 'null'} style={{ marginBottom: '15px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: '#e2e8f0', borderRadius: '8px', fontWeight: 'bold', color: '#334155' }}>
+                      <div key={group.folder_id || 'null'} style={{ marginBottom: 'var(--spacing-4)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', padding: 'var(--spacing-2)', backgroundColor: 'var(--color-border)', borderRadius: 'var(--radius-md)', fontWeight: 'var(--font-weight-bold)', color: '#334155' }}>
                           <input 
                             type="checkbox" 
                             checked={allSelected}
@@ -541,9 +511,9 @@ const ClassDetail = () => {
                           />
                           📁 {group.folder_name}
                         </div>
-                        <div style={{ paddingLeft: '25px', marginTop: '5px' }}>
+                        <div style={{ paddingLeft: '25px', marginTop: 'var(--spacing-1)' }}>
                           {group.docs.map((doc: any) => (
-                            <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', color: '#475569' }}>
+                            <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', padding: '6px 0', color: 'var(--color-text-secondary)' }}>
                               <input 
                                 type="checkbox" 
                                 checked={selectedDocIds.includes(doc.id)}
@@ -555,28 +525,28 @@ const ClassDetail = () => {
                                   }
                                 }}
                               />
-                              📄 {doc.title} {doc.folder_class_id === Number(id) && <span style={{fontSize: '11px', backgroundColor: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: '4px'}}>Đã gán</span>}
+                              📄 {doc.title} {doc.folder_class_id === Number(id) && <Badge variant="primary">Đã gán</Badge>}
                             </div>
                           ))}
                         </div>
                       </div>
                     );
                   })}
-                  {allDocs.length === 0 && <div style={{textAlign: 'center', color: '#94a3b8', padding: '20px'}}>Không có tài liệu nào trong kho</div>}
+                  {allDocs.length === 0 && <EmptyState title="Không có tài liệu nào trong kho" />}
                 </div>
                 
-                <div style={{ marginBottom: '20px', color: '#0f172a', fontWeight: 'bold' }}>
+                <div style={{ marginBottom: 'var(--spacing-5)', color: 'var(--color-text)', fontWeight: 'var(--font-weight-bold)' }}>
                   Đã chọn {selectedDocIds.length} tài liệu
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                  <button type="button" onClick={() => setShowAssignModal(false)} style={{ padding: '12px 20px', borderRadius: '10px', border: 'none', backgroundColor: '#f1f5f9', color: '#475569', cursor: 'pointer', fontWeight: 'bold' }}>Hủy</button>
-                  <button type="submit" disabled={isAssigning} style={{ padding: '12px 24px', borderRadius: '10px', border: 'none', backgroundColor: isAssigning ? '#cbd5e1' : '#8b5cf6', color: 'white', fontWeight: 'bold', cursor: isAssigning ? 'not-allowed' : 'pointer' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
+                  <Button type="button" onClick={() => setShowAssignModal(false)} variant="ghost">Hủy</Button>
+                  <Button type="submit" disabled={isAssigning} variant="primary">
                     {isAssigning ? 'Đang gán...' : 'Gán vào lớp'}
-                  </button>
+                  </Button>
                 </div>
               </form>
-          </div>
+          </Card>
         </div>
       )}
     </div>
@@ -584,4 +554,3 @@ const ClassDetail = () => {
 };
 
 export default ClassDetail;
-

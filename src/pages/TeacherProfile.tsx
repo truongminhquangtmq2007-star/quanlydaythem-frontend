@@ -1,6 +1,9 @@
 import React, { useState, useContext, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
 
 const TeacherProfile = () => {
   const { user, updateUser } = useContext(AuthContext);
@@ -35,17 +38,17 @@ const TeacherProfile = () => {
   };
 
   return (
-    <div style={{ padding: '30px', maxWidth: '600px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0f172a', marginBottom: '30px' }}>Hồ sơ cá nhân</h1>
+    <div style={{ padding: 'var(--spacing-8)', maxWidth: '600px', margin: '0 auto' }}>
+      <h1 style={{ color: 'var(--color-text)', marginBottom: 'var(--spacing-8)' }}>Hồ sơ cá nhân</h1>
       
-      <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
-        <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <Card>
+        <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Danh xưng hiển thị</label>
+            <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-secondary)' }}>Danh xưng hiển thị</label>
             <select 
               value={title} 
               onChange={e => setTitle(e.target.value)} 
-              style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', outline: 'none' }}
+              style={{ width: '100%', padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', outline: 'none' }}
             >
               <option value="Thầy">Thầy</option>
               <option value="Cô">Cô</option>
@@ -54,37 +57,37 @@ const TeacherProfile = () => {
               <option value="Gia sư">Gia sư</option>
               <option value="Coach">Coach</option>
             </select>
-            <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>Sẽ hiển thị trước tên trên toàn bộ hệ thống (VD: Thầy Quang)</p>
+            <p style={{ margin: '5px 0 0 0', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>Sẽ hiển thị trước tên trên toàn bộ hệ thống (VD: Thầy Quang)</p>
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#475569' }}>Họ và tên</label>
-            <input 
+            <Input 
               required
+              label="Họ và tên"
               value={fullName} 
               onChange={e => setFullName(e.target.value)} 
               placeholder="Nhập họ tên của bạn..."
-              style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', outline: 'none' }} 
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-            <button 
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--spacing-2)' }}>
+            <Button 
               type="submit" 
+              variant="primary"
+              isLoading={loading}
               disabled={loading}
-              style={{ padding: '12px 24px', backgroundColor: loading ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s', boxShadow: '0 4px 15px rgba(59,130,246,0.3)' }}
             >
               {loading ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-            </button>
+            </Button>
           </div>
           
           {message && (
-            <div style={{ padding: '15px', backgroundColor: message.includes('thành công') ? '#dcfce7' : '#fee2e2', color: message.includes('thành công') ? '#166534' : '#991b1b', borderRadius: '10px', textAlign: 'center', fontWeight: 'bold' }}>
+            <div style={{ padding: 'var(--spacing-4)', backgroundColor: message.includes('thành công') ? 'var(--color-success-light, #dcfce7)' : 'var(--color-danger-light, #fee2e2)', color: message.includes('thành công') ? 'var(--color-success, #166534)' : 'var(--color-danger, #991b1b)', borderRadius: 'var(--radius-md)', textAlign: 'center', fontWeight: 'var(--font-weight-bold)' }}>
               {message}
             </div>
           )}
         </form>
-      </div>
+      </Card>
     </div>
   );
 };

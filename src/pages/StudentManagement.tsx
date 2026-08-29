@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 import type { Student } from '../types/core';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Badge } from '../components/ui/Badge';
+import { Input } from '../components/ui/Input';
 
 const StudentManagement = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -68,35 +73,30 @@ const StudentManagement = () => {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '35px' }}>
+    <div style={{ padding: 'var(--spacing-6)', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
         <div>
-          <h1 style={{ margin: '0 0 8px 0', fontSize: '30px', color: '#0f172a' }}>👨‍🎓 Hồ sơ Học sinh 360°</h1>
-          <p style={{ margin: 0, color: '#64748b' }}>Quản lý danh sách và hồ sơ toàn diện của học sinh</p>
+          <h1 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '30px', color: 'var(--color-text)' }}>👨‍🎓 Hồ sơ Học sinh 360°</h1>
+          <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>Quản lý danh sách và hồ sơ toàn diện của học sinh</p>
         </div>
-        <button 
-          onClick={() => setShowModal(true)}
-          style={{ padding: '12px 24px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)' }}
-        >
+        <Button variant="primary" onClick={() => setShowModal(true)}>
           + Thêm học sinh
-        </button>
+        </Button>
       </div>
 
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '25px', backgroundColor: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+      <Card style={{ marginBottom: 'var(--spacing-6)', padding: 'var(--spacing-4)', display: 'flex', gap: 'var(--spacing-4)' }}>
         <div style={{ flex: 1 }}>
-          <input 
-            type="text" 
+          <Input 
             placeholder="🔍 Tìm kiếm theo tên học sinh..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '12px 15px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }}
           />
         </div>
         <div style={{ width: '200px' }}>
           <select 
             value={gradeFilter} 
             onChange={(e) => setGradeFilter(e.target.value)}
-            style={{ width: '100%', padding: '12px 15px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none', backgroundColor: 'white' }}
+            style={{ width: '100%', padding: '12px 15px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box', outline: 'none', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}
           >
             <option value="ALL">Tất cả các khối</option>
             <option value="10">Khối 10</option>
@@ -104,82 +104,123 @@ const StudentManagement = () => {
             <option value="12">Khối 12</option>
           </select>
         </div>
-      </div>
+      </Card>
 
-      <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.03)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8fafc' }}>
-              <th style={{ padding: '18px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>ID / Mã HS</th>
-              <th style={{ padding: '18px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>Họ Tên</th>
-              <th style={{ padding: '18px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>Trường & Khối</th>
-              <th style={{ padding: '18px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0' }}>SĐT Phụ huynh</th>
-              <th style={{ padding: '18px 20px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '2px solid #e2e8f0', textAlign: 'right' }}>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Đang tải dữ liệu...</td></tr>
-            ) : students.length === 0 ? (
-              <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Không tìm thấy học sinh nào.</td></tr>
-            ) : students.map(student => (
-              <tr key={student.id} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }} onClick={() => navigate(`/students/${student.id}`)} onMouseOver={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                <td style={{ padding: '18px 20px', color: '#64748b', fontWeight: 'bold' }}>{student.student_code || student.id}</td>
-                <td style={{ padding: '18px 20px', fontWeight: 'bold', color: '#0f172a', fontSize: '16px' }}>{student.full_name}</td>
-                <td style={{ padding: '18px 20px', color: '#475569' }}>
-                  {student.school || 'Chưa cập nhật'} <br/>
-                  <span style={{ fontSize: '13px', color: '#94a3b8' }}>Khối: {student.grade || '---'}</span>
-                </td>
-                <td style={{ padding: '18px 20px', color: '#475569' }}>{student.parent_phone || '---'}</td>
-                <td style={{ padding: '18px 20px', textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setSelectedStudentId(student.id); setShowPasswordModal(true); }}
-                      style={{ padding: '8px 12px', backgroundColor: '#fef3c7', color: '#d97706', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      🔑 Đổi MK
-                    </button>
-                    <button style={{ padding: '8px 16px', backgroundColor: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Xem Hồ Sơ</button>
-                  </div>
-                </td>
+      <Card>
+        <div className="overflow-x-auto">
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ backgroundColor: 'var(--color-background)' }}>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>ID / Mã HS</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Họ Tên</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Trường & Khối</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>SĐT Phụ huynh</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', textAlign: 'right' }}>Thao tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={5} style={{ padding: 'var(--spacing-10)', textAlign: 'center' }}>Đang tải dữ liệu...</td></tr>
+              ) : students.length === 0 ? (
+                <tr><td colSpan={5}><EmptyState title="Không tìm thấy học sinh nào" description="Thử thay đổi bộ lọc hoặc thêm học sinh mới." /></td></tr>
+              ) : students.map(student => (
+                <tr key={student.id} style={{ borderBottom: '1px solid var(--color-background)', cursor: 'pointer' }} onClick={() => navigate(`/students/${student.id}`)} onMouseOver={e => e.currentTarget.style.backgroundColor = 'var(--color-background)'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-bold)' }}>{student.student_code || student.id}</td>
+                  <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', fontSize: 'var(--font-size-base)' }}>{student.full_name}</td>
+                  <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>
+                    {student.school || 'Chưa cập nhật'} <br/>
+                    <Badge variant={student.grade ? 'info' : 'neutral'}>Khối: {student.grade || '---'}</Badge>
+                  </td>
+                  <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>{student.parent_phone || '---'}</td>
+                  <td style={{ padding: 'var(--spacing-4)', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: 'var(--spacing-2)', justifyContent: 'flex-end' }}>
+                      <Button 
+                        variant="secondary"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setSelectedStudentId(student.id); setShowPasswordModal(true); }}
+                      >
+                        🔑 Đổi MK
+                      </Button>
+                      <Button variant="outline" size="sm">Xem Hồ Sơ</Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       {showModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div style={{ backgroundColor: 'white', padding: '35px', borderRadius: '20px', width: '450px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            <h2 style={{ margin: '0 0 25px 0', color: '#0f172a' }}>Thêm Học Sinh Mới</h2>
+          <Card style={{ padding: 'var(--spacing-8)', width: '450px' }}>
+            <h2 style={{ margin: '0 0 var(--spacing-6) 0', color: 'var(--color-text)' }}>Thêm Học Sinh Mới</h2>
             <form onSubmit={handleCreate}>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>Họ Tên</label>
-                <input required value={newStudent.full_name} onChange={e => setNewStudent({...newStudent, full_name: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }} placeholder="VD: Nguyễn Văn A" />
+              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                <Input 
+                  label="Họ Tên"
+                  required 
+                  value={newStudent.full_name} 
+                  onChange={e => setNewStudent({...newStudent, full_name: e.target.value})} 
+                  placeholder="VD: Nguyễn Văn A" 
+                />
               </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>SĐT Phụ huynh (dùng đăng nhập)</label>
-                <input required value={newStudent.parent_phone} onChange={e => setNewStudent({...newStudent, parent_phone: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }} placeholder="VD: 0912345678" />
+              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                <Input 
+                  label="SĐT Phụ huynh (dùng đăng nhập)"
+                  required 
+                  value={newStudent.parent_phone} 
+                  onChange={e => setNewStudent({...newStudent, parent_phone: e.target.value})} 
+                  placeholder="VD: 0912345678" 
+                />
               </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>Trường</label>
-                <input value={newStudent.school} onChange={e => setNewStudent({...newStudent, school: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none' }} placeholder="VD: THPT Chuyên Sư Phạm" />
+              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                <Input 
+                  label="Trường"
+                  value={newStudent.school} 
+                  onChange={e => setNewStudent({...newStudent, school: e.target.value})} 
+                  placeholder="VD: THPT Chuyên Sư Phạm" 
+                />
               </div>
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '14px' }}>Khối</label>
-                <select value={newStudent.grade} onChange={e => setNewStudent({...newStudent, grade: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box', outline: 'none', backgroundColor: 'white' }}>
+              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>Khối</label>
+                <select value={newStudent.grade} onChange={e => setNewStudent({...newStudent, grade: e.target.value})} style={{ width: '100%', padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box', outline: 'none', backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
                   <option value="">Chọn khối</option>
                   <option value="10">Khối 10</option>
                   <option value="11">Khối 11</option>
                   <option value="12">Khối 12</option>
                 </select>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '30px' }}>
-                <button type="button" onClick={() => setShowModal(false)} style={{ padding: '12px 20px', borderRadius: '10px', border: 'none', backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 'bold', cursor: 'pointer' }}>Hủy</button>
-                <button type="submit" style={{ padding: '12px 24px', borderRadius: '10px', border: 'none', backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Thêm Học Sinh</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)', marginTop: 'var(--spacing-6)' }}>
+                <Button variant="ghost" type="button" onClick={() => setShowModal(false)}>Hủy</Button>
+                <Button variant="primary" type="submit">Thêm Học Sinh</Button>
               </div>
             </form>
-          </div>
+          </Card>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <Card style={{ padding: 'var(--spacing-8)', width: '400px' }}>
+            <h2 style={{ margin: '0 0 var(--spacing-6) 0', color: 'var(--color-text)' }}>Đổi Mật Khẩu</h2>
+            <form onSubmit={handleResetPassword}>
+              <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                <Input 
+                  label="Mật khẩu mới"
+                  required 
+                  value={newPassword} 
+                  onChange={e => setNewPassword(e.target.value)} 
+                  placeholder="Nhập mật khẩu mới" 
+                  type="password"
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)', marginTop: 'var(--spacing-6)' }}>
+                <Button variant="ghost" type="button" onClick={() => {setShowPasswordModal(false); setNewPassword('');}}>Hủy</Button>
+                <Button variant="primary" type="submit">Lưu Mật Khẩu</Button>
+              </div>
+            </form>
+          </Card>
         </div>
       )}
     </div>
@@ -187,4 +228,3 @@ const StudentManagement = () => {
 };
 
 export default StudentManagement;
-

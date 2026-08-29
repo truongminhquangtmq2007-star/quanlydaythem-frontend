@@ -5,6 +5,12 @@ import axiosClient from '../api/axiosClient';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 import ExamResult from './ExamResult';
+import { ExamList } from '../components/exam/ExamList';
+import { ExamConfirm } from '../components/exam/ExamConfirm';
+import { ExamHeader } from '../components/exam/ExamHeader';
+import { QuestionNavigator } from '../components/exam/QuestionNavigator';
+import { SubmitConfirmModal } from '../components/exam/SubmitConfirmModal';
+import { Button } from '../components/ui/Button';
 import type { ExamGradingResult } from '../types/exam';
 
 // ==========================================
@@ -87,9 +93,9 @@ const renderContent = (text: string) => {
         renderError={(error) => (
           <span
             style={{
-              color: '#ef4444',
-              fontSize: '13px',
-              fontWeight: 'bold'
+              color: 'var(--color-danger)',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-bold)'
             }}
           >
             ⚠️ Lỗi công thức: {math}
@@ -113,8 +119,8 @@ const renderContent = (text: string) => {
 // COMPONENT HIỂN THỊ ẢNH CHO HỌC SINH (Chỉ đọc)
 // ==========================================
 const ImageBlock = ({ url }: { url: string }) => (
-  <div style={{ float: 'right', marginLeft: '15px', marginBottom: '10px', maxWidth: '42%' }}>
-    <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'block' }} />
+  <div style={{ float: 'right', marginLeft: 'var(--spacing-4)', marginBottom: 'var(--spacing-2)', maxWidth: '42%' }}>
+    <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', display: 'block' }} />
   </div>
 );
 
@@ -317,378 +323,323 @@ const ExamRoom = () => {
     return groups.find((g) => g.questionIds.includes(qId)) || null;
   };
   
-  const wrapperStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: '#f1f5f9', overflowY: 'auto' };
+  const wrapperStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: 'var(--color-background)', overflowY: 'auto' };
 
-  // ================= VIEW 1: DANH SÁCH ĐỀ =================
+    // ================= VIEW 1: DANH SÁCH ĐỀ =================
   if (viewState === 'LIST') {
     return (
-      <div style={wrapperStyle}>
-        <div style={{ background: '#1e40af', padding: '40px 40px 100px 40px', color: 'white' }}>
-          <button onClick={() => navigate(-1)} style={{ marginBottom: '20px', padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: 'rgba(255, 255, 255, 0.2)', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>🔙 Quay lại</button>
-          <h1 style={{ margin: '0 0 10px 0', fontSize: '30px', textTransform: 'uppercase' }}>Khu vực luyện thi</h1>
-          <p style={{ margin: 0, fontSize: '15px', color: '#bfdbfe' }}>Hoàn thành các đề thi dưới đây để nâng cao năng lực.</p>
-        </div>
-
-        <div style={{ margin: '-50px 40px 40px 40px', backgroundColor: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', position: 'relative', zIndex: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '30px' }}>
-            {exams.length === 0 ? (
-              <div style={{ gridColumn: '1 / -1', padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Chưa có đề thi nào.</div>
-            ) : exams.map(doc => {
-              const attempts = myScores[doc.id] || [];
-              const isCompleted = attempts.length > 0;
-
-              return (
-                <div key={doc.id} style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '25px', display: 'flex', flexDirection: 'column', border: '1px solid #e2e8f0', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
-                    <div style={{ width: '50px', height: '50px', borderRadius: '12px', backgroundColor: '#eff6ff', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '24px' }}>📝</div>
-                    <div>
-                      <h3 style={{ margin: '0 0 5px 0', color: '#0f172a', fontSize: '18px' }}>{doc.title}</h3>
-                      <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 'bold' }}>⏱ {doc.duration_minutes || 50} Phút</span>
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: 'auto', paddingTop: '15px', borderTop: '1px dashed #cbd5e1' }}>
-                    {isCompleted ? (
-                      <div>
-                        <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#64748b', fontWeight: 'bold' }}>LỊCH SỬ THI ({attempts.length} lần)</p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px', maxHeight: '100px', overflowY: 'auto' }}>
-                          {attempts.map((att, idx) => (
-                             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', backgroundColor: 'white', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                               <span>Lần {attempts.length - idx}</span><span style={{ fontWeight: 'bold', color: '#10b981' }}>{att.total_score}đ</span>
-                             </div>
-                          ))}
-                        </div>
-                        <button onClick={() => { setSelectedExam(doc); setViewState('CONFIRM'); }} style={{ width: '100%', padding: '12px 0', backgroundColor: '#eff6ff', color: '#3b82f6', border: '1px solid #bfdbfe', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Luyện Lại ➔</button>
-                      {doc.allow_view_answers && (
-                        <button onClick={() => navigate(`/student/view-answers/${doc.id}`)} style={{ marginTop: '10px', padding: '12px', width: '100%', backgroundColor: '#fff', color: '#f59e0b', border: '2px solid #f59e0b', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxSizing: 'border-box' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f59e0b'; e.currentTarget.style.color = 'white'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#f59e0b'; }}>
-                          👁️ Xem đáp án
-                        </button>
-                      )}
-                      </div>
-                    ) : (
-                      <button onClick={() => { setSelectedExam(doc); setViewState('CONFIRM'); }} style={{ width: '100%', padding: '12px 0', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Vào Thi Ngay ⚡</button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <ExamList 
+        exams={exams} 
+        myScores={myScores} 
+        onBack={() => navigate(-1)} 
+        onSelectExam={(doc) => {
+          setSelectedExam(doc);
+          setViewState('CONFIRM');
+        }} 
+      />
     );
   }
 
-  // ================= VIEW 2: MÀN HÌNH XÁC NHẬN =================
+  // ================= VIEW 2: CONFIRM =================
   if (viewState === 'CONFIRM') {
     return (
-      <div style={{...wrapperStyle, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f1f5f9'}}>
-        <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '20px', width: '500px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-          <div style={{ fontSize: '50px', marginBottom: '15px' }}>⏱️</div>
-          <h2 style={{ margin: '0 0 15px 0', color: '#1e293b' }}>Xác nhận vào thi</h2>
-          <p style={{ color: '#475569', fontSize: '15px', lineHeight: '1.6', marginBottom: '30px' }}>Bạn chuẩn bị làm bài thi: <strong>{selectedExam?.title}</strong>.<br/>Thời gian làm bài: <strong>{selectedExam?.duration_minutes || 50} phút</strong>.<br/><br/>Hệ thống sẽ chuyển sang chế độ <strong>Toàn màn hình</strong>.</p>
-          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-            <button onClick={() => setViewState('LIST')} style={{ padding: '12px 25px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Quay lại</button>
-            <button onClick={startExam} style={{ padding: '12px 25px', backgroundColor: '#1e40af', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Bắt đầu thi</button>
-          </div>
-        </div>
-      </div>
+      <ExamConfirm 
+        selectedExam={selectedExam} 
+        onCancel={() => {
+          setSelectedExam(null);
+          setViewState('LIST');
+        }} 
+        onConfirm={() => {
+          setViewState('EXAM');
+        }} 
+      />
     );
   }
 
-  // ================= VIEW 3: KẾT QUẢ THI =================
+  // ================= VIEW 4: RESULT =================
   if (viewState === 'RESULT') {
-    // Đang xử lý hoặc chưa có kết quả
-    if (isSubmitting || !gradingResult) {
-      return (
-        <div style={{...wrapperStyle, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
-          <div style={{ textAlign: 'center', color: '#475569' }}>
-            <div style={{ fontSize: '50px', marginBottom: '20px' }}>⏳</div>
-            <h2 style={{ margin: '0 0 10px 0' }}>Đang chấm điểm bài thi...</h2>
-            <p>Vui lòng chờ trong giây lát</p>
-          </div>
-        </div>
-      );
-    }
-
-    // Hiển thị kết quả đầy đủ
     return (
-      <div style={wrapperStyle}>
-        <ExamResult
-            examId={selectedExam?.id || id}
-            gradingResult={gradingResult}
-          examData={examData}
-          examTitle={selectedExam?.title || 'Kết quả thi'}
-          timeTakenSeconds={elapsedTimeRef.current}
-          onBackToList={() => { setViewState('LIST'); fetchExams(); }}
-          onViewAnswers={examScore?.allow_view_answers ? () => navigate(`/student/view-answers/${selectedExam.id}`) : undefined}
+      <ExamResult 
+         
+        examId={selectedExam?.id} 
+        onBackToList={() => {
+          setViewState('LIST');
+          setSelectedExam(null);
+          setExamScore(null);
+          setGradingResult(null);
+          // reset answers
+          setPart1Answers({});
+          setPart2Answers({});
+          setPart3Answers({});
+          fetchExams();
+        }}
+        gradingResult={gradingResult || undefined}
+      />
+    );
+  }
+
+  // ================= VIEW 3: EXAM ROOM (DISTRACTION FREE) =================
+  if (viewState === 'EXAM') {
+    
+    // We keep the old render style logic here for questions, but wrap it in the new layout
+    const examStyles = {
+      sectionTitle: { fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)', borderBottom: '2px solid var(--color-primary)', paddingBottom: 'var(--spacing-2)', marginBottom: 'var(--spacing-4)', marginTop: 'var(--spacing-8)' },
+      questionBox: { backgroundColor: 'var(--color-surface)', padding: 'var(--spacing-6)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--spacing-6)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' },
+      questionText: { fontSize: `${fontSize}px`, marginBottom: 'var(--spacing-4)', lineHeight: 1.6 },
+      optionsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-3)' },
+      optionItem: (selected: boolean) => ({
+        padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', border: selected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)', backgroundColor: selected ? 'var(--color-primary-soft)' : 'var(--color-surface)', cursor: 'pointer', display: 'flex', gap: 'var(--spacing-3)', transition: 'all var(--transition-fast)'
+      }),
+      radioCircle: (selected: boolean) => ({
+        width: '20px', height: '20px', minWidth: '20px', borderRadius: '50%', border: selected ? '6px solid var(--color-primary)' : '2px solid var(--color-border)', backgroundColor: 'var(--color-surface)', transition: 'all 0.2s'
+      }),
+      tfTable: { width: '100%', borderCollapse: 'collapse' as const, marginTop: 'var(--spacing-3)' },
+      tfCell: { padding: 'var(--spacing-3)', borderBottom: '1px solid var(--color-border)', fontSize: `${fontSize - 1}px` }
+    };
+
+    const answeredCount = Object.keys(part1Answers).length 
+      + Object.keys(part2Answers).reduce((acc, qId) => acc + Object.keys(part2Answers[Number(qId)]).length, 0) 
+      + Object.keys(part3Answers).length;
+      
+    // Count total required sub-questions
+    let totalQ = 0;
+    if (examData?.part1) totalQ += examData.part1.length;
+    if (examData?.part2) {
+      examData.part2.forEach((q: any) => {
+        totalQ += (q.sub_questions?.length || 4);
+      });
+    }
+    if (examData?.part3) totalQ += examData.part3.length;
+
+    const allQuestions = [
+      ...(examData?.part1 || []),
+      ...(examData?.part2 || []),
+      ...(examData?.part3 || [])
+    ];
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--color-background)', overflow: 'hidden' }}>
+        <ExamHeader 
+          title={selectedExam?.title || 'Đang thi'} 
+          duration={selectedExam?.duration_minutes || 50} 
+          saveStatus={saveStatus}
+          isSubmitting={isSubmitting}
+          timeLeft={timeLeft}
+          onExit={() => {
+            if (window.confirm("Bạn có chắc chắn muốn thoát? Kết quả có thể không được lưu đầy đủ.")) {
+               setViewState('LIST');
+            }
+          }}
         />
+
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* LEFT: CONTENT */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--spacing-8)' }} id="exam-scroll-area">
+            <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+              
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--spacing-4)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', backgroundColor: 'var(--color-surface)', padding: 'var(--spacing-2) var(--spacing-4)', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-border)' }}>
+                  <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Cỡ chữ:</span>
+                  <button onClick={() => setFontSize(f => Math.max(14, f - 2))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 'var(--font-size-lg)' }}>A-</button>
+                  <span style={{ fontWeight: 'var(--font-weight-bold)' }}>{fontSize}px</span>
+                  <button onClick={() => setFontSize(f => Math.min(24, f + 2))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 'var(--font-size-lg)' }}>A+</button>
+                </div>
+              </div>
+
+              {!examData ? (
+                 <div className="text-center text-muted">Đang tải đề thi...</div>
+              ) : (
+                <>
+                  {/* PART 1 */}
+                  {examData.part1 && examData.part1.length > 0 && (
+                    <div style={{ marginBottom: 'var(--spacing-10)' }}>
+                      <div style={examStyles.sectionTitle}>PHẦN I. CÂU TRẮC NGHIỆM NHIỀU PHƯƠNG ÁN</div>
+                      {examData.part1.map((q: any) => {
+                        const ctx = findContext(q.id);
+                        return (
+                          <React.Fragment key={q.id}>
+                            {ctx && (
+                              <div style={{ marginBottom: 'var(--spacing-2)' }}>
+                                <Button variant="secondary" size="sm" onClick={() => setActiveContext(ctx)}>
+                                  Xem dữ liệu chung (Context)
+                                </Button>
+                              </div>
+                            )}
+                            <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))}>
+                              {q.image_url && <ImageBlock url={q.image_url} />}
+                              <div style={examStyles.questionText}>
+                                <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
+                              </div>
+                              <div style={examStyles.optionsGrid}>
+                                {['A', 'B', 'C', 'D'].map((opt) => (
+                                  <div key={opt} style={examStyles.optionItem(part1Answers[q.id] === opt)} onClick={() => setPart1Answers({ ...part1Answers, [q.id]: opt })}>
+                                    <div style={examStyles.radioCircle(part1Answers[q.id] === opt)}></div>
+                                    <div><strong>{opt}.</strong> {renderContent(q.options[opt])}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* PART 2 */}
+                  {examData.part2 && examData.part2.length > 0 && (
+                    <div style={{ marginBottom: 'var(--spacing-10)' }}>
+                      <div style={examStyles.sectionTitle}>PHẦN II. CÂU TRẮC NGHIỆM ĐÚNG/SAI</div>
+                      {examData.part2.map((q: any) => {
+                        const ctx = findContext(q.id);
+                        return (
+                          <React.Fragment key={q.id}>
+                            {ctx && (
+                              <div style={{ marginBottom: 'var(--spacing-2)' }}>
+                                <Button variant="secondary" size="sm" onClick={() => setActiveContext(ctx)}>
+                                  Xem dữ liệu chung (Context)
+                                </Button>
+                              </div>
+                            )}
+                            <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))}>
+                              {q.image_url && <ImageBlock url={q.image_url} />}
+                              <div style={examStyles.questionText}>
+                                <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
+                              </div>
+                              <table style={examStyles.tfTable}>
+                                <thead>
+                                  <tr>
+                                    <th style={{ textAlign: 'left', padding: 'var(--spacing-3)', borderBottom: '2px solid var(--color-border)' }}>Phát biểu</th>
+                                    <th style={{ width: '60px', textAlign: 'center', padding: 'var(--spacing-3)', borderBottom: '2px solid var(--color-border)' }}>Đúng</th>
+                                    <th style={{ width: '60px', textAlign: 'center', padding: 'var(--spacing-3)', borderBottom: '2px solid var(--color-border)' }}>Sai</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {q.statements && Object.keys(q.statements).map((stmt) => {
+                                    const currentAns = part2Answers[q.id]?.[stmt];
+                                    return (
+                                      <tr key={stmt}>
+                                        <td style={examStyles.tfCell}><strong>{stmt})</strong> {renderContent(q.statements[stmt])}</td>
+                                        <td style={{ textAlign: 'center', borderBottom: '1px solid var(--color-border)' }}>
+                                          <div 
+                                            onClick={() => setPart2Answers({ ...part2Answers, [q.id]: { ...part2Answers[q.id], [stmt]: 'Đ' } })}
+                                            style={{ margin: '0 auto', cursor: 'pointer', ...examStyles.radioCircle(currentAns === 'Đ') }}></div>
+                                        </td>
+                                        <td style={{ textAlign: 'center', borderBottom: '1px solid var(--color-border)' }}>
+                                          <div 
+                                            onClick={() => setPart2Answers({ ...part2Answers, [q.id]: { ...part2Answers[q.id], [stmt]: 'S' } })}
+                                            style={{ margin: '0 auto', cursor: 'pointer', ...examStyles.radioCircle(currentAns === 'S') }}></div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* PART 3 */}
+                  {examData.part3 && examData.part3.length > 0 && (
+                    <div style={{ marginBottom: 'var(--spacing-10)' }}>
+                      <div style={examStyles.sectionTitle}>PHẦN III. CÂU TRẮC NGHIỆM TRẢ LỜI NGẮN</div>
+                      {examData.part3.map((q: any) => {
+                        const ctx = findContext(q.id);
+                        return (
+                          <React.Fragment key={q.id}>
+                            {ctx && (
+                              <div style={{ marginBottom: 'var(--spacing-2)' }}>
+                                <Button variant="secondary" size="sm" onClick={() => setActiveContext(ctx)}>
+                                  Xem dữ liệu chung (Context)
+                                </Button>
+                              </div>
+                            )}
+                            <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))}>
+                              {q.image_url && <ImageBlock url={q.image_url} />}
+                              <div style={examStyles.questionText}>
+                                <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
+                              </div>
+                              <input 
+                                type="text"
+                                className="input-base"
+                                placeholder="Nhập câu trả lời của bạn..."
+                                value={part3Answers[q.id] || ''}
+                                onChange={(e) => setPart3Answers({ ...part3Answers, [q.id]: e.target.value })}
+                                style={{ marginTop: 'var(--spacing-3)', fontSize: `${fontSize}px` }}
+                              />
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: NAVIGATOR */}
+          <QuestionNavigator 
+            questions={allQuestions}
+            part1Answers={part1Answers}
+            part2Answers={part2Answers}
+            part3Answers={part3Answers}
+            onScrollToQuestion={(qId) => {
+              const el = document.getElementById(`q-${qId}`);
+              if (el) {
+                const container = document.getElementById('exam-scroll-area');
+                if (container) {
+                   container.scrollTo({ top: el.offsetTop - 20, behavior: 'smooth' });
+                }
+              }
+            }}
+            onSubmitClick={() => setShowCheatModal(true)} 
+          />
+        </div>
+
+        {/* MODALS */}
+        <SubmitConfirmModal 
+          isOpen={showCheatModal && !cheatReason} 
+          onClose={() => setShowCheatModal(false)}
+          onSubmit={forceSubmit}
+          totalQuestions={totalQ}
+          answeredCount={answeredCount}
+          isSubmitting={isSubmitting}
+        />
+
+        {/* CHEAT MODAL OVERRIDE (If actually cheating) */}
+        {showCheatModal && cheatReason && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ backgroundColor: 'var(--color-surface)', padding: 'var(--spacing-8)', borderRadius: 'var(--radius-lg)', textAlign: 'center', maxWidth: '400px' }}>
+              <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-4)' }}>🚨</div>
+              <h2 style={{ color: 'var(--color-danger)', marginBottom: 'var(--spacing-4)' }}>CẢNH BÁO GIAN LẬN!</h2>
+              <p style={{ marginBottom: 'var(--spacing-6)' }}>{cheatReason}</p>
+              <Button variant="danger" onClick={forceSubmit} isLoading={isSubmitting}>Nộp bài bắt buộc</Button>
+            </div>
+          </div>
+        )}
+
+        {/* ACTIVE CONTEXT DRAWER */}
+        {activeContext && (
+          <div style={{ position: 'fixed', bottom: 'var(--spacing-6)', left: 'var(--spacing-6)', width: '400px', backgroundColor: 'var(--color-surface)', border: '2px solid var(--color-primary)', borderRadius: 'var(--radius-lg)', padding: 'var(--spacing-6)', boxShadow: 'var(--shadow-lg)', zIndex: 9000 }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
+               <h4 style={{ margin: 0, color: 'var(--color-primary)' }}>Dữ liệu chung</h4>
+               <Button variant="ghost" size="sm" onClick={() => setActiveContext(null)}>Đóng</Button>
+             </div>
+             <div style={{ maxHeight: '300px', overflowY: 'auto', fontSize: `${fontSize - 1}px` }}>
+               {activeContext.image_url && <img src={activeContext.image_url} alt="Context" style={{ width: '100%', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-3)' }} />}
+               <div>{renderContent(activeContext.content)}</div>
+             </div>
+          </div>
+        )}
+
       </div>
     );
   }
 
-  // ================= VIEW 4: MÀN HÌNH LÀM BÀI CHÍNH =================
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
-  const totalQuestions = (examData?.part1?.length || 0) + (examData?.part2?.length || 0) + (examData?.part3?.length || 0);
-  const answeredCount = Object.keys(part1Answers).length + Object.keys(part2Answers).length + Object.keys(part3Answers).filter(k => part3Answers[Number(k)]?.trim() !== '').length;
-
-  const examStyles = {
-    layout: { backgroundColor: '#f1f5f9', minHeight: '100vh', display: 'flex', flexDirection: 'column' as const, fontSize: `${fontSize}px`, position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0 },
-    header: { backgroundColor: '#1e293b', color: 'white', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    titleArea: { display: 'flex', flexDirection: 'column' as const, gap: '4px' },
-    examTitle: { fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' as const, margin: 0 },
-    studentInfo: { fontSize: '13px', color: '#cbd5e1', display: 'flex', gap: '20px' },
-    statusArea: { display: 'flex', alignItems: 'center', gap: '15px' },
-    timer: { border: '1px solid #475569', padding: '6px 15px', borderRadius: '20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' },
-    submitBtn: { backgroundColor: 'transparent', color: 'white', border: '1px solid white', padding: '8px 20px', borderRadius: '5px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s' },
-    toolbar: { backgroundColor: '#fff', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' },
-    toolGroup: { display: 'flex', alignItems: 'center', gap: '10px' },
-    outlineBtn: { backgroundColor: 'white', border: '1px solid #cbd5e1', padding: '6px 15px', borderRadius: '5px', cursor: 'pointer', color: '#475569' },
-    primaryBtn: { backgroundColor: '#3b82f6', border: 'none', padding: '7px 15px', borderRadius: '5px', cursor: 'pointer', color: 'white' },
-    darkBtn: { backgroundColor: '#1e293b', border: 'none', padding: '7px 15px', borderRadius: '5px', cursor: 'pointer', color: 'white' },
-    fontBtn: { backgroundColor: 'white', border: '1px solid #cbd5e1', padding: '6px 10px', cursor: 'pointer', color: '#475569' },
-    mainContent: { flex: 1, padding: '30px 20px', overflowY: 'auto' as const, paddingBottom: '100px' },
-    card: { backgroundColor: '#fff', maxWidth: '900px', margin: '0 auto', borderRadius: '8px', padding: '40px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' },
-    sectionTitle: { color: '#1e3a8a', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' as const, borderBottom: '2px solid #1e3a8a', paddingBottom: '10px', marginBottom: '30px' },
-    questionBox: { marginBottom: '40px', clear: 'both' as const },
-    questionText: { fontWeight: 'bold', marginBottom: '15px', lineHeight: '1.6' },
-    optionsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
-    optionItem: (isSelected: boolean) => ({ border: isSelected ? '2px solid #3b82f6' : '1px solid #cbd5e1', backgroundColor: isSelected ? '#eff6ff' : 'white', borderRadius: '8px', padding: '12px 15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.2s' }),
-    radioCircle: (isSelected: boolean) => ({ width: '18px', height: '18px', borderRadius: '50%', border: isSelected ? '5px solid #3b82f6' : '1px solid #94a3b8', backgroundColor: 'white' }),
-    tfTable: { width: '100%', borderCollapse: 'collapse' as const, marginTop: '10px' },
-    tfCell: { padding: '12px', borderBottom: '1px dashed #e2e8f0' },
-    footer: { position: 'fixed' as const, bottom: 0, left: 0, right: 0, backgroundColor: 'white', borderTop: '1px solid #e2e8f0', padding: '15px', display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' as const },
-    navBubble: (isAnswered: boolean) => ({ width: '35px', height: '35px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', backgroundColor: isAnswered ? '#3b82f6' : 'white', color: isAnswered ? 'white' : '#64748b', border: isAnswered ? 'none' : '1px solid #cbd5e1' })
-  };
-
-  return (
-    <div style={examStyles.layout}>
-      {/* MODAL CẢNH BÁO GIAN LẬN */}
-      {showCheatModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(239, 68, 68, 0.95)', zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', textAlign: 'center', width: '450px' }}>
-            <h1 style={{ color: '#dc2626', fontSize: '50px', margin: '0 0 15px 0' }}>⚠️</h1>
-            <h2 style={{ color: '#dc2626', marginTop: 0 }}>CẢNH BÁO GIAN LẬN</h2>
-            <p style={{ fontWeight: 'bold' }}>{cheatReason}</p>
-            <div style={{ backgroundColor: '#fef2f2', padding: '10px', borderRadius: '8px', color: '#b91c1c', fontWeight: 'bold', margin: '20px 0' }}>Số lần vi phạm: {cheatWarnings}</div>
-            <button onClick={() => { setShowCheatModal(false); try { document.documentElement.requestFullscreen(); }catch (e) {
-      console.error(e);
-    } }} style={{ padding: '12px 40px', backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Tiếp tục làm bài</button>
-          </div>
-        </div>
-      )}
-
-      {/* 1. TOP HEADER */}
-      <div style={examStyles.header}>
-        <div style={examStyles.titleArea}>
-          <h1 style={examStyles.examTitle}>{selectedExam?.title || 'ĐỀ THAM KHẢO TỐT NGHIỆP THPT'}</h1>
-          <div style={examStyles.studentInfo}>
-            <span><strong>Thí sinh:</strong> Ẩn danh</span>
-            <span><strong>SBD:</strong> GUEST</span>
-            <span><strong>Môn thi:</strong> TOÁN</span>
-          </div>
-        </div>
-        <div style={examStyles.statusArea}>
-          <div style={{...examStyles.timer, gap: '15px', display: 'flex'}}>
-            <span style={{ fontSize: '14px', color: '#cbd5e1', fontWeight: 'normal' }}>{saveStatus}</span>
-            <span>
-              <span>⏱</span> {formatTime(timeLeft)}
-            </span>
-          </div>
-          <div style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px', color: '#10b981' }}>
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%' }}></span> Mạng ổn định
-          </div>
-          <button style={examStyles.submitBtn} onClick={() => { if(window.confirm("Xác nhận nộp bài?")) forceSubmit() }} disabled={isSubmitting}>
-            {isSubmitting ? 'ĐANG XỬ LÝ...' : 'NỘP BÀI'}
-          </button>
-        </div>
-      </div>
-
-      {/* 2. SUB TOOLBAR */}
-      <div style={examStyles.toolbar}>
-        <button style={examStyles.outlineBtn} onClick={() => window.confirm("Thoát sẽ không lưu bài, bạn chắc chứ?") && setViewState('LIST')}>Thoát</button>
-        <div style={examStyles.toolGroup}>
-          <button style={examStyles.outlineBtn}>Quay lại</button>
-          <button style={examStyles.primaryBtn}>Tiếp theo</button>
-        </div>
-        <div style={examStyles.toolGroup}>
-          <span style={{ fontSize: '14px', color: '#475569', fontWeight: 'bold', marginRight: '15px' }}>
-            Đã làm: <span style={{ color: '#3b82f6' }}>{answeredCount} / {totalQuestions}</span>
-          </span>
-          <button style={examStyles.darkBtn}>Lưu nháp</button>
-          <div style={{ display: 'flex', marginLeft: '10px' }}>
-            <button style={{ ...examStyles.fontBtn, borderRadius: '5px 0 0 5px' }} onClick={() => setFontSize(prev => Math.max(12, prev - 1))}>A-</button>
-            <button style={{ ...examStyles.fontBtn, borderRadius: '0 5px 5px 0', borderLeft: 'none' }} onClick={() => setFontSize(prev => Math.min(24, prev + 1))}>A+</button>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. MAIN CONTENT */}
-      <div style={examStyles.mainContent}>
-        {!examData ? (
-          <div style={{ padding: '50px', textAlign: 'center', fontWeight: 'bold' }}>Đang tải nội dung đề thi...</div>
-        ) : (
-          <div style={examStyles.card}>
-            
-            {/* PHẦN 1 */}
-            {examData.part1 && examData.part1.length > 0 && (
-              <div style={{ marginBottom: '50px' }}>
-                <div style={examStyles.sectionTitle}>PHẦN I. CÂU TRẮC NGHIỆM NHIỀU PHƯƠNG ÁN</div>
-                {examData.part1.map((q: any) => {
-                  const ctx = findContext(q.id);
-  return (
-    <React.Fragment key={q.id}>
-      {ctx && (
-        <div style={{ marginBottom: '10px' }}>
-          <button onClick={() => setActiveContext(ctx)} style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', color: '#b45309', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>📖 Xem dữ liệu chung (Context)</button>
-        </div>
-      )}
-      <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))} onClick={() => setActiveContext(findContext(q.id))}>
-                        <div>
-                          {q.image_url && <ImageBlock url={q.image_url} />}
-                          <div style={examStyles.questionText}>
-                            <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
-                          </div>
-                          <div style={examStyles.optionsGrid}>
-                            {['A', 'B', 'C', 'D'].map((opt) => (
-                              <div key={opt} style={examStyles.optionItem(part1Answers[q.id] === opt)} onClick={() => setPart1Answers({ ...part1Answers, [q.id]: opt })}>
-                                <div style={examStyles.radioCircle(part1Answers[q.id] === opt)}></div>
-                                <div><strong>{opt}.</strong> {renderContent(q.options[opt])}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div style={{ clear: 'both' }}></div>
-                      </div>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* PHẦN 2 */}
-            {examData.part2 && examData.part2.length > 0 && (
-              <div style={{ marginBottom: '50px' }}>
-                <div style={examStyles.sectionTitle}>PHẦN II. CÂU TRẮC NGHIỆM ĐÚNG/SAI</div>
-                {examData.part2.map((q: any) => {
-                  const ctx = findContext(q.id);
-  return (
-    <React.Fragment key={q.id}>
-      {ctx && (
-        <div style={{ marginBottom: '10px' }}>
-          <button onClick={() => setActiveContext(ctx)} style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', color: '#b45309', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>📖 Xem dữ liệu chung (Context)</button>
-        </div>
-      )}
-      <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))} onClick={() => setActiveContext(findContext(q.id))}>
-                        <div>
-                          {q.image_url && <ImageBlock url={q.image_url} />}
-                          <div style={examStyles.questionText}>
-                            <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
-                          </div>
-                          <table style={examStyles.tfTable}>
-                            <tbody>
-                              {['a', 'b', 'c', 'd'].map((stmt) => (
-                                <tr key={stmt}>
-                                  <td style={examStyles.tfCell}><strong>{stmt})</strong> {renderContent(q.statements[stmt])}</td>
-                                  <td style={{ ...examStyles.tfCell, width: '120px', textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                                      <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                        <input type="radio" checked={part2Answers[q.id]?.[stmt] === 'Đ'} onChange={() => setPart2Answers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || {}), [stmt]: 'Đ' } }))} /> Đ
-                                      </label>
-                                      <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                        <input type="radio" checked={part2Answers[q.id]?.[stmt] === 'S'} onChange={() => setPart2Answers(prev => ({ ...prev, [q.id]: { ...(prev[q.id] || {}), [stmt]: 'S' } }))} /> S
-                                      </label>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        <div style={{ clear: 'both' }}></div>
-                      </div>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* PHẦN 3 */}
-            {examData.part3 && examData.part3.length > 0 && (
-              <div style={{ marginBottom: '10px' }}>
-                <div style={examStyles.sectionTitle}>PHẦN III. CÂU TRẮC NGHIỆM TRẢ LỜI NGẮN</div>
-                {examData.part3.map((q: any) => {
-                  const ctx = findContext(q.id);
-  return (
-    <React.Fragment key={q.id}>
-      {ctx && (
-        <div style={{ marginBottom: '10px' }}>
-          <button onClick={() => setActiveContext(ctx)} style={{ backgroundColor: '#fffbeb', border: '1px solid #f59e0b', color: '#b45309', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>📖 Xem dữ liệu chung (Context)</button>
-        </div>
-      )}
-      <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))} onClick={() => setActiveContext(findContext(q.id))}>
-                        <div>
-                          {q.image_url && <ImageBlock url={q.image_url} />}
-                          <div style={examStyles.questionText}>
-                            <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
-                          </div>
-                          <div style={{ marginTop: '10px' }}>
-                            <span style={{ fontWeight: 'bold', marginRight: '15px' }}>Đáp án của bạn:</span>
-                            <input 
-                              type="text" 
-                              style={{ padding: '10px 15px', borderRadius: '5px', border: '2px solid #cbd5e1', fontSize: '16px', width: '200px' }} 
-                              value={part3Answers[q.id] || ''} 
-                              onChange={(e) => setPart3Answers({ ...part3Answers, [q.id]: e.target.value })}
-                              placeholder="Nhập giá trị..."
-                            />
-                          </div>
-                        </div>
-                        <div style={{ clear: 'both' }}></div>
-                      </div>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      
-      {/* 5. SIDE PANEL (CONTEXT) */}
-      <div style={{ position: 'fixed', right: '0', top: '130px', bottom: '80px', width: '350px', backgroundColor: 'white', borderLeft: '2px solid #e2e8f0', boxShadow: '-5px 0 20px rgba(0,0,0,0.1)', padding: '20px', overflowY: 'auto', zIndex: 90, transition: 'transform 0.3s ease-in-out', transform: activeContext ? 'translateX(0)' : 'translateX(100%)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
-          <h3 style={{ margin: 0, color: '#1e3a8a', fontSize: '16px' }}>📖 Dữ liệu chung</h3>
-          <button onClick={() => setActiveContext(null)} style={{ border: 'none', background: '#f1f5f9', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✖</button>
-        </div>
-        {activeContext && (
-          <div style={{ lineHeight: '1.6', color: '#334155', fontSize: '15px' }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '15px', color: '#b45309', backgroundColor: '#fffbeb', padding: '8px', borderRadius: '5px', fontSize: '13px' }}>📌 Dùng cho các câu: {activeContext.questionIds.join(', ')}</div>
-            {activeContext.image_url && <img src={activeContext.image_url} alt="Minh họa" style={{ width: '100%', marginBottom: '15px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />}
-            <div>{renderContent(activeContext.content)}</div>
-          </div>
-        )}
-      </div>
-
-      {/* 4. FOOTER */}
-      <div style={examStyles.footer}>
-        {[...(examData?.part1 || []), ...(examData?.part2 || []), ...(examData?.part3 || [])].map((q: any) => {
-          const isAnswered = part1Answers[q.id] || (part2Answers[q.id] && Object.keys(part2Answers[q.id]).length > 0) || (part3Answers[q.id] && part3Answers[q.id].trim() !== '');
-          return (
-            <a href={`#q-${q.id}`} key={q.id} style={{ textDecoration: 'none' }}>
-              <div style={examStyles.navBubble(!!isAnswered)}>{q.id}</div>
-            </a>
-          );
-        })}
-      </div>
-    </div>
-  );
+  return null;
 };
 
 export default ExamRoom;

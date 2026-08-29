@@ -1,64 +1,74 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
+import { Card } from '../components/ui/Card';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Badge } from '../components/ui/Badge';
+import { Button } from '../components/ui/Button';
 
 const StudentDocuments = () => {
   const [docs, setDocs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDocs = async () => {
-      const token = localStorage.getItem('token');
       try {
         const res = await axiosClient.get('/api/student/documents');
         setDocs(res.data);
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchDocs();
   }, []);
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1 style={{ color: '#0f172a', marginBottom: '20px' }}>📚 Bài Tập & Tài Liệu</h1>
-      <div style={{ backgroundColor: 'white', borderRadius: '20px', padding: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
-        {docs.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#94a3b8' }}>Chưa có tài liệu nào.</div>
+    <div style={{ padding: 'var(--spacing-6)', maxWidth: '1000px', margin: '0 auto' }}>
+      <h1 style={{ color: 'var(--color-text)', marginBottom: 'var(--spacing-6)' }}>📚 Bài Tập & Tài Liệu</h1>
+      <Card style={{ padding: 'var(--spacing-8)' }}>
+        {loading ? (
+           <div className="skeleton" style={{ height: '200px', borderRadius: 'var(--radius-md)' }}></div>
+        ) : docs.length === 0 ? (
+          <EmptyState title="Trống" description="Chưa có tài liệu nào." />
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8fafc' }}>
-                <th style={{ padding: '15px', color: '#64748b' }}>Tiêu đề / Loại</th>
-                <th style={{ padding: '15px', color: '#64748b' }}>Lớp</th>
-                <th style={{ padding: '15px', color: '#64748b' }}>Hạn chót</th>
-                <th style={{ padding: '15px', color: '#64748b', textAlign: 'right' }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {docs.map(d => (
-                <tr key={d.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '15px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#1e293b' }}>{d.title}</div>
-                    <div style={{ fontSize: '12px', color: '#3b82f6', backgroundColor: '#eff6ff', padding: '2px 8px', borderRadius: '10px', display: 'inline-block', marginTop: '5px' }}>{d.type}</div>
-                  </td>
-                  <td style={{ padding: '15px', color: '#475569' }}>{d.class_name}</td>
-                  <td style={{ padding: '15px' }}>
-                    {d.due_at ? (
-                      <span style={{ color: new Date(d.due_at) < new Date() ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
-                        {new Date(d.due_at).toLocaleDateString('vi-VN')} {new Date(d.due_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
-                      </span>
-                    ) : '-'}
-                  </td>
-                  <td style={{ padding: '15px', textAlign: 'right' }}>
-                    <a href={d.file_url} target="_blank" rel="noreferrer" style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
-                      Xem / Làm Bài
-                    </a>
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--color-border)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                  <th style={{ padding: 'var(--spacing-4)' }}>Tiêu đề / Loại</th>
+                  <th style={{ padding: 'var(--spacing-4)' }}>Lớp</th>
+                  <th style={{ padding: 'var(--spacing-4)' }}>Hạn chót</th>
+                  <th style={{ padding: 'var(--spacing-4)', textAlign: 'right' }}>Thao tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {docs.map(d => (
+                  <tr key={d.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td style={{ padding: 'var(--spacing-4)' }}>
+                      <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text)' }}>{d.title}</div>
+                      <Badge variant="info" style={{ marginTop: 'var(--spacing-1)' }}>{d.type}</Badge>
+                    </td>
+                    <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>{d.class_name}</td>
+                    <td style={{ padding: 'var(--spacing-4)' }}>
+                      {d.due_at ? (
+                        <span style={{ color: new Date(d.due_at) < new Date() ? 'var(--color-danger)' : 'var(--color-success)', fontWeight: 'var(--font-weight-bold)' }}>
+                          {new Date(d.due_at).toLocaleDateString('vi-VN')} {new Date(d.due_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td style={{ padding: 'var(--spacing-4)', textAlign: 'right' }}>
+                      <Button variant="primary" size="sm" onClick={() => window.open(d.file_url, '_blank')}>
+                        Xem / Làm Bài
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };

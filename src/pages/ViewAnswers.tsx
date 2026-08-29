@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { EmptyState } from '../components/ui/EmptyState';
 
 // ==========================================
 // CẤU TRÚC DỮ LIỆU
@@ -29,7 +33,7 @@ const renderContent = (text: string) => {
           key={index}
           math={cleanMath}
           renderError={() => (
-            <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'bold' }}>
+            <span style={{ color: 'var(--color-danger)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)' }}>
               ⚠️ Lỗi công thức: {cleanMath}
             </span>
           )}
@@ -44,8 +48,8 @@ const renderContent = (text: string) => {
 // COMPONENT HIỂN THỊ ẢNH (Chỉ đọc)
 // ==========================================
 const ImageBlock = ({ url }: { url: string }) => (
-  <div style={{ float: 'right', marginLeft: '15px', marginBottom: '10px', maxWidth: '42%' }}>
-    <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'block' }} />
+  <div style={{ float: 'right', marginLeft: 'var(--spacing-4)', marginBottom: 'var(--spacing-2)', maxWidth: '42%' }}>
+    <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', display: 'block' }} />
   </div>
 );
 
@@ -86,9 +90,9 @@ const ViewAnswers = () => {
   };
 
   const renderGroupBlock = (group: SharedContext) => (
-    <div style={{ backgroundColor: '#fffbeb', border: '1px dashed #f59e0b', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
+    <div style={{ backgroundColor: 'var(--color-surface)beb', border: '1px dashed var(--color-warning)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-5)', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
       {group.image_url && <ImageBlock url={group.image_url} />}
-      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+      <div style={{ fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-2)' }}>
         📌 Sử dụng thông tin sau để trả lời các câu {group.questionIds.join(', ')}:
       </div>
       <div>{renderContent(group.content)}</div>
@@ -96,25 +100,24 @@ const ViewAnswers = () => {
     </div>
   );
 
-  if (isLoading) return <div style={{padding:'60px', textAlign:'center', fontSize:'18px', fontWeight:'bold'}}>Đang tải chi tiết đáp án...</div>;
-  if (!examData || !examKey) return <div style={{padding:'60px', textAlign:'center', color:'#ef4444'}}>Không tìm thấy dữ liệu đề thi.</div>;
+  if (isLoading) return <div style={{padding:'var(--spacing-10)'}}><EmptyState title="Đang tải chi tiết đáp án..." /></div>;
+  if (!examData || !examKey) return <div style={{padding:'var(--spacing-10)'}}><EmptyState title="Không tìm thấy dữ liệu đề thi." /></div>;
 
   const styles = {
-    container: { padding: '40px 20px', backgroundColor: '#f1f5f9', minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' },
-    card: { maxWidth: '900px', margin: '0 auto', backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' },
-    sectionTitle: { color: '#1e3a8a', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' as const, borderBottom: '2px solid #1e3a8a', paddingBottom: '10px', marginBottom: '30px' },
-    questionBox: { marginBottom: '40px', clear: 'both' as const, borderBottom: '1px solid #e2e8f0', paddingBottom: '25px' },
-    questionText: { fontWeight: 'bold', marginBottom: '15px', lineHeight: '1.6', fontSize: '16px', color: '#1e293b' },
-    optionsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
-    optionItem: (isCorrect: boolean) => ({ border: isCorrect ? '2px solid #10b981' : '1px solid #cbd5e1', backgroundColor: isCorrect ? '#ecfdf5' : 'white', borderRadius: '8px', padding: '12px 15px', display: 'flex', alignItems: 'center', gap: '10px' }),
-    answerBadge: { marginTop: '15px', padding: '10px 15px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '15px', fontWeight: 'bold' }
+    container: { padding: 'var(--spacing-10) var(--spacing-5)', backgroundColor: 'var(--color-background)', minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' },
+    sectionTitle: { color: '#1e3a8a', fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', textTransform: 'uppercase' as const, borderBottom: '2px solid #1e3a8a', paddingBottom: 'var(--spacing-2)', marginBottom: 'var(--spacing-8)' },
+    questionBox: { marginBottom: 'var(--spacing-10)', clear: 'both' as const, borderBottom: '1px solid var(--color-border)', paddingBottom: 'var(--spacing-6)' },
+    questionText: { fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-4)', lineHeight: '1.6', fontSize: 'var(--font-size-base)', color: 'var(--color-text)' },
+    optionsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' },
+    optionItem: (isCorrect: boolean) => ({ border: isCorrect ? '2px solid var(--color-success)' : '1px solid var(--color-border)', backgroundColor: isCorrect ? '#ecfdf5' : 'var(--color-surface)', borderRadius: 'var(--radius-md)', padding: '12px 15px', display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }),
+    answerBadge: { marginTop: 'var(--spacing-4)', padding: '10px 15px', backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--color-border)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', fontSize: '15px', fontWeight: 'var(--font-weight-bold)' }
   };
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
-        <button onClick={() => navigate(-1)} style={{ marginBottom: '25px', padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>← Quay lại</button>
-        <h2 style={{ color: '#1e3a8a', marginBottom: '30px', textAlign: 'center', textTransform: 'uppercase' }}>📖 Xem Đáp Án & Lời Giải Chi Tiết</h2>
+      <Card style={{ maxWidth: '900px', margin: '0 auto', padding: 'var(--spacing-10)' }}>
+        <Button onClick={() => navigate(-1)} variant="outline" style={{ marginBottom: 'var(--spacing-6)' }}>← Quay lại</Button>
+        <h2 style={{ color: '#1e3a8a', marginBottom: 'var(--spacing-8)', textAlign: 'center', textTransform: 'uppercase' }}>📖 Xem Đáp Án & Lời Giải Chi Tiết</h2>
 
         {/* ==================== PHẦN 1 ==================== */}
         {examData.part1 && examData.part1.length > 0 && (
@@ -138,7 +141,7 @@ const ViewAnswers = () => {
                         const isCorrect = (opt === correctOpt);
                         return (
                           <div key={opt} style={styles.optionItem(isCorrect)}>
-                            <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: isCorrect ? '5px solid #10b981' : '1px solid #94a3b8', backgroundColor: 'white' }}></div>
+                            <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: isCorrect ? '5px solid var(--color-success)' : '1px solid var(--color-text-secondary)', backgroundColor: 'var(--color-surface)' }}></div>
                             <div style={{ color: isCorrect ? '#065f46' : '#334155', fontWeight: isCorrect ? 'bold' : 'normal' }}>
                               <strong>{opt}.</strong> {renderContent(q.options[opt])}
                             </div>
@@ -147,8 +150,8 @@ const ViewAnswers = () => {
                       })}
                     </div>
                     <div style={styles.answerBadge}>
-                      <span style={{ color: '#10b981' }}>✅ Đáp án chuẩn:</span>
-                      <span style={{ color: '#059669', fontSize: '18px' }}>{correctOpt || 'Chưa cập nhật'}</span>
+                      <span style={{ color: 'var(--color-success)' }}>✅ Đáp án chuẩn:</span>
+                      <span style={{ color: '#059669', fontSize: 'var(--font-size-lg)' }}>{correctOpt || 'Chưa cập nhật'}</span>
                     </div>
                   </div>
                 </React.Fragment>
@@ -174,21 +177,23 @@ const ViewAnswers = () => {
                     <div style={styles.questionText}>
                       <strong>Câu {qId}. </strong>{renderContent(q.questionText)}
                     </div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-                      <tbody>
-                        {['a', 'b', 'c', 'd'].map((stmt) => {
-                          const ans = correctObj[stmt];
-                          return (
-                            <tr key={stmt} style={{ borderBottom: '1px dashed #e2e8f0' }}>
-                              <td style={{ padding: '10px 0' }}><strong>{stmt})</strong> {renderContent(q.statements[stmt])}</td>
-                              <td style={{ width: '100px', textAlign: 'right', fontWeight: 'bold', color: ans === 'Đ' ? '#10b981' : '#ef4444' }}>
-                                {ans === 'Đ' ? 'ĐÚNG' : ans === 'S' ? 'SAI' : '-'}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <div className="overflow-x-auto">
+                      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 'var(--spacing-2)' }}>
+                        <tbody>
+                          {['a', 'b', 'c', 'd'].map((stmt) => {
+                            const ans = correctObj[stmt];
+                            return (
+                              <tr key={stmt} style={{ borderBottom: '1px dashed var(--color-border)' }}>
+                                <td style={{ padding: '10px 0' }}><strong>{stmt})</strong> {renderContent(q.statements[stmt])}</td>
+                                <td style={{ width: '100px', textAlign: 'right', fontWeight: 'var(--font-weight-bold)', color: ans === 'Đ' ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                                  {ans === 'Đ' ? 'ĐÚNG' : ans === 'S' ? 'SAI' : '-'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </React.Fragment>
               );
@@ -198,7 +203,7 @@ const ViewAnswers = () => {
 
         {/* ==================== PHẦN 3 ==================== */}
         {examData.part3 && examData.part3.length > 0 && (
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: 'var(--spacing-5)' }}>
             <div style={styles.sectionTitle}>PHẦN III. TRẢ LỜI NGẮN</div>
             {examData.part3.map((q: any) => {
               const qId = q.id;
@@ -214,8 +219,8 @@ const ViewAnswers = () => {
                       <strong>Câu {qId}. </strong>{renderContent(q.questionText)}
                     </div>
                     <div style={styles.answerBadge}>
-                      <span style={{ color: '#10b981' }}>✅ Đáp án đúng:</span>
-                      <span style={{ color: '#059669', fontSize: '18px', backgroundColor: '#d1fae5', padding: '2px 10px', borderRadius: '4px' }}>
+                      <span style={{ color: 'var(--color-success)' }}>✅ Đáp án đúng:</span>
+                      <span style={{ color: '#059669', fontSize: 'var(--font-size-lg)', backgroundColor: '#d1fae5', padding: '2px 10px', borderRadius: 'var(--radius-sm)' }}>
                         {correctAns || 'Chưa cập nhật'}
                       </span>
                     </div>
@@ -226,7 +231,7 @@ const ViewAnswers = () => {
           </div>
         )}
 
-      </div>
+      </Card>
     </div>
   );
 };

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
 import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { EmptyState } from '../components/ui/EmptyState';
 
 interface ClassData {
   id: number;
@@ -65,74 +69,77 @@ const ClassList = () => {
   };
 
   return (
-    <div style={{ padding: '40px', width: '100%', boxSizing: 'border-box' }}>      
+    <div style={{ padding: 'var(--spacing-8)', width: '100%', boxSizing: 'border-box' }}>      
       {/* HEADER PAGE */}
-      <div style={{ marginBottom: '35px' }}>
-        <h1 style={{ margin: 0, color: '#1e293b', fontSize: '28px', fontWeight: '800' }}>Quản Lý Lớp Học</h1>
-        <p style={{ margin: '8px 0 0 0', color: '#64748b', fontSize: '15px' }}>Tạo và kiểm soát danh sách các lớp học/nhóm học viên của bạn.</p>
+      <div style={{ marginBottom: 'var(--spacing-8)' }}>
+        <h1 style={{ margin: 0, color: 'var(--color-text)', fontSize: '28px', fontWeight: '800' }}>Quản Lý Lớp Học</h1>
+        <p style={{ margin: 'var(--spacing-2) 0 0 0', color: 'var(--color-text-secondary)', fontSize: '15px' }}>Tạo và kiểm soát danh sách các lớp học/nhóm học viên của bạn.</p>
       </div>
 
       {/* CARD: FORM NHẬP LIỆU */}
-      <div style={{ backgroundColor: '#ffffff', padding: '30px', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', marginBottom: '30px', border: '1px solid #f1f5f9' }}>
-        <h3 style={{ marginTop: 0, color: '#334155', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <Card style={{ marginBottom: 'var(--spacing-8)' }}>
+        <h3 style={{ marginTop: 0, color: 'var(--color-text)', fontSize: 'var(--font-size-lg)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
           {editingId ? '✏️ Chỉnh sửa thông tin lớp' : '✨ Tạo lớp học mới'}
         </h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap', marginTop: '20px' }}>
-          <input 
-            type="text" 
-            placeholder="Tên lớp học (VD: Lớp Toán 10 - Sunny)" 
-            value={className} 
-            onChange={(e) => setClassName(e.target.value)} 
-            style={{ padding: '12px 16px', flex: 1, minWidth: '250px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '15px', outline: 'none', transition: '0.3s' }} 
-            required
-          />
-          <button type="submit" style={{ padding: '12px 25px', backgroundColor: editingId ? '#3b82f6' : '#10b981', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', transition: '0.2s', boxShadow: editingId ? '0 4px 10px rgba(59,130,246,0.3)' : '0 4px 10px rgba(16,185,129,0.3)' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 'var(--spacing-4)', alignItems: 'center', flexWrap: 'wrap', marginTop: 'var(--spacing-5)' }}>
+          <div style={{ flex: 1, minWidth: '250px' }}>
+            <Input 
+              placeholder="Tên lớp học (VD: Lớp Toán 10 - Sunny)" 
+              value={className} 
+              onChange={(e: any) => setClassName(e.target.value)} 
+              required
+            />
+          </div>
+          <Button type="submit" variant={editingId ? 'primary' : 'primary'}>
             {editingId ? 'Lưu thay đổi' : 'Thêm vào danh sách'}
-          </button>
+          </Button>
           {editingId && (
-            <button type="button" onClick={() => { setEditingId(null); setClassName(''); }} style={{ padding: '12px 20px', backgroundColor: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}>
+            <Button type="button" variant="ghost" onClick={() => { setEditingId(null); setClassName(''); }}>
               Hủy
-            </button>
+            </Button>
           )}
         </form>
-        {message && <p style={{ marginTop: '15px', marginBottom: 0, fontWeight: '600', fontSize: '14px', color: message.includes('❌') ? '#ef4444' : '#10b981' }}>{message}</p>}
-      </div>
+        {message && <p style={{ marginTop: 'var(--spacing-4)', marginBottom: 0, fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)', color: message.includes('❌') ? 'var(--color-danger)' : 'var(--color-success)' }}>{message}</p>}
+      </Card>
       
       {/* CARD: BẢNG DỮ LIỆU */}
-      <div style={{ backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-            <tr>
-              <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>ID</th>
-              <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tên Lớp Học</th>
-              <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {classes.map((cls) => (
-              <tr key={cls.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'white'}>
-                <td style={{ padding: '18px 25px', color: '#94a3b8', fontWeight: '500' }}>#{cls.id}</td>
-                <td style={{ padding: '18px 25px' }}>
-                  <Link to={`/classes/${cls.id}`} style={{ textDecoration: 'none', color: '#0f172a', fontWeight: '700', fontSize: '15px' }}>
-                    {cls.class_name}
-                  </Link>
-                </td>
-                <td style={{ padding: '18px 25px', textAlign: 'center' }}>
-                  <Link to={`/classes/${cls.id}`} style={{ display: 'inline-block', marginRight: '10px', padding: '8px 16px', backgroundColor: '#e0f2fe', color: '#0369a1', textDecoration: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '13px' }}>Chi tiết</Link>
-                  <button onClick={() => handleEditClick(cls)} style={{ marginRight: '10px', padding: '8px 16px', backgroundColor: '#fef3c7', color: '#b45309', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Sửa</button>
-                  <button onClick={() => handleDelete(cls.id)} style={{ padding: '8px 16px', backgroundColor: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Xóa</button>
-                </td>
-              </tr>
-            ))}
-            {classes.length === 0 && (
+      <Card>
+        <div className="overflow-x-auto">
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead style={{ backgroundColor: 'var(--color-background)', borderBottom: '2px solid var(--color-border)' }}>
               <tr>
-                <td colSpan={3} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Chưa có lớp học nào được tạo.</td>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase' }}>ID</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase' }}>Tên Lớp Học</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', textAlign: 'center' }}>Hành động</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
+            </thead>
+            <tbody>
+              {classes.map((cls) => (
+                <tr key={cls.id} style={{ borderBottom: '1px solid var(--color-background)' }}>
+                  <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-medium)' }}>#{cls.id}</td>
+                  <td style={{ padding: 'var(--spacing-4)' }}>
+                    <Link to={`/classes/${cls.id}`} style={{ textDecoration: 'none', color: 'var(--color-text)', fontWeight: '700', fontSize: '15px' }}>
+                      {cls.class_name}
+                    </Link>
+                  </td>
+                  <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
+                    <Link to={`/classes/${cls.id}`} style={{ display: 'inline-block', marginRight: 'var(--spacing-2)', padding: 'var(--spacing-2) var(--spacing-4)', backgroundColor: '#e0f2fe', color: '#0369a1', textDecoration: 'none', borderRadius: 'var(--radius-md)', fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)' }}>Chi tiết</Link>
+                    <Button onClick={() => handleEditClick(cls)} variant="secondary" size="sm" style={{ marginRight: 'var(--spacing-2)' }}>Sửa</Button>
+                    <Button onClick={() => handleDelete(cls.id)} variant="danger" size="sm">Xóa</Button>
+                  </td>
+                </tr>
+              ))}
+              {classes.length === 0 && (
+                <tr>
+                  <td colSpan={3} style={{ padding: 'var(--spacing-10)' }}>
+                    <EmptyState title="Chưa có lớp học nào" description="Bạn có thể tạo lớp học mới bằng form phía trên." />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 };

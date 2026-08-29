@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { EmptyState } from '../components/ui/EmptyState';
 
 interface Folder {
   id: number;
@@ -126,7 +130,6 @@ const DocumentLibrary = () => {
     if (!itemToMove) return;
     try {
       if (itemToMove.type === 'DOC') {
-        // Cần pass title để update
         const doc = documents.find(d => d.id === itemToMove.id);
         if (doc) {
           await axiosClient.put(`/api/documents/${itemToMove.id}`, { title: doc.title, folder_id: targetFolderId });
@@ -140,100 +143,104 @@ const DocumentLibrary = () => {
   };
 
   return (
-    <div style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+    <div style={{ padding: 'var(--spacing-8)', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-5)' }}>
         <h2>📚 Kho Tài Liệu</h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => setShowFolderModal(true)} style={{ padding: '10px 15px', backgroundColor: '#e2e8f0', color: '#1e293b', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+          <Button variant="outline" onClick={() => setShowFolderModal(true)}>
             + Tạo thư mục
-          </button>
-          <button onClick={() => setShowDocModal(true)} style={{ padding: '10px 15px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+          </Button>
+          <Button variant="primary" onClick={() => setShowDocModal(true)}>
             + Thêm tài liệu
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', fontSize: '15px', color: '#3b82f6', cursor: 'pointer' }}>
+      <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-5)', fontSize: 'var(--font-size-base)', color: 'var(--color-primary)', cursor: 'pointer' }}>
         {breadcrumbs.map((b, idx) => (
           <React.Fragment key={idx}>
-            <span onClick={() => navigateTo(b.id, b.name)} style={{ fontWeight: idx === breadcrumbs.length - 1 ? 'bold' : 'normal', textDecoration: 'underline' }}>
+            <span onClick={() => navigateTo(b.id, b.name)} style={{ fontWeight: idx === breadcrumbs.length - 1 ? 'var(--font-weight-bold)' : 'var(--font-weight-medium)', textDecoration: 'underline' }}>
               {b.name}
             </span>
-            {idx < breadcrumbs.length - 1 && <span style={{ color: '#94a3b8', textDecoration: 'none' }}> / </span>}
+            {idx < breadcrumbs.length - 1 && <span style={{ color: 'var(--color-text-secondary)', textDecoration: 'none' }}> / </span>}
           </React.Fragment>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--spacing-5)' }}>
         {folders.map(f => (
-          <div key={`f-${f.id}`} style={{ padding: '20px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-            <div onClick={() => navigateTo(f.id, f.name)} style={{ fontSize: '40px', marginBottom: '10px' }}>📁</div>
-            <div onClick={() => navigateTo(f.id, f.name)} style={{ fontWeight: 'bold', color: '#334155', textAlign: 'center', marginBottom: '10px', wordBreak: 'break-all' }}>{f.name}</div>
-            <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f.id); }} style={{ padding: '4px 8px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Xóa</button>
-          </div>
+          <Card key={`f-${f.id}`} style={{ padding: 'var(--spacing-5)', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+            <div onClick={() => navigateTo(f.id, f.name)} style={{ fontSize: '40px', marginBottom: 'var(--spacing-2)' }}>📁</div>
+            <div onClick={() => navigateTo(f.id, f.name)} style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', textAlign: 'center', marginBottom: 'var(--spacing-2)', wordBreak: 'break-all' }}>{f.name}</div>
+            <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f.id); }}>Xóa</Button>
+          </Card>
         ))}
 
         {documents.map(d => (
-          <div key={`d-${d.id}`} style={{ padding: '20px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-            <div style={{ fontSize: '40px', marginBottom: '10px' }}>📄</div>
-            <div style={{ fontWeight: 'bold', color: '#334155', textAlign: 'center', marginBottom: '15px', wordBreak: 'break-all' }}>{d.title}</div>
-            <div style={{ display: 'flex', gap: '5px' }}>
-              <a href={d.file_url} target="_blank" rel="noreferrer" style={{ padding: '4px 8px', backgroundColor: '#3b82f6', color: 'white', textDecoration: 'none', borderRadius: '4px', fontSize: '13px' }}>Mở</a>
-              <button onClick={() => { setItemToMove({type: 'DOC', id: d.id}); setShowMoveModal(true); }} style={{ padding: '4px 8px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Di chuyển</button>
-              <button onClick={() => handleDeleteDoc(d.id)} style={{ padding: '4px 8px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Xóa</button>
+          <Card key={`d-${d.id}`} style={{ padding: 'var(--spacing-5)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ fontSize: '40px', marginBottom: 'var(--spacing-2)' }}>📄</div>
+            <div style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', textAlign: 'center', marginBottom: 'var(--spacing-4)', wordBreak: 'break-all' }}>{d.title}</div>
+            <div style={{ display: 'flex', gap: 'var(--spacing-1)', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Button variant="primary" size="sm" onClick={() => window.open(d.file_url, '_blank')}>Mở</Button>
+              <Button variant="secondary" size="sm" onClick={() => { setItemToMove({type: 'DOC', id: d.id}); setShowMoveModal(true); }}>Di chuyển</Button>
+              <Button variant="danger" size="sm" onClick={() => handleDeleteDoc(d.id)}>Xóa</Button>
             </div>
-          </div>
+          </Card>
         ))}
-        {folders.length === 0 && documents.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#94a3b8', padding: '40px' }}>Thư mục trống</div>
-        )}
       </div>
 
+      {folders.length === 0 && documents.length === 0 && (
+        <div style={{ marginTop: 'var(--spacing-10)' }}>
+          <EmptyState title="Thư mục trống" description="Chưa có thư mục hoặc tài liệu nào ở đây." />
+        </div>
+      )}
+
       {showFolderModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', width: '400px' }}>
-            <h3 style={{ margin: '0 0 20px 0' }}>Tạo thư mục mới</h3>
-            <input value={folderName} onChange={e => setFolderName(e.target.value)} placeholder="Tên thư mục..." style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => setShowFolderModal(false)} style={{ padding: '10px 15px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Hủy</button>
-              <button onClick={handleCreateFolder} style={{ padding: '10px 15px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Tạo</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <Card style={{ padding: 'var(--spacing-8)', width: '400px' }}>
+            <h3 style={{ margin: '0 0 var(--spacing-5) 0' }}>Tạo thư mục mới</h3>
+            <Input value={folderName} onChange={e => setFolderName(e.target.value)} placeholder="Tên thư mục..." />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-5)' }}>
+              <Button variant="ghost" onClick={() => setShowFolderModal(false)}>Hủy</Button>
+              <Button variant="primary" onClick={handleCreateFolder}>Tạo</Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {showDocModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', width: '400px' }}>
-              <h3 style={{ margin: '0 0 20px 0' }}>Thêm tài liệu</h3>
-              <input value={docForm.title} onChange={e => setDocForm({...docForm, title: e.target.value})} placeholder="Tên tài liệu..." style={{ width: '100%', padding: '10px', marginBottom: '15px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Tải file lên (PDF, Word...):</label>
-                <input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }} />
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+            <Card style={{ padding: 'var(--spacing-8)', width: '400px' }}>
+              <h3 style={{ margin: '0 0 var(--spacing-5) 0' }}>Thêm tài liệu</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+                <Input label="Tên tài liệu" value={docForm.title} onChange={e => setDocForm({...docForm, title: e.target.value})} placeholder="Tên tài liệu..." />
+                <div>
+                  <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>Tải file lên (PDF, Word...):</label>
+                  <input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: 'var(--spacing-2)', backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--color-border)' }} />
+                </div>
+                <div style={{ textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>Hoặc nhập URL trực tiếp:</div>
+                <Input label="URL tài liệu" value={docForm.file_url} onChange={e => setDocForm({...docForm, file_url: e.target.value})} placeholder="URL tài liệu (VD: https://...)" />
               </div>
-              <div style={{ textAlign: 'center', marginBottom: '10px', color: '#64748b' }}>Hoặc nhập URL trực tiếp:</div>
-              <input value={docForm.file_url} onChange={e => setDocForm({...docForm, file_url: e.target.value})} placeholder="URL tài liệu (VD: https://...)" style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button onClick={() => setShowDocModal(false)} disabled={uploadingDoc} style={{ padding: '10px 15px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Hủy</button>
-                <button onClick={handleAddDoc} disabled={uploadingDoc} style={{ padding: '10px 15px', backgroundColor: uploadingDoc ? '#94a3b8' : '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: uploadingDoc ? 'not-allowed' : 'pointer' }}>
-                  {uploadingDoc ? 'Đang tải lên...' : 'Lưu'}
-                </button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-5)' }}>
+                <Button variant="ghost" onClick={() => setShowDocModal(false)} disabled={uploadingDoc}>Hủy</Button>
+                <Button variant="primary" onClick={handleAddDoc} isLoading={uploadingDoc} disabled={uploadingDoc}>
+                  Lưu
+                </Button>
               </div>
-            </div>
+            </Card>
         </div>
       )}
 
       {showMoveModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '16px', width: '400px' }}>
-            <h3 style={{ margin: '0 0 20px 0' }}>Di chuyển tới...</h3>
-            <p style={{ marginBottom: '15px', color: '#64748b' }}>Nhập ID thư mục đích (0 để đưa ra ngoài Trang chủ):</p>
-            <input type="number" onChange={e => setTargetFolderId(e.target.value ? Number(e.target.value) : null)} placeholder="Folder ID..." style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button onClick={() => setShowMoveModal(false)} style={{ padding: '10px 15px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Hủy</button>
-              <button onClick={handleMoveItem} style={{ padding: '10px 15px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>Di chuyển</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <Card style={{ padding: 'var(--spacing-8)', width: '400px' }}>
+            <h3 style={{ margin: '0 0 var(--spacing-5) 0' }}>Di chuyển tới...</h3>
+            <Input type="number" label="ID thư mục đích (0 để đưa ra ngoài Trang chủ)" onChange={e => setTargetFolderId(e.target.value ? Number(e.target.value) : null)} placeholder="Folder ID..." />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-5)' }}>
+              <Button variant="ghost" onClick={() => setShowMoveModal(false)}>Hủy</Button>
+              <Button variant="secondary" onClick={handleMoveItem}>Di chuyển</Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

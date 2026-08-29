@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../api/axiosClient';
 import moment from 'moment';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const TuitionManager = () => {
   const [bills, setBills] = useState<any[]>([]);
@@ -58,64 +62,74 @@ const TuitionManager = () => {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: 'var(--spacing-10)', maxWidth: '100%', boxSizing: 'border-box' }}>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '35px', paddingBottom: '15px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 'var(--spacing-8)', paddingBottom: 'var(--spacing-4)' }}>
         <div>
-          <h1 style={{ margin: '0 0 8px 0', color: '#1e293b', fontSize: '30px' }}>Quản lý Tài chính</h1>
-          <p style={{ margin: 0, color: '#64748b', fontSize: '15px' }}>Lưu trữ phiếu học phí, xác nhận thanh toán và theo dõi doanh thu.</p>
+          <h1 style={{ margin: '0 0 8px 0', color: 'var(--color-text)', fontSize: '30px' }}>Quản lý Tài chính</h1>
+          <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '15px' }}>Lưu trữ phiếu học phí, xác nhận thanh toán và theo dõi doanh thu.</p>
         </div>
         
         {/* BỘ LỌC THÁNG DOANH THU */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', backgroundColor: 'white', padding: '10px 20px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', border: '1px solid #e2e8f0' }}>
-          <span style={{ fontWeight: 'bold', color: '#475569' }}>📅 Kỳ kế toán:</span>
-          <input 
-            type="month" 
-            value={selectedMonth} 
-            onChange={(e) => setSelectedMonth(e.target.value)} 
-            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontWeight: 'bold', color: '#1d4ed8', cursor: 'pointer' }}
-          />
-        </div>
+        <Card>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', padding: 'var(--spacing-3)' }}>
+            <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-secondary)' }}>📅 Kỳ kế toán:</span>
+            <input 
+              type="month" 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)} 
+              style={{ padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', outline: 'none', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)', cursor: 'pointer' }}
+            />
+          </div>
+        </Card>
       </div>
 
       {/* DASHBOARD THỐNG KÊ (Thay đổi theo tháng) */}
-      <div style={{ display: 'flex', gap: '20px', marginBottom: '35px', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '220px', backgroundColor: 'white', padding: '25px', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)' }}>
-          <h4 style={{ margin: '0 0 10px 0', color: '#64748b', textTransform: 'uppercase', fontSize: '13px' }}>Tổng hóa đơn tháng này</h4>
-          <h2 style={{ margin: 0, color: '#0f172a', fontSize: '32px' }}>{stats.totalExpected.toLocaleString('vi-VN')} <span style={{ fontSize: '16px', color: '#94a3b8' }}>đ</span></h2>
-        </div>
-        <div style={{ flex: 1, minWidth: '220px', backgroundColor: 'white', padding: '25px', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', borderBottom: '4px solid #10b981' }}>
-          <h4 style={{ margin: '0 0 10px 0', color: '#64748b', textTransform: 'uppercase', fontSize: '13px' }}>✅ Đã thu (Thực tế)</h4>
-          <h2 style={{ margin: 0, color: '#10b981', fontSize: '32px' }}>{stats.totalReceived.toLocaleString('vi-VN')} <span style={{ fontSize: '16px', color: '#94a3b8' }}>đ</span></h2>
-        </div>
-        <div style={{ flex: 1, minWidth: '220px', backgroundColor: 'white', padding: '25px', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', borderBottom: '4px solid #ef4444' }}>
-          <h4 style={{ margin: '0 0 10px 0', color: '#64748b', textTransform: 'uppercase', fontSize: '13px' }}>⏳ Đang chờ phụ huynh nộp</h4>
-          <h2 style={{ margin: 0, color: '#ef4444', fontSize: '32px' }}>{stats.totalPending.toLocaleString('vi-VN')} <span style={{ fontSize: '16px', color: '#94a3b8' }}>đ</span></h2>
-        </div>
+      <div style={{ display: 'flex', gap: 'var(--spacing-5)', marginBottom: 'var(--spacing-8)', flexWrap: 'wrap' }}>
+        <Card style={{ flex: 1, minWidth: '220px' }}>
+          <div style={{ padding: 'var(--spacing-6)' }}>
+            <h4 style={{ margin: '0 0 10px 0', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>Tổng hóa đơn tháng này</h4>
+            <h2 style={{ margin: 0, color: 'var(--color-text)', fontSize: 'var(--font-size-3xl)' }}>{stats.totalExpected.toLocaleString('vi-VN')} <span style={{ fontSize: 'var(--font-size-base)', color: 'var(--color-text-secondary)' }}>đ</span></h2>
+          </div>
+        </Card>
+        <Card style={{ flex: 1, minWidth: '220px', borderBottom: '4px solid var(--color-success)' }}>
+          <div style={{ padding: 'var(--spacing-6)' }}>
+            <h4 style={{ margin: '0 0 10px 0', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>✅ Đã thu (Thực tế)</h4>
+            <h2 style={{ margin: 0, color: 'var(--color-success)', fontSize: 'var(--font-size-3xl)' }}>{stats.totalReceived.toLocaleString('vi-VN')} <span style={{ fontSize: 'var(--font-size-base)', color: 'var(--color-text-secondary)' }}>đ</span></h2>
+          </div>
+        </Card>
+        <Card style={{ flex: 1, minWidth: '220px', borderBottom: '4px solid var(--color-danger)' }}>
+          <div style={{ padding: 'var(--spacing-6)' }}>
+            <h4 style={{ margin: '0 0 10px 0', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontSize: 'var(--font-size-sm)' }}>⏳ Đang chờ phụ huynh nộp</h4>
+            <h2 style={{ margin: 0, color: 'var(--color-danger)', fontSize: 'var(--font-size-3xl)' }}>{stats.totalPending.toLocaleString('vi-VN')} <span style={{ fontSize: 'var(--font-size-base)', color: 'var(--color-text-secondary)' }}>đ</span></h2>
+          </div>
+        </Card>
       </div>
 
       {/* DANH SÁCH PHIẾU THU */}
-      <div style={{ backgroundColor: 'white', borderRadius: '20px', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', overflow: 'hidden' }}>
-        <div style={{ padding: '25px', borderBottom: '1px solid #f1f5f9' }}>
-          <h3 style={{ margin: 0, color: '#0f172a', fontSize: '20px' }}>Chi tiết giao dịch {moment(selectedMonth).format('[Tháng] MM/YYYY')}</h3>
+      <Card style={{ overflow: 'hidden' }}>
+        <div style={{ padding: 'var(--spacing-6)', borderBottom: '1px solid var(--color-border)' }}>
+          <h3 style={{ margin: 0, color: 'var(--color-text)', fontSize: 'var(--font-size-xl)' }}>Chi tiết giao dịch {moment(selectedMonth).format('[Tháng] MM/YYYY')}</h3>
         </div>
         
-        <div style={{ overflowX: 'auto' }}>
+        <div className="overflow-x-auto" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f8fafc' }}>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Mã phiếu</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Học viên</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Giai đoạn tính tiền</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Thành tích (Điểm thi)</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9' }}>Tổng tiền</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9', textAlign: 'center' }}>Trạng thái</th>
-                <th style={{ padding: '18px 25px', color: '#64748b', fontSize: '13px', textTransform: 'uppercase', borderBottom: '1px solid #f1f5f9', textAlign: 'center' }}>Thao tác</th>
+              <tr style={{ backgroundColor: 'var(--color-background)' }}>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Mã phiếu</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Học viên</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Giai đoạn tính tiền</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Thành tích (Điểm thi)</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Tổng tiền</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', textAlign: 'center' }}>Trạng thái</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', textAlign: 'center' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {bills.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>Không có hóa đơn nào trong tháng này.</td></tr>
+                <tr><td colSpan={7} style={{ padding: 'var(--spacing-10)' }}>
+                  <EmptyState title="Không có hóa đơn" description="Không có hóa đơn nào trong tháng này." />
+                </td></tr>
               ) : (
                 bills.map((b) => {
                   let parsedScores: any[] = [];
@@ -124,55 +138,57 @@ const TuitionManager = () => {
                   }
 
                   return (
-                  <tr key={b.id} style={{ borderBottom: '1px solid #f1f5f9', transition: '0.2s', backgroundColor: b.is_paid ? 'white' : '#fef2f2' }}>
-                    <td style={{ padding: '20px 25px', fontWeight: 'bold', color: '#64748b' }}>#{b.id}</td>
-                    <td style={{ padding: '20px 25px', fontWeight: 'bold', color: '#0f172a' }}>{b.full_name}</td>
-                    <td style={{ padding: '20px 25px', color: '#475569' }}>
+                  <tr key={b.id} style={{ borderBottom: '1px solid var(--color-border)', transition: '0.2s', backgroundColor: b.is_paid ? 'var(--color-surface)' : 'var(--color-danger-light)' }}>
+                    <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-secondary)' }}>#{b.id}</td>
+                    <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>{b.full_name}</td>
+                    <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>
                       {new Date(b.start_date).toLocaleDateString('vi-VN')} - {new Date(b.end_date).toLocaleDateString('vi-VN')}
                     </td>
-                    <td style={{ padding: '20px 25px' }}>
-                      {parsedScores.length === 0 ? <span style={{ color: '#94a3b8' }}>-</span> : (
+                    <td style={{ padding: 'var(--spacing-4)' }}>
+                      {parsedScores.length === 0 ? <span style={{ color: 'var(--color-text-secondary)' }}>-</span> : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {parsedScores.map((s: any, idx: number) => {
                             const scoreNum = Number(s.score);
-                            let color = '#0369a1', bg = '#e0f2fe';
-                            if (scoreNum >= 8) { color = '#15803d'; bg = '#dcfce7'; }
-                            else if (scoreNum < 5) { color = '#b91c1c'; bg = '#fee2e2'; }
+                            let variant: 'primary' | 'danger' | 'info' = 'info';
+                            if (scoreNum >= 8) { variant = 'primary'; }
+                            else if (scoreNum < 5) { variant = 'danger'; }
                             
                             return (
-                              <span key={idx} style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', color: color, backgroundColor: bg, border: `1px solid ${color}`, whiteSpace: 'nowrap' }}>
+                              <Badge key={idx} variant={variant}>
                                 {s.exam_title}: {s.score}đ
-                              </span>
+                              </Badge>
                             );
                           })}
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '20px 25px', fontWeight: 'bold', color: '#1e293b' }}>
+                    <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>
                       {b.total_amount.toLocaleString('vi-VN')}đ
                     </td>
-                    <td style={{ padding: '20px 25px', textAlign: 'center' }}>
+                    <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
                       {b.is_paid ? (
-                        <span style={{ backgroundColor: '#dcfce7', color: '#166534', padding: '6px 12px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold' }}>Đã thu</span>
+                        <Badge variant="success">Đã thu</Badge>
                       ) : (
-                        <span style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '6px 12px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold' }}>Chờ thanh toán</span>
+                        <Badge variant="danger">Chờ thanh toán</Badge>
                       )}
                     </td>
-                    <td style={{ padding: '20px 25px', textAlign: 'center' }}>
-                      <button 
-                        onClick={() => handleOpenAiRemark(b.student_id, b.full_name)}
-                        style={{ padding: '8px 12px', border: 'none', backgroundColor: '#8b5cf6', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', marginBottom: '8px', width: '100%' }}>
-                        ✨ AI Nhận xét
-                      </button>
-                      {!b.is_paid ? (
-                        <button 
-                          onClick={() => handleConfirmPayment(b.id)}
-                          style={{ padding: '8px 12px', border: 'none', backgroundColor: '#3b82f6', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', width: '100%' }}>
-                          Xác nhận Đã Thu
-                        </button>
-                      ) : (
-                        <span style={{ color: '#cbd5e1', fontWeight: 'bold', fontSize: '13px' }}>Hoàn tất</span>
-                      )}
+                    <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
+                        <Button 
+                          onClick={() => handleOpenAiRemark(b.student_id, b.full_name)}
+                          variant="primary" size="sm" style={{ backgroundColor: '#8b5cf6' }}>
+                          ✨ AI Nhận xét
+                        </Button>
+                        {!b.is_paid ? (
+                          <Button 
+                            onClick={() => handleConfirmPayment(b.id)}
+                            variant="primary" size="sm">
+                            Xác nhận Đã Thu
+                          </Button>
+                        ) : (
+                          <span style={{ color: 'var(--color-border)', fontWeight: 'var(--font-weight-bold)', fontSize: 'var(--font-size-sm)' }}>Hoàn tất</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -181,34 +197,33 @@ const TuitionManager = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {/* Modal AI Nhận xét */}
       {aiRemarkModal.show && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '20px', width: '500px' }}>
-            <h2 style={{ marginTop: 0, color: '#1e293b' }}>✨ Nhận xét cho {aiRemarkModal.studentName}</h2>
+          <Card style={{ width: '500px', padding: 'var(--spacing-8)' }}>
+            <h2 style={{ marginTop: 0, color: 'var(--color-text)' }}>✨ Nhận xét cho {aiRemarkModal.studentName}</h2>
             {aiRemarkModal.loading ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#8b5cf6', fontWeight: 'bold' }}>⏳ AI đang viết nhận xét...</div>
+              <div style={{ textAlign: 'center', padding: 'var(--spacing-10)', color: '#8b5cf6', fontWeight: 'var(--font-weight-bold)' }}>⏳ AI đang viết nhận xét...</div>
             ) : (
               <div>
                 <textarea 
                   value={aiRemarkModal.text}
                   onChange={(e) => setAiRemarkModal(prev => ({...prev, text: e.target.value}))}
-                  style={{ width: '100%', height: '150px', padding: '15px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '15px', outline: 'none', resize: 'vertical' }}
+                  style={{ width: '100%', height: '150px', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', fontSize: '15px', outline: 'none', resize: 'vertical' }}
                 />
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
-                  <button onClick={() => setAiRemarkModal({ show: false, studentId: null, studentName: '', text: '', loading: false })} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: '#f1f5f9', cursor: 'pointer' }}>Hủy</button>
-                  <button onClick={() => {
-                    // Tương lai có thể gửi Zalo ở đây
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-5)' }}>
+                  <Button onClick={() => setAiRemarkModal({ show: false, studentId: null, studentName: '', text: '', loading: false })} variant="ghost">Hủy</Button>
+                  <Button onClick={() => {
                     alert('Đã copy nhận xét vào Clipboard!');
                     navigator.clipboard.writeText(aiRemarkModal.text);
                     setAiRemarkModal({ show: false, studentId: null, studentName: '', text: '', loading: false });
-                  }} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: '#3b82f6', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Copy & Đóng</button>
+                  }} variant="primary">Copy & Đóng</Button>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         </div>
       )}
     </div>

@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../api/axiosClient';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const TeacherSessionManager = () => {
   const [classes, setClasses] = useState<any[]>([]); // Chứa danh sách lớp
@@ -103,109 +107,109 @@ const TeacherSessionManager = () => {
   };
 
   return (
-    <div style={{ padding: '30px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
-      <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Sổ Giáo Án & Tiến Độ Dạy</h2>
+    <div style={{ padding: 'var(--spacing-8)', maxWidth: '1200px', margin: '0 auto' }}>
+      <h2 style={{ textAlign: 'center', marginBottom: 'var(--spacing-5)' }}>Sổ Giáo Án & Tiến Độ Dạy</h2>
 
       {/* BỘ LỌC CHỌN LỚP HỌC */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px', alignItems: 'center', gap: '15px' }}>
-        <h3 style={{ margin: 0 }}>Đang quản lý lớp:</h3>
-        <select 
-          value={selectedClassId} 
-          onChange={(e) => {
-            setSelectedClassId(e.target.value);
-            setSessions([]); // Xóa trắng bảng tạm khi chuyển lớp
-          }}
-          style={{ padding: '10px', fontSize: '16px', borderRadius: '5px', border: '2px solid #007bff', minWidth: '250px' }}
-        >
-          <option value="">-- Vui lòng chọn lớp học --</option>
-          {classes.map(c => (
-            <option key={c.id} value={c.id}>{c.class_name}</option>
-          ))}
-        </select>
-      </div>
+      <Card style={{ marginBottom: 'var(--spacing-8)' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 'var(--spacing-4)', padding: 'var(--spacing-6)' }}>
+          <h3 style={{ margin: 0 }}>Đang quản lý lớp:</h3>
+          <select 
+            value={selectedClassId} 
+            onChange={(e) => {
+              setSelectedClassId(e.target.value);
+              setSessions([]); // Xóa trắng bảng tạm khi chuyển lớp
+            }}
+            style={{ padding: 'var(--spacing-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', minWidth: '250px' }}
+          >
+            <option value="">-- Vui lòng chọn lớp học --</option>
+            {classes.map(c => (
+              <option key={c.id} value={c.id}>{c.class_name}</option>
+            ))}
+          </select>
+        </div>
+      </Card>
       
       {/* CHỈ HIỂN THỊ BẢNG KHI ĐÃ CHỌN LỚP */}
       {selectedClassId ? (
         <>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-            <button onClick={handleSaveDraft} style={{ padding: '10px 20px', marginRight: '10px', background: '#ffc107', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--spacing-5)', gap: 'var(--spacing-2)' }}>
+            <Button onClick={handleSaveDraft} variant="secondary">
               💾 Lưu Nháp Lịch Học
-            </button>
-            <button onClick={handlePublish} style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
+            </Button>
+            <Button onClick={handlePublish} variant="primary">
               🚀 Công Bố Lịch Lên App Học Sinh
-            </button>
+            </Button>
           </div>
 
-          <div style={{ overflowX: 'auto', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', border: '1px solid #ddd' }}>
-              <thead style={{ backgroundColor: '#f8f9fa' }}>
-                <tr>
-                  <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Trạng Thái</th>
-                  <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Ngày Học</th>
-                  <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Giờ Học</th>
-                  <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>Nội Dung (Dạy trước)</th>
-                  <th style={{ padding: '12px', borderBottom: '2px solid #ddd' }}>BTVN</th>
-                  <th style={{ padding: '12px', borderBottom: '2px solid #ddd', textAlign: 'center' }}>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((session, index) => (
-                  <tr key={index} style={{ borderBottom: '1px solid #ddd' }}>
-                    <td style={{ padding: '10px' }}>
-                      {session.is_published ? (
-                        <span style={{ color: 'green', fontWeight: 'bold' }}>Đã gửi Phụ huynh</span>
-                      ) : (
-                        <span style={{ color: '#ffc107', fontWeight: 'bold' }}>Bản nháp</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '10px' }}>
-                      <input type="date" value={session.session_date ? session.session_date.split('T')[0] : ''} 
-                             onChange={(e) => handleInputChange(index, 'session_date', e.target.value)}
-                             style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }} />
-                    </td>
-                    <td style={{ padding: '10px' }}>
-                      <input type="time" value={session.start_time || ''} 
-                             onChange={(e) => handleInputChange(index, 'start_time', e.target.value)}
-                             style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }} />
-                    </td>
-                    <td style={{ padding: '10px' }}>
-                      <input type="text" value={session.content || ''} placeholder="VD: Dạy Bài 8_1"
-                             onChange={(e) => handleInputChange(index, 'content', e.target.value)}
-                             style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }} />
-                    </td>
-                    <td style={{ padding: '10px' }}>
-                      <input type="text" value={session.homework || ''} placeholder="VD: Sửa test 2"
-                             onChange={(e) => handleInputChange(index, 'homework', e.target.value)}
-                             style={{ padding: '8px', width: '100%', boxSizing: 'border-box' }} />
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      <button onClick={() => handleAttendanceClick(session.id)} 
-                              style={{ padding: '6px 12px', marginRight: '8px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                        📝 Điểm danh & Nhận xét
-                      </button>
-                      <button onClick={() => handleDeleteRow(index, session.id)} 
-                              style={{ padding: '6px 12px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                        Xóa
-                      </button>
-                    </td>
+          <Card>
+            <div className="overflow-x-auto" style={{ overflowX: 'auto', width: '100%' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead style={{ backgroundColor: 'var(--color-background)' }}>
+                  <tr>
+                    <th style={{ padding: 'var(--spacing-3)', borderBottom: '1px solid var(--color-border)' }}>Trạng Thái</th>
+                    <th style={{ padding: 'var(--spacing-3)', borderBottom: '1px solid var(--color-border)' }}>Ngày Học</th>
+                    <th style={{ padding: 'var(--spacing-3)', borderBottom: '1px solid var(--color-border)' }}>Giờ Học</th>
+                    <th style={{ padding: 'var(--spacing-3)', borderBottom: '1px solid var(--color-border)' }}>Nội Dung (Dạy trước)</th>
+                    <th style={{ padding: 'var(--spacing-3)', borderBottom: '1px solid var(--color-border)' }}>BTVN</th>
+                    <th style={{ padding: 'var(--spacing-3)', borderBottom: '1px solid var(--color-border)', textAlign: 'center' }}>Thao tác</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {sessions.map((session, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                      <td style={{ padding: 'var(--spacing-2)' }}>
+                        {session.is_published ? (
+                          <Badge variant="success">Đã gửi Phụ huynh</Badge>
+                        ) : (
+                          <Badge variant="warning">Bản nháp</Badge>
+                        )}
+                      </td>
+                      <td style={{ padding: 'var(--spacing-2)' }}>
+                        <input type="date" value={session.session_date ? session.session_date.split('T')[0] : ''} 
+                               onChange={(e) => handleInputChange(index, 'session_date', e.target.value)}
+                               style={{ padding: 'var(--spacing-2)', width: '100%', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ padding: 'var(--spacing-2)' }}>
+                        <input type="time" value={session.start_time || ''} 
+                               onChange={(e) => handleInputChange(index, 'start_time', e.target.value)}
+                               style={{ padding: 'var(--spacing-2)', width: '100%', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ padding: 'var(--spacing-2)' }}>
+                        <input type="text" value={session.content || ''} placeholder="VD: Dạy Bài 8_1"
+                               onChange={(e) => handleInputChange(index, 'content', e.target.value)}
+                               style={{ padding: 'var(--spacing-2)', width: '100%', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ padding: 'var(--spacing-2)' }}>
+                        <input type="text" value={session.homework || ''} placeholder="VD: Sửa test 2"
+                               onChange={(e) => handleInputChange(index, 'homework', e.target.value)}
+                               style={{ padding: 'var(--spacing-2)', width: '100%', boxSizing: 'border-box' }} />
+                      </td>
+                      <td style={{ padding: 'var(--spacing-2)', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 'var(--spacing-2)', justifyContent: 'center' }}>
+                          <Button onClick={() => handleAttendanceClick(session.id)} variant="secondary" size="sm">
+                            📝 Điểm danh & Nhận xét
+                          </Button>
+                          <Button onClick={() => handleDeleteRow(index, session.id)} variant="danger" size="sm">
+                            Xóa
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
           
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-            <button 
-              onClick={() => setSessions([...sessions, { is_published: false }])} 
-              style={{ padding: '10px 30px', background: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--spacing-5)' }}>
+            <Button onClick={() => setSessions([...sessions, { is_published: false }])} variant="primary">
               + Thêm dòng mới
-            </button>
+            </Button>
           </div>
         </>
       ) : (
-        <div style={{ textAlign: 'center', padding: '50px', color: '#6c757d', fontStyle: 'italic' }}>
-          Vui lòng chọn một lớp học ở trên để bắt đầu soạn giáo án.
-        </div>
+        <EmptyState title="Chưa chọn lớp học" description="Vui lòng chọn một lớp học ở trên để bắt đầu soạn giáo án." />
       )}
     </div>
   );

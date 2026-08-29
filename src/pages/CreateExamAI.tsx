@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { Wizard } from '../components/ui/Wizard';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
 
 
 
@@ -67,9 +71,9 @@ const renderContent = (text: string) => {
         renderError={(error) => (
           <span
             style={{
-              color: '#ef4444',
-              fontSize: '13px',
-              fontWeight: 'bold'
+              color: 'var(--color-danger)',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-bold)'
             }}
           >
             ⚠️ Lỗi công thức: {math}
@@ -102,24 +106,24 @@ interface SharedContext {
 
 
 const styles = {
-  container: { maxWidth: '1200px', margin: '30px auto', fontFamily: 'Inter, Arial, sans-serif', color: '#333' },
-  card: { backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', padding: '30px' },
-  header: { color: '#1e293b', fontSize: '24px', margin: '0 0 20px 0', borderBottom: '2px solid #e2e8f0', paddingBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' },
-  formGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '25px' },
-  input: { width: '100%', padding: '10px 15px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '15px', boxSizing: 'border-box' as const },
-  previewBox: { backgroundColor: '#fff', border: '1px solid #e2e8f0', padding: '20px', borderRadius: '8px', marginBottom: '15px', color: '#1e293b', lineHeight: '1.6', fontSize: '16px', whiteSpace: 'pre-wrap' as const },
-  sharedBox: { backgroundColor: '#fffbeb', border: '1px dashed #f59e0b', padding: '15px', borderRadius: '8px', marginBottom: '15px', color: '#78350f', lineHeight: '1.6', fontSize: '15px', whiteSpace: 'pre-wrap' as const },
-  jsonEditor: { width: '100%', height: '400px', padding: '15px', borderRadius: '8px', border: '2px solid #3b82f6', backgroundColor: '#1e293b', color: '#10b981', fontFamily: 'monospace', fontSize: '14px', resize: 'vertical' as const },
-  saveBtn: { padding: '15px 40px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' },
+  container: { maxWidth: '1200px', margin: '30px auto', fontFamily: 'Inter, Arial, sans-serif', color: 'var(--color-text)' },
+  card: { backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', boxShadow: '0 4px 20px var(--color-border)', padding: 'var(--spacing-8)' },
+  header: { color: 'var(--color-text)', fontSize: 'var(--font-size-2xl)', margin: '0 0 20px 0', borderBottom: '2px solid var(--color-border)', paddingBottom: 'var(--spacing-4)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' },
+  formGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--spacing-5)', marginBottom: '25px' },
+  input: { width: '100%', padding: '10px 15px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '15px', boxSizing: 'border-box' as const },
+  previewBox: { backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', padding: 'var(--spacing-5)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-4)', color: 'var(--color-text)', lineHeight: '1.6', fontSize: 'var(--font-size-base)', whiteSpace: 'pre-wrap' as const },
+  sharedBox: { backgroundColor: 'var(--color-surface)beb', border: '1px dashed var(--color-warning)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-4)', color: '#78350f', lineHeight: '1.6', fontSize: '15px', whiteSpace: 'pre-wrap' as const },
+  jsonEditor: { width: '100%', height: '400px', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '2px solid var(--color-primary)', backgroundColor: 'var(--color-text)', color: 'var(--color-success)', fontFamily: 'monospace', fontSize: 'var(--font-size-sm)', resize: 'vertical' as const },
+  saveBtn: { padding: '15px 40px', backgroundColor: 'var(--color-success)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-bold)', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' },
 };
 
 // ==========================================
 // COMPONENT RENDER ẢNH
 // ==========================================
 const ImageBlock = ({ url, onRemove }: { url: string; onRemove: () => void }) => (
-  <div style={{ float: 'right', marginLeft: '15px', marginBottom: '10px', maxWidth: '40%', textAlign: 'center' }}>
-    <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '250px', objectFit: 'contain', borderRadius: '8px', border: '2px solid #cbd5e1', display: 'block', marginBottom: '8px' }} />
-    <button onClick={onRemove} style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', padding: '6px 12px', borderRadius: '5px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}>🗑️ Xóa ảnh này</button>
+  <div style={{ float: 'right', marginLeft: 'var(--spacing-4)', marginBottom: 'var(--spacing-2)', maxWidth: '40%', textAlign: 'center' }}>
+    <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '250px', objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '2px solid var(--color-border)', display: 'block', marginBottom: 'var(--spacing-2)' }} />
+    <button onClick={onRemove} style={{ backgroundColor: '#fee2e2', color: 'var(--color-danger)', border: 'none', padding: '6px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)' }}>🗑️ Xóa ảnh này</button>
   </div>
 );
 
@@ -145,6 +149,7 @@ const CreateExamAI = () => {
   const [editKeys, setEditKeys] = useState<any>(null);
   const [jsonString, setJsonString] = useState<string>('');
   const [jsonError, setJsonError] = useState<string>('');
+  const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -193,7 +198,7 @@ const CreateExamAI = () => {
       clearTimeout(t1);
       clearTimeout(t2);
 
-      const responseData = response?.data?.status === 'success' ? response.data.data : response?.data;
+      const responseData = response?.data?.status === 'primary' ? response.data.data : response?.data;
       if (responseData && responseData.examContent) {
         const content = responseData.examContent;
         if (!content.sharedContexts) content.sharedContexts = [];
@@ -436,148 +441,163 @@ const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
 
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.header}>📑 Bóc Tách Đề AI (Tự động hóa)</h2>
-        <div style={styles.formGrid}>
-          {/* Ô MÃ TÀI LIỆU ĐÃ ĐƯỢC THAY BẰNG TÊN ĐỀ THI */}
-          <div><label style={{ fontWeight: 'bold' }}>Tên đề thi</label><input type="text" placeholder="Nhập tên đề..." value={examTitle} onChange={(e) => setExamTitle(e.target.value)} style={styles.input} /></div>
-          <div><label style={{ fontWeight: 'bold' }}>Lớp</label><select value={classId} onChange={(e) => setClassId(e.target.value)} style={styles.input}><option value="">-Chọn-</option>{classOptions.map((c) => <option key={c.id} value={c.id}>{c.class_name}</option>)}</select></div>
-          <div><label style={{ fontWeight: 'bold' }}>Thời gian (Phút)</label><input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} style={styles.input} /></div>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          <div style={{ padding: '10px', cursor: 'pointer', borderBottom: inputMode === 'text' ? '3px solid #3b82f6' : '3px solid transparent' }} onClick={() => setInputMode('text')}>📝 Văn bản (Word)</div>
-          <div style={{ padding: '10px', cursor: 'pointer', borderBottom: inputMode === 'file' ? '3px solid #3b82f6' : '3px solid transparent' }} onClick={() => setInputMode('file')}>📎 File (PDF/Ảnh)</div>
-        </div>
-        {inputMode === 'text' ? <textarea value={rawText} onChange={(e) => setRawText(e.target.value)} style={{ ...styles.input, height: '150px' }} /> : <input type="file" onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])} />}
-        <button onClick={handleParseExam} disabled={isLoading} style={{ width: '100%', padding: '15px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', marginTop: '20px', cursor: 'pointer' }}>{isLoading ? '⏳ Đang xử lý...' : '✨ Bắt Đầu Phân Tích'}</button>
-      </div>
-
-      {editContent && editKeys && (
-        <div style={{ ...styles.card, marginTop: '30px', borderTop: '4px solid #10b981' }}>
-          <h3 style={{ color: '#10b981' }}>👀 Live Preview</h3>
-          <div style={{ maxHeight: '700px', overflowY: 'auto', backgroundColor: '#f8fafc', padding: '20px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-            
-            {/* ==================== PHẦN 1 ==================== */}
-            <h4 style={{ color: '#1d4ed8' }}>Phần 1: Trắc nghiệm nhiều lựa chọn</h4>
-            {editContent.part1?.map((q: any, index: number) => {
-              const qId = q.id || index + 1;
-              const group = findGroupIfFirst('part1', qId);
-              return (
-                <div key={index} style={{ clear: 'both' }}>
-                  {group && (
-                    <div style={styles.sharedBox}>
-                      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>📌 Dùng chung cho câu {group.questionIds.join(', ')}:</div>
-                      <div>{renderContent(group.content)}</div>
+    <div style={{ padding: 'var(--spacing-6)', maxWidth: '1000px', margin: '0 auto' }}>
+      <h1 style={{ marginBottom: 'var(--spacing-6)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+        <span style={{ fontSize: 'var(--font-size-3xl)' }}>✨</span> Tạo Đề Thi Với AI
+      </h1>
+      
+      {isLoading ? (
+        <Card style={{ padding: 'var(--spacing-10)', textAlign: 'center' }}>
+          <div className="spinner" style={{ fontSize: '48px', color: 'var(--color-primary)', margin: '0 auto var(--spacing-6) auto' }}></div>
+          <h2 style={{ color: 'var(--color-primary)' }}>{loadingMessage || 'AI đang phân tích đề thi...'}</h2>
+          <p className="text-secondary">Quá trình này có thể mất từ 1 - 3 phút. Vui lòng không đóng trình duyệt.</p>
+        </Card>
+      ) : (
+        <Wizard
+          currentStep={currentStep}
+          onNext={() => {
+            if (currentStep === 1) {
+              handleParseExam();
+              setCurrentStep(2);
+            } else if (currentStep === 2) { 
+              // Do nothing, next is submit
+            } else {
+              setCurrentStep(c => c + 1);
+            }
+          }}
+          onPrev={() => setCurrentStep(c => c - 1)}
+          onSubmit={handleSaveExam}
+          isSubmitting={isLoading}
+          submitLabel="Lưu & Xuất bản"
+          steps={[
+            {
+              id: 'config',
+              label: 'Cấu hình chung',
+              isValid: !!examTitle && !!classId,
+              content: (
+                <div className="flex flex-col gap-6">
+                  <Input 
+                    label="Tên đề thi"
+                    placeholder="VD: Đề thi Giữa kỳ Hóa 12"
+                    value={examTitle}
+                    onChange={(e) => setExamTitle(e.target.value)}
+                    required
+                  />
+                  <div className="flex flex-col gap-2">
+                    <label style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>Lớp học <span style={{color: 'var(--color-danger)'}}>*</span></label>
+                    <select 
+                      className="input-base"
+                      value={classId} 
+                      onChange={(e) => setClassId(e.target.value)} 
+                      required
+                    >
+                      <option value="">-- Chọn lớp học --</option>
+                      {classOptions.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.class_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <Input 
+                    label="Thời gian thi (Phút)"
+                    type="number"
+                    value={duration as any}
+                    onChange={(e) => setDuration(e.target.value)}
+                    required
+                  />
+                </div>
+              )
+            },
+            {
+              id: 'source',
+              label: 'Nguồn đề thi',
+              isValid: inputMode === 'text' ? !!rawText : !!selectedFile,
+              content: (
+                <div className="flex flex-col gap-6">
+                  <div style={{ display: 'flex', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-2)' }}>
+                    <Button variant={inputMode === 'text' ? 'primary' : 'outline'} onClick={() => setInputMode('text')} style={{ flex: 1 }}>Nhập văn bản (Text)</Button>
+                    <Button variant={inputMode === 'file' ? 'primary' : 'outline'} onClick={() => setInputMode('file')} style={{ flex: 1 }}>Tải lên File (PDF, DOCX)</Button>
+                  </div>
+                  
+                  {inputMode === 'text' ? (
+                    <div className="flex flex-col gap-2">
+                      <label style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>Nội dung văn bản</label>
+                      <textarea 
+                        className="input-base"
+                        rows={10} 
+                        placeholder="Dán nội dung câu hỏi vào đây (Hỗ trợ định dạng LaTeX)..."
+                        value={rawText}
+                        onChange={(e) => setRawText(e.target.value)}
+                        style={{ resize: 'vertical' }}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ padding: 'var(--spacing-10)', border: '2px dashed var(--color-border)', borderRadius: 'var(--radius-lg)', textAlign: 'center', backgroundColor: 'var(--color-surface-hover)' }}>
+                       <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-4)' }}>📄</div>
+                       <input 
+                         type="file" 
+                         accept=".pdf,.docx,.png,.jpg,.jpeg" 
+                         onChange={(e) => setSelectedFile(e.target.files ? e.target.files[0] : null)}
+                         id="file-upload"
+                         style={{ display: 'none' }}
+                       />
+                       <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'inline-flex', padding: 'var(--spacing-2) var(--spacing-4)', backgroundColor: 'var(--color-primary)', color: 'var(--color-surface)', borderRadius: 'var(--radius-md)', fontWeight: 'var(--font-weight-medium)' }}>
+                         Chọn tệp tải lên
+                       </label>
+                       {selectedFile && <p style={{ marginTop: 'var(--spacing-4)', color: 'var(--color-success)', fontWeight: 'var(--font-weight-medium)' }}>Đã chọn: {selectedFile.name}</p>}
+                       <p className="text-secondary" style={{ marginTop: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}>Hỗ trợ PDF, DOCX, Ảnh (tối đa 10MB)</p>
                     </div>
                   )}
-                  <div style={styles.previewBox}>
-                    {q.image_url && <ImageBlock url={q.image_url} onRemove={() => removeQuestionImage('part1', index)} />}
-                    <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Câu {qId}: {renderContent(q.questionText)}</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      {['A', 'B', 'C', 'D'].map((opt) => (<div key={opt}><strong>{opt}.</strong> {renderContent(q.options[opt])}</div>))}
-                    </div>
-                    <div style={{ clear: 'both' }} />
-
-                    <div style={{ marginTop: '20px', padding: '12px 15px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 'bold', color: '#047857' }}>👉 Chọn đáp án chuẩn:</span>
-                        <select style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '15px' }} value={editKeys.part1_key[qId] || ''} onChange={(e) => updateKey('part1_key', qId, e.target.value)}>
-                          <option value="">- Chọn -</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
-                        </select>
-                      </div>
-                      <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                        📸 TẢI ẢNH LÊN
-                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if(e.target.files?.[0]) handleQuestionImage('part1', index, e.target.files[0]); e.target.value = ''; }} />
-                      </label>
-                    </div>
-
-                  </div>
+                  {error && <p style={{ color: 'var(--color-danger)' }}>{error}</p>}
                 </div>
-              );
-            })}
+              )
+            },
+            {
+              id: 'preview',
+              label: 'Kiểm tra & Cấu trúc',
+              isValid: !!editContent,
+              content: (
+                <div className="flex flex-col gap-4">
+                  {!editContent ? (
+                    <div className="text-center text-muted" style={{ padding: 'var(--spacing-8)' }}>Chưa có dữ liệu. Vui lòng quay lại bước Nguồn đề thi và tiếp tục để AI phân tích.</div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-success-soft)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-success)' }}>
+                         <div style={{ color: 'var(--color-success)', fontWeight: 'var(--font-weight-bold)' }}>✅ Phân tích thành công!</div>
+                         <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+                            <Button variant="outline" size="sm" onClick={() => { setJsonString(JSON.stringify(editContent, null, 2)); }}>Sửa JSON Nội dung</Button>
+                         </div>
+                      </div>
 
-            {/* ==================== PHẦN 2 ==================== */}
-            <h4 style={{ color: '#1d4ed8', marginTop: '30px' }}>Phần 2: Trắc nghiệm Đúng/Sai</h4>
-            {editContent.part2?.map((q: any, index: number) => {
-              const qId = q.id || index + 1;
-              const group = findGroupIfFirst('part2', qId);
-              return (
-                <div key={index} style={{ clear: 'both' }}>
-                  {group && (
-                    <div style={styles.sharedBox}>
-                      <div style={{ fontWeight: 'bold' }}>📌 Dùng chung cho câu {group.questionIds.join(', ')}:</div>
-                      <div>{renderContent(group.content)}</div>
-                    </div>
+                      <div style={{ maxHeight: '60vh', overflowY: 'auto', padding: 'var(--spacing-4)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface)' }}>
+                        <pre style={{ whiteSpace: 'pre-wrap', fontSize: 'var(--font-size-sm)', fontFamily: 'monospace', margin: 0 }}>
+                          {JSON.stringify(editContent, null, 2)}
+                        </pre>
+                      </div>
+
+                      {(jsonString !== '') && (
+                        <div style={{ marginTop: 'var(--spacing-6)' }}>
+                          <h3 style={{ marginBottom: 'var(--spacing-2)' }}>Chỉnh sửa JSON</h3>
+                          <textarea 
+                            className="input-base"
+                            rows={15}
+                            value={jsonString}
+                            onChange={(e) => setJsonString(e.target.value)}
+                            style={{ fontFamily: 'monospace', fontSize: 'var(--font-size-sm)' }}
+                          />
+                          {jsonError && <p style={{ color: 'var(--color-danger)', marginTop: 'var(--spacing-2)' }}>{jsonError}</p>}
+                          <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-4)' }}>
+                            <Button variant="primary" onClick={() => { try { setEditContent(JSON.parse(jsonString)); setJsonError(''); } catch(e) { setJsonError('Lỗi JSON'); } }}>Lưu thay đổi</Button>
+                            <Button variant="ghost" onClick={() => { setJsonString(''); }}>Hủy</Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
-                  <div style={styles.previewBox}>
-                    {q.image_url && <ImageBlock url={q.image_url} onRemove={() => removeQuestionImage('part2', index)} />}
-                    <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Câu {qId}: {renderContent(q.questionText)}</div>
-                    {['a', 'b', 'c', 'd'].map((stmt) => (
-                      <div key={stmt} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px dashed #e2e8f0' }}>
-                        <span><strong>{stmt})</strong> {renderContent(q.statements?.[stmt])}</span>
-                        <select style={{ padding: '4px' }} value={editKeys.part2_key?.[qId]?.[stmt] || ''} onChange={(e) => updatePart2Key(qId, stmt, e.target.value)}><option value="">-</option><option value="Đ">Đ</option><option value="S">S</option></select>
-                      </div>
-                    ))}
-                    <div style={{ clear: 'both' }} />
-
-                    <div style={{ marginTop: '20px', padding: '12px 15px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', color: '#047857', fontWeight: 'bold' }}>Đáp án Đ/S ở từng dòng trên.</span>
-                      <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                        📸 TẢI ẢNH LÊN
-                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if(e.target.files?.[0]) handleQuestionImage('part2', index, e.target.files[0]); e.target.value = ''; }} />
-                      </label>
-                    </div>
-
-                  </div>
                 </div>
-              );
-            })}
-
-            {/* ==================== PHẦN 3 ==================== */}
-            <h4 style={{ color: '#1d4ed8', marginTop: '30px' }}>Phần 3: Trả lời ngắn</h4>
-            {editContent.part3?.map((q: any, index: number) => {
-              const qId = q.id || index + 1;
-              const group = findGroupIfFirst('part3', qId);
-              return (
-                <div key={index} style={{ clear: 'both' }}>
-                  {group && (
-                    <div style={styles.sharedBox}>
-                      <div style={{ fontWeight: 'bold' }}>📌 Dùng chung cho câu {group.questionIds.join(', ')}:</div>
-                      <div>{renderContent(group.content)}</div>
-                    </div>
-                  )}
-                  <div style={styles.previewBox}>
-                    {q.image_url && <ImageBlock url={q.image_url} onRemove={() => removeQuestionImage('part3', index)} />}
-                    <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>Câu {qId}: {renderContent(q.questionText)}</div>
-                    <div style={{ clear: 'both' }} />
-
-                    <div style={{ marginTop: '20px', padding: '12px 15px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 'bold', color: '#047857' }}>👉 Đáp án chuẩn:</span>
-                        <input type="text" style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #cbd5e1' }} value={editKeys.part3_key[qId] || ''} onChange={(e) => updateKey('part3_key', qId, e.target.value)} />
-                      </div>
-                      <label style={{ cursor: 'pointer', backgroundColor: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                        📸 TẢI ẢNH LÊN
-                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if(e.target.files?.[0]) handleQuestionImage('part3', index, e.target.files[0]); e.target.value = ''; }} />
-                      </label>
-                    </div>
-
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <h3 style={{ marginTop: '30px', color: '#3b82f6' }}>🛠 Trình sửa mã JSON</h3>
-          <textarea style={{ ...styles.jsonEditor }} value={jsonString} onChange={(e) => {
-            setJsonString(e.target.value);
-            try { setEditContent(JSON.parse(e.target.value)); setJsonError(''); } catch (err) { setJsonError('Lỗi cú pháp JSON'); }
-          }} spellCheck="false" />
-          <button onClick={handleSaveExam} disabled={isLoading} style={{ ...styles.saveBtn, marginTop: '20px', width: '100%' }}>
-            {isLoading ? '⏳ ĐANG LƯU VÀ TẠO TÀI LIỆU...' : '💾 XÁC NHẬN LƯU HỆ THỐNG'}
-          </button>
-        </div>
+              )
+            }
+          ]}
+        />
       )}
     </div>
   );

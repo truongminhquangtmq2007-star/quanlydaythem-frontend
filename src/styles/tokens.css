@@ -1,0 +1,229 @@
+:root {
+  /* ============================
+     1. TYPOGRAPHY
+     ============================ */
+  --font-family-base: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ============================
+     2. SPACING & RADIUS
+     ============================ */
+  --spacing-1: 0.25rem;  /* 4px */
+  --spacing-2: 0.5rem;   /* 8px */
+  --spacing-3: 0.75rem;  /* 12px */
+  --spacing-4: 1rem;     /* 16px */
+  --spacing-5: 1.25rem;  /* 20px */
+  --spacing-6: 1.5rem;   /* 24px */
+  --spacing-8: 2rem;     /* 32px */
+  --spacing-10: 2.5rem;  /* 40px */
+  --spacing-12: 3rem;    /* 48px */
+  --spacing-16: 4rem;    /* 64px */
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ============================
+     3. SHADOWS & TRANSITIONS
+     ============================ */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+
+  /* ============================
+     4. DEFAULT LIGHT THEME (Lavender)
+     ============================ */
+  --color-primary: #8b5cf6;
+  --color-primary-hover: #7c3aed;
+  --color-primary-soft: #ede9fe;
+  --color-primary-muted: #ddd6fe;
+
+  --color-secondary: #f472b6;
+  --color-accent: #38bdf8;
+
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  
+  --color-border: #e2e8f0;
+  --color-border-hover: #cbd5e1;
+
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+
+  --color-success: #10b981;
+  --color-success-soft: #d1fae5;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #ef4444;
+  --color-danger-soft: #fee2e2;
+  --color-info: #3b82f6;
+  --color-info-soft: #dbeafe;
+}
+
+/* ============================
+   DARK MODE OVERRIDES
+   ============================ */
+[data-theme='dark'] {
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-elevated: #334155;
+  --color-surface-hover: #334155;
+  
+  --color-border: #334155;
+  --color-border-hover: #475569;
+
+  --color-text: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #64748b;
+
+  --color-primary-soft: #4c1d95;
+  --color-primary-muted: #5b21b6;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================
+   PASTEL PRESETS (LIGHT & DARK)
+   ============================ */
+/* MINT */
+[data-preset='mint'] {
+  --color-primary: #10b981;
+  --color-primary-hover: #059669;
+  --color-primary-soft: #d1fae5;
+  --color-primary-muted: #a7f3d0;
+}
+[data-theme='dark'][data-preset='mint'] {
+  --color-primary-soft: #064e3b;
+  --color-primary-muted: #065f46;
+}
+
+/* SKY */
+[data-preset='sky'] {
+  --color-primary: #0ea5e9;
+  --color-primary-hover: #0284c7;
+  --color-primary-soft: #e0f2fe;
+  --color-primary-muted: #bae6fd;
+}
+[data-theme='dark'][data-preset='sky'] {
+  --color-primary-soft: #082f49;
+  --color-primary-muted: #0c4a6e;
+}
+
+/* PEACH */
+[data-preset='peach'] {
+  --color-primary: #f97316;
+  --color-primary-hover: #ea580c;
+  --color-primary-soft: #ffedd5;
+  --color-primary-muted: #fed7aa;
+}
+[data-theme='dark'][data-preset='peach'] {
+  --color-primary-soft: #431407;
+  --color-primary-muted: #7c2d12;
+}
+
+/* ROSE */
+[data-preset='rose'] {
+  --color-primary: #f43f5e;
+  --color-primary-hover: #e11d48;
+  --color-primary-soft: #ffe4e6;
+  --color-primary-muted: #fecdd3;
+}
+[data-theme='dark'][data-preset='rose'] {
+  --color-primary-soft: #4c0519;
+  --color-primary-muted: #881337;
+}
+
+/* LEMON */
+[data-preset='lemon'] {
+  --color-primary: #eab308;
+  --color-primary-hover: #ca8a04;
+  --color-primary-soft: #fef9c3;
+  --color-primary-muted: #fef08a;
+}
+[data-theme='dark'][data-preset='lemon'] {
+  --color-primary-soft: #422006;
+  --color-primary-muted: #713f12;
+}
+
+/* PERIWINKLE */
+[data-preset='periwinkle'] {
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-soft: #e0e7ff;
+  --color-primary-muted: #c7d2fe;
+}
+[data-theme='dark'][data-preset='periwinkle'] {
+  --color-primary-soft: #312e81;
+  --color-primary-muted: #3730a3;
+}
+
+/* SAKURA */
+[data-preset='sakura'] {
+  --color-primary: #ec4899;
+  --color-primary-hover: #db2777;
+  --color-primary-soft: #fce7f3;
+  --color-primary-muted: #fbcfe8;
+}
+[data-theme='dark'][data-preset='sakura'] {
+  --color-primary-soft: #500724;
+  --color-primary-muted: #831843;
+}
+
+/* OCEAN */
+[data-preset='ocean'] {
+  --color-primary: #06b6d4;
+  --color-primary-hover: #0891b2;
+  --color-primary-soft: #cffafe;
+  --color-primary-muted: #a5f3fc;
+}
+[data-theme='dark'][data-preset='ocean'] {
+  --color-primary-soft: #083344;
+  --color-primary-muted: #164e63;
+}
+
+/* SUNSET */
+[data-preset='sunset'] {
+  --color-primary: #f43f5e; 
+  --color-primary-hover: #e11d48;
+  --color-primary-soft: #ffe4e6;
+  --color-primary-muted: #fecdd3;
+  --color-secondary: #f97316;
+}
+[data-theme='dark'][data-preset='sunset'] {
+  --color-primary-soft: #4c0519;
+  --color-primary-muted: #881337;
+}
+
+/* ============================
+   REDUCED MOTION
+   ============================ */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

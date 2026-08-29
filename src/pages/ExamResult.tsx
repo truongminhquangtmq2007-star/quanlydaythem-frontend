@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import axiosClient from '../api/axiosClient';
+import { Button } from '../components/ui/Button';
 
 // ==========================================
 // HÀM TIỆN ÍCH: Render LaTeX an toàn
@@ -29,7 +30,7 @@ const renderContent = (text: string) => {
     return (
       <InlineMath key={index} math={math}
         renderError={(error) => (
-          <span style={{ color: '#ef4444', fontSize: '13px', fontWeight: 'bold' }}>
+          <span style={{ color: 'var(--color-danger)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)' }}>
             ⚠️ {math} <br /><span style={{ fontSize: '11px', color: '#b91c1c' }}>{error.message}</span>
           </span>
         )}
@@ -39,8 +40,8 @@ const renderContent = (text: string) => {
 };
 
 const ImageBlock = ({ url }: { url: string }) => (
-  <div style={{ float: 'right', marginLeft: '15px', marginBottom: '10px', maxWidth: '42%' }}>
-    <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #cbd5e1', display: 'block' }} />
+  <div style={{ float: 'right', marginLeft: 'var(--spacing-4)', marginBottom: 'var(--spacing-2)', maxWidth: '42%' }}>
+    <img src={url} alt="Hình minh họa" style={{ width: '100%', maxHeight: '260px', objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', display: 'block' }} />
   </div>
 );
 
@@ -86,9 +87,9 @@ const findGroupIfFirst = (examData: any, part: string, qId: number): SharedConte
 };
 
 const renderGroupBlock = (group: SharedContext) => (
-  <div style={{ backgroundColor: '#fffbeb', border: '1px dashed #f59e0b', padding: '15px', borderRadius: '8px', marginBottom: '20px', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
+  <div style={{ backgroundColor: 'var(--color-surface)beb', border: '1px dashed var(--color-warning)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-5)', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
     {group.image_url && <ImageBlock url={group.image_url} />}
-    <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+    <div style={{ fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-2)' }}>
       📌 Sử dụng thông tin sau để trả lời các câu {group.questionIds.join(', ')}:
     </div>
     <div>{renderContent(group.content)}</div>
@@ -137,23 +138,23 @@ const AITutorBlock = ({ examId, questionId }: { examId: string | number, questio
   if (!examId) return null;
 
   return (
-    <div style={{ marginTop: '15px' }}>
-      <button 
+    <div style={{ marginTop: 'var(--spacing-4)' }}>
+      <Button 
         onClick={() => setIsOpen(!isOpen)}
-        style={{ padding: '8px 16px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+        style={{ padding: '8px 16px', backgroundColor: '#8b5cf6', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
         💬 Hỏi Gia sư AI giải thích câu này
-      </button>
+      </Button>
       
       {isOpen && (
-        <div style={{ marginTop: '15px', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+        <div style={{ marginTop: 'var(--spacing-4)', backgroundColor: 'var(--color-background)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
           {chatHistory.map((msg, idx) => (
-            <div key={idx} style={{ marginBottom: '10px', display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+            <div key={idx} style={{ marginBottom: 'var(--spacing-2)', display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
                <div style={{
-                 backgroundColor: msg.role === 'user' ? '#3b82f6' : '#ffffff',
-                 color: msg.role === 'user' ? 'white' : '#1e293b',
+                 backgroundColor: msg.role === 'user' ? 'var(--color-primary)' : 'var(--color-surface)',
+                 color: msg.role === 'user' ? 'var(--color-surface)' : 'var(--color-text)',
                  padding: '10px 15px',
-                 borderRadius: '12px',
-                 border: msg.role === 'ai' ? '1px solid #cbd5e1' : 'none',
+                 borderRadius: 'var(--radius-lg)',
+                 border: msg.role === 'ai' ? '1px solid var(--color-border)' : 'none',
                  maxWidth: '100%',
                  overflowX: 'auto'
                }}>
@@ -165,23 +166,23 @@ const AITutorBlock = ({ examId, questionId }: { examId: string | number, questio
                </div>
             </div>
           ))}
-          {loading && <div style={{ color: '#64748b', fontSize: '14px', fontStyle: 'italic', marginBottom: '10px' }}>AI đang phân tích lời giải...</div>}
+          {loading && <div style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', fontStyle: 'italic', marginBottom: 'var(--spacing-2)' }}>AI đang phân tích lời giải...</div>}
           
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+          <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-2)' }}>
             <input 
                type="text" 
                value={question} 
                onChange={e => setQuestion(e.target.value)} 
                onKeyDown={e => e.key === 'Enter' && handleSend()}
                placeholder="Nhập thắc mắc (VD: Tại sao bước 2 lại ra công thức đó?)..." 
-               style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+               style={{ flex: 1, padding: 'var(--spacing-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
             />
-            <button 
+            <Button 
                onClick={handleSend} 
                disabled={loading}
-               style={{ padding: '10px 20px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+               style={{ padding: '10px 20px', backgroundColor: 'var(--color-success)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
                Gửi
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -280,10 +281,10 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
 
   // Tính grade color
   const getScoreColor = (s: number) => {
-    if (s >= 8) return '#10b981';
-    if (s >= 6.5) return '#3b82f6';
-    if (s >= 5) return '#f59e0b';
-    return '#ef4444';
+    if (s >= 8) return 'var(--color-success)';
+    if (s >= 6.5) return 'var(--color-primary)';
+    if (s >= 5) return 'var(--color-warning)';
+    return 'var(--color-danger)';
   };
 
   const scoreColor = getScoreColor(totalScore);
@@ -292,33 +293,28 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
   // STYLES
   // ==========================================
   const styles = {
-    container: { backgroundColor: '#f1f5f9', minHeight: isTeacherView ? 'auto' : '100vh', fontFamily: 'Inter, -apple-system, sans-serif' } as React.CSSProperties,
-    header: { background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)', padding: '25px 30px', color: 'white', borderRadius: isTeacherView ? '12px 12px 0 0' : undefined } as React.CSSProperties,
-    headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' } as React.CSSProperties,
-    backBtn: { padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' } as React.CSSProperties,
-    scorePanel: { display: 'flex', alignItems: 'center', gap: '40px', justifyContent: 'center', flexWrap: 'wrap' as const } as React.CSSProperties,
-    bigScore: { textAlign: 'center' as const } as React.CSSProperties,
-    bigScoreValue: { fontSize: isTeacherView ? '56px' : '72px', fontWeight: '900', lineHeight: 1, textShadow: '0 4px 15px rgba(0,0,0,0.2)' } as React.CSSProperties,
-    bigScoreLabel: { fontSize: '14px', color: '#bfdbfe', marginTop: '5px', fontWeight: '600' } as React.CSSProperties,
-    statCards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', flex: 1, maxWidth: '600px' } as React.CSSProperties,
-    statCard: (bg: string) => ({ backgroundColor: bg, borderRadius: '12px', padding: '14px', textAlign: 'center' as const }) as React.CSSProperties,
-    statValue: { fontSize: '20px', fontWeight: '800', color: 'white', margin: 0 } as React.CSSProperties,
-    statLabel: { fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '2px', fontWeight: '600' } as React.CSSProperties,
-    // Bảng breakdown
-    breakdownContainer: { margin: isTeacherView ? '0' : '-30px 30px 0 30px', position: 'relative' as const, zIndex: 10 } as React.CSSProperties,
-    breakdownCard: { backgroundColor: 'white', borderRadius: isTeacherView ? '0' : '16px', padding: '25px', boxShadow: isTeacherView ? 'none' : '0 10px 30px rgba(0,0,0,0.08)', marginBottom: '25px' } as React.CSSProperties,
-    breakdownGrid: { display: 'grid', gridTemplateColumns: isEnglishExam ? '1fr' : '1fr 1fr 1fr', gap: '15px' } as React.CSSProperties,
-    partBox: (color: string) => ({ border: `2px solid ${color}`, borderRadius: '12px', padding: '18px', textAlign: 'center' as const }) as React.CSSProperties,
-    // Review section
-    reviewCard: { maxWidth: '900px', margin: '0 auto', backgroundColor: 'white', borderRadius: '16px', padding: '35px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', marginBottom: '30px' } as React.CSSProperties,
-    sectionTitle: { color: '#1e3a8a', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' as const, borderBottom: '2px solid #1e3a8a', paddingBottom: '10px', marginBottom: '30px', marginTop: '40px' } as React.CSSProperties,
-    questionBox: { marginBottom: '30px', clear: 'both' as const, borderBottom: '1px solid #f1f5f9', paddingBottom: '25px' } as React.CSSProperties,
-    questionText: { fontWeight: 'bold', marginBottom: '15px', lineHeight: '1.6', fontSize: '15px', color: '#1e293b' } as React.CSSProperties,
-    optionsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' } as React.CSSProperties,
-  };
-
-  // ==========================================
-  // RENDER PART 1 — Trắc nghiệm
+      container: { backgroundColor: 'var(--color-background)', minHeight: isTeacherView ? 'auto' : '100vh', paddingBottom: 'var(--spacing-16)' } as React.CSSProperties,
+      header: { background: 'var(--color-primary)', padding: 'var(--spacing-8) var(--spacing-6)', color: 'var(--color-surface)', borderRadius: isTeacherView ? '0' : '0 0 var(--radius-xl) var(--radius-xl)' } as React.CSSProperties,
+      headerTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)', maxWidth: '1000px', margin: '0 auto var(--spacing-6) auto' } as React.CSSProperties,
+      backBtn: { padding: 'var(--spacing-2) var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.3)', backgroundColor: 'transparent', color: 'var(--color-surface)', fontWeight: 'var(--font-weight-medium)', cursor: 'pointer', fontSize: 'var(--font-size-sm)', transition: 'all var(--transition-fast)' } as React.CSSProperties,
+      scorePanel: { display: 'flex', alignItems: 'center', gap: 'var(--spacing-10)', justifyContent: 'center', flexWrap: 'wrap' as const, maxWidth: '1000px', margin: '0 auto' } as React.CSSProperties,
+      bigScore: { textAlign: 'center' as const } as React.CSSProperties,
+      bigScoreValue: { fontSize: isTeacherView ? '56px' : '72px', fontWeight: 'var(--font-weight-bold)', lineHeight: 1, textShadow: 'var(--shadow-sm)', color: 'var(--color-surface)' } as React.CSSProperties,
+      bigScoreLabel: { fontSize: 'var(--font-size-sm)', color: 'rgba(255,255,255,0.8)', marginTop: 'var(--spacing-1)', fontWeight: 'var(--font-weight-semibold)' } as React.CSSProperties,
+      statCards: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--spacing-3)', flex: 1, maxWidth: '600px' } as React.CSSProperties,
+      statCard: (bg: string) => ({ backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-4)', textAlign: 'center' as const, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--color-border)' }) as React.CSSProperties,
+      statValue: { fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', margin: 0 } as React.CSSProperties,
+      statLabel: { fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)', fontWeight: 'var(--font-weight-semibold)' } as React.CSSProperties,
+      breakdownContainer: { margin: isTeacherView ? '0' : '-30px auto 0 auto', maxWidth: '1000px', position: 'relative' as const, zIndex: 10 } as React.CSSProperties,
+      breakdownCard: { backgroundColor: 'var(--color-surface)', borderRadius: isTeacherView ? '0' : 'var(--radius-lg)', padding: 'var(--spacing-6)', boxShadow: isTeacherView ? 'none' : 'var(--shadow-md)', marginBottom: 'var(--spacing-6)' } as React.CSSProperties,
+      breakdownGrid: { display: 'grid', gridTemplateColumns: isEnglishExam ? '1fr' : '1fr 1fr 1fr', gap: 'var(--spacing-4)' } as React.CSSProperties,
+      partBox: (color: string) => ({ border: `1px solid ${color}`, borderRadius: 'var(--radius-md)', padding: 'var(--spacing-4)', textAlign: 'center' as const, backgroundColor: 'var(--color-surface)' }) as React.CSSProperties,
+      reviewCard: { maxWidth: '1000px', margin: '0 auto', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', padding: 'var(--spacing-8)', boxShadow: 'var(--shadow-sm)', marginBottom: 'var(--spacing-8)' } as React.CSSProperties,
+      sectionTitle: { color: 'var(--color-primary)', fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', borderBottom: '2px solid var(--color-primary)', paddingBottom: 'var(--spacing-2)', marginBottom: 'var(--spacing-6)', marginTop: 'var(--spacing-8)' } as React.CSSProperties,
+      questionBox: { marginBottom: 'var(--spacing-6)', clear: 'both' as const, borderBottom: '1px solid var(--color-border)', paddingBottom: 'var(--spacing-6)' } as React.CSSProperties,
+      questionText: { fontWeight: 'var(--font-weight-medium)', marginBottom: 'var(--spacing-4)', lineHeight: '1.6', fontSize: 'var(--font-size-base)', color: 'var(--color-text)' } as React.CSSProperties,
+      optionsGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-3)' } as React.CSSProperties,
+    };
   // ==========================================
   const renderPart1Review = () => {
     const part1Details = (Array.isArray(details) ? details : []).filter(d => d.part === 'part1');
@@ -343,15 +339,15 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                 {group && renderGroupBlock(group)}
                 <div style={styles.questionBox}>
                   {q.image_url && <ImageBlock url={q.image_url} />}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>
                     <div style={styles.questionText}>
                       <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
                     </div>
                     <div style={{
-                      padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold',
+                      padding: '4px 12px', borderRadius: 'var(--radius-xl)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)',
                       backgroundColor: isCorrect ? '#dcfce7' : '#fef2f2',
                       color: isCorrect ? '#15803d' : '#dc2626',
-                      whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '10px'
+                      whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 'var(--spacing-2)'
                     }}>
                       {isCorrect ? '✓ Đúng' : '✗ Sai'} ({detail?.score_earned ?? 0}đ)
                     </div>
@@ -362,48 +358,48 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                       const isStudentOpt = opt === studentAns;
                       const isWrong = isStudentOpt && !isCorrectOpt;
 
-                      let borderColor = '#e2e8f0';
-                      let bgColor = '#f8fafc';
-                      let textColor = '#94a3b8';
+                      let borderColor = 'var(--color-border)';
+                      let bgColor = 'var(--color-background)';
+                      let textColor = 'var(--color-text-secondary)';
 
                       if (isCorrectOpt) {
-                        borderColor = '#10b981'; bgColor = '#ecfdf5'; textColor = '#065f46';
+                        borderColor = 'var(--color-success)'; bgColor = '#ecfdf5'; textColor = '#065f46';
                       }
                       if (isWrong) {
-                        borderColor = '#ef4444'; bgColor = '#fef2f2'; textColor = '#991b1b';
+                        borderColor = 'var(--color-danger)'; bgColor = '#fef2f2'; textColor = '#991b1b';
                       }
 
                       return (
                         <div key={opt} style={{
                           border: `2px solid ${borderColor}`, backgroundColor: bgColor,
-                          borderRadius: '8px', padding: '10px 14px',
-                          display: 'flex', alignItems: 'center', gap: '10px', position: 'relative'
+                          borderRadius: 'var(--radius-md)', padding: '10px 14px',
+                          display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', position: 'relative'
                         }}>
                           <div style={{
                             width: '20px', height: '20px', borderRadius: '50%',
-                            border: isCorrectOpt ? '5px solid #10b981' : isWrong ? '5px solid #ef4444' : '2px solid #cbd5e1',
-                            backgroundColor: 'white', flexShrink: 0
+                            border: isCorrectOpt ? '5px solid var(--color-success)' : isWrong ? '5px solid var(--color-danger)' : '2px solid var(--color-border)',
+                            backgroundColor: 'var(--color-surface)', flexShrink: 0
                           }} />
                           <div style={{ color: textColor, fontWeight: (isCorrectOpt || isWrong) ? 'bold' : 'normal' }}>
                             <strong>{opt}.</strong> {renderContent(q.options?.[opt] || '')}
                           </div>
-                          {isCorrectOpt && <span style={{ position: 'absolute', right: '10px', fontSize: '16px' }}>✅</span>}
-                          {isWrong && <span style={{ position: 'absolute', right: '10px', fontSize: '16px' }}>❌</span>}
+                          {isCorrectOpt && <span style={{ position: 'absolute', right: 'var(--spacing-2)', fontSize: 'var(--font-size-base)' }}>✅</span>}
+                          {isWrong && <span style={{ position: 'absolute', right: 'var(--spacing-2)', fontSize: 'var(--font-size-base)' }}>❌</span>}
                         </div>
                       );
                     })}
                   </div>
                   {!isCorrect && (
-                    <div style={{ marginTop: '15px' }}>
-                      <button 
+                    <div style={{ marginTop: 'var(--spacing-4)' }}>
+                      <Button 
                         onClick={() => handleExplainError(q.id.toString(), studentAns)}
                         disabled={aiExplanations[q.id]?.loading}
-                        style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                        style={{ padding: '8px 16px', backgroundColor: 'var(--color-primary)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
                         {aiExplanations[q.id]?.loading ? '⏳ Đang phân tích...' : '✨ Nhờ AI Giải thích'}
-                      </button>
+                      </Button>
                       
                       {aiExplanations[q.id]?.text && (
-                        <div style={{ marginTop: '15px', backgroundColor: '#eff6ff', padding: '15px', borderRadius: '8px', border: '1px solid #bfdbfe', color: '#1e3a8a', fontSize: '14px' }}>
+                        <div style={{ marginTop: 'var(--spacing-4)', backgroundColor: '#eff6ff', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe', color: '#1e3a8a', fontSize: 'var(--font-size-sm)' }}>
                           <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
                             {aiExplanations[q.id].text}
                           </ReactMarkdown>
@@ -427,15 +423,15 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
         <div style={styles.sectionTitle}>
           {isEnglishExam ? 'CÂU TRẮC NGHIỆM' : 'PHẦN I. CÂU TRẮC NGHIỆM NHIỀU PHƯƠNG ÁN'}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--spacing-2)' }}>
           {part1Details.map(d => (
             <div key={d.question_id} style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              padding: '10px 14px', borderRadius: '10px',
+              padding: '10px 14px', borderRadius: 'var(--radius-md)',
               backgroundColor: d.is_correct ? '#ecfdf5' : '#fef2f2',
               border: `1px solid ${d.is_correct ? '#a7f3d0' : '#fecaca'}`
             }}>
-              <span style={{ fontWeight: '700', color: '#475569', fontSize: '14px' }}>Câu {d.question_id}</span>
+              <span style={{ fontWeight: '700', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>Câu {d.question_id}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{
                   fontWeight: '800', fontSize: '15px',
@@ -445,7 +441,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                 {!d.is_correct && (
                   <span style={{
                     fontWeight: '800', fontSize: '15px', color: '#059669',
-                    backgroundColor: '#d1fae5', padding: '1px 8px', borderRadius: '4px'
+                    backgroundColor: '#d1fae5', padding: '1px 8px', borderRadius: 'var(--radius-sm)'
                   }}>{d.correct_answer}</span>
                 )}
               </div>
@@ -486,28 +482,28 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
               {group && renderGroupBlock(group)}
               <div style={styles.questionBox}>
                 {q?.image_url && <ImageBlock url={q.image_url} />}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-2)' }}>
                   <div style={styles.questionText}>
                     <strong>Câu {qId}. </strong>{q ? renderContent(q.questionText) : ''}
                   </div>
                   <div style={{
-                    padding: '6px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold',
+                    padding: '6px 14px', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)',
                     backgroundColor: correctCount === 4 ? '#dcfce7' : correctCount >= 2 ? '#fefce8' : '#fef2f2',
                     color: correctCount === 4 ? '#15803d' : correctCount >= 2 ? '#a16207' : '#dc2626',
-                    whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '10px', textAlign: 'center' as const
+                    whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 'var(--spacing-2)', textAlign: 'center' as const
                   }}>
                     <div>{baremLabel}</div>
-                    <div style={{ fontSize: '16px', marginTop: '2px' }}>+{qScore}đ</div>
+                    <div style={{ fontSize: 'var(--font-size-base)', marginTop: '2px' }}>+{qScore}đ</div>
                   </div>
                 </div>
 
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 'var(--spacing-2)' }}>
                   <thead>
-                    <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-                      <th style={{ padding: '8px', textAlign: 'left', fontSize: '13px', color: '#64748b' }}>Mệnh đề</th>
-                      <th style={{ padding: '8px', textAlign: 'center', fontSize: '13px', color: '#64748b', width: '100px' }}>Trò chọn</th>
-                      <th style={{ padding: '8px', textAlign: 'center', fontSize: '13px', color: '#64748b', width: '100px' }}>Đáp án chuẩn</th>
-                      <th style={{ padding: '8px', textAlign: 'center', fontSize: '13px', color: '#64748b', width: '60px' }}>Kết quả</th>
+                    <tr style={{ borderBottom: '2px solid var(--color-border)' }}>
+                      <th style={{ padding: 'var(--spacing-2)', textAlign: 'left', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Mệnh đề</th>
+                      <th style={{ padding: 'var(--spacing-2)', textAlign: 'center', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', width: '100px' }}>Trò chọn</th>
+                      <th style={{ padding: 'var(--spacing-2)', textAlign: 'center', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', width: '100px' }}>Đáp án chuẩn</th>
+                      <th style={{ padding: 'var(--spacing-2)', textAlign: 'center', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', width: '60px' }}>Kết quả</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -519,22 +515,22 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
 
                       return (
                         <tr key={stmt} style={{
-                          borderBottom: '1px dashed #e2e8f0',
+                          borderBottom: '1px dashed var(--color-border)',
                           backgroundColor: isStmtCorrect ? '#f0fdf4' : (studentVal !== '—' ? '#fef2f2' : 'transparent')
                         }}>
                           <td style={{ padding: '10px 8px' }}>
                             <strong>{stmt})</strong> {q ? renderContent(q.statements?.[stmt] || '') : `Ý ${stmt}`}
                           </td>
                           <td style={{
-                            padding: '10px 8px', textAlign: 'center', fontWeight: 'bold',
-                            color: isStmtCorrect ? '#10b981' : (studentVal !== '—' ? '#ef4444' : '#94a3b8')
+                            padding: '10px 8px', textAlign: 'center', fontWeight: 'var(--font-weight-bold)',
+                            color: isStmtCorrect ? 'var(--color-success)' : (studentVal !== '—' ? 'var(--color-danger)' : 'var(--color-text-secondary)')
                           }}>
                             {studentVal === 'Đ' ? 'ĐÚNG' : studentVal === 'S' ? 'SAI' : studentVal}
                           </td>
-                          <td style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 'bold', color: '#10b981' }}>
+                          <td style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-success)' }}>
                             {correctVal === 'Đ' ? 'ĐÚNG' : correctVal === 'S' ? 'SAI' : correctVal}
                           </td>
-                          <td style={{ padding: '10px 8px', textAlign: 'center', fontSize: '18px' }}>
+                          <td style={{ padding: '10px 8px', textAlign: 'center', fontSize: 'var(--font-size-lg)' }}>
                             {isStmtCorrect ? '✅' : '❌'}
                           </td>
                         </tr>
@@ -543,16 +539,16 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                   </tbody>
                 </table>
                 {correctCount < 4 && (
-                    <div style={{ marginTop: '15px' }}>
-                      <button 
+                    <div style={{ marginTop: 'var(--spacing-4)' }}>
+                      <Button 
                         onClick={() => handleExplainError(qId.toString(), stmtResults.map(s => `${s.statement}: ${s.student || 'trống'}`).join(', '))}
                         disabled={aiExplanations[qId]?.loading}
-                        style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                        style={{ padding: '8px 16px', backgroundColor: 'var(--color-primary)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
                         {aiExplanations[qId]?.loading ? '⏳ Đang phân tích...' : '✨ Nhờ AI Giải thích'}
-                      </button>
+                      </Button>
                       
                       {aiExplanations[qId]?.text && (
-                        <div style={{ marginTop: '15px', backgroundColor: '#eff6ff', padding: '15px', borderRadius: '8px', border: '1px solid #bfdbfe', color: '#1e3a8a', fontSize: '14px' }}>
+                        <div style={{ marginTop: 'var(--spacing-4)', backgroundColor: '#eff6ff', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe', color: '#1e3a8a', fontSize: 'var(--font-size-sm)' }}>
                           <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
                             {aiExplanations[qId].text}
                           </ReactMarkdown>
@@ -595,31 +591,31 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
               {group && renderGroupBlock(group)}
               <div style={styles.questionBox}>
                 {q?.image_url && <ImageBlock url={q.image_url} />}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>
                   <div style={styles.questionText}>
                     <strong>Câu {qId}. </strong>{q ? renderContent(q.questionText) : ''}
                   </div>
                   <div style={{
-                    padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold',
+                    padding: '4px 12px', borderRadius: 'var(--radius-xl)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)',
                     backgroundColor: isCorrect ? '#dcfce7' : '#fef2f2',
                     color: isCorrect ? '#15803d' : '#dc2626',
-                    whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '10px'
+                    whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 'var(--spacing-2)'
                   }}>
                     {isCorrect ? '✓ Đúng' : '✗ Sai'} ({scoreEarned}/{maxScore}đ)
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-5)', marginTop: 'var(--spacing-3)', flexWrap: 'wrap' }}>
                   {/* Câu trả lời học sinh */}
                   <div style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '10px 16px', borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)',
+                    padding: '10px 16px', borderRadius: 'var(--radius-md)',
                     backgroundColor: isCorrect ? '#ecfdf5' : '#fef2f2',
-                    border: `2px solid ${isCorrect ? '#10b981' : '#ef4444'}`
+                    border: `2px solid ${isCorrect ? 'var(--color-success)' : 'var(--color-danger)'}`
                   }}>
-                    <span style={{ fontSize: '13px', color: '#64748b' }}>Trò trả lời:</span>
+                    <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Trò trả lời:</span>
                     <span style={{
-                      fontWeight: 'bold', fontSize: '16px',
+                      fontWeight: 'var(--font-weight-bold)', fontSize: 'var(--font-size-base)',
                       color: isCorrect ? '#065f46' : '#991b1b',
                       textDecoration: isCorrect ? 'none' : 'line-through'
                     }}>
@@ -630,28 +626,28 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                   {/* Đáp án đúng (hiển thị khi sai) */}
                   {!isCorrect && (
                     <div style={{
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                      padding: '10px 16px', borderRadius: '8px',
-                      backgroundColor: '#ecfdf5', border: '2px solid #10b981'
+                      display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)',
+                      padding: '10px 16px', borderRadius: 'var(--radius-md)',
+                      backgroundColor: '#ecfdf5', border: '2px solid var(--color-success)'
                     }}>
-                      <span style={{ fontSize: '13px', color: '#64748b' }}>Đáp án đúng:</span>
-                      <span style={{ fontWeight: 'bold', fontSize: '16px', color: '#065f46' }}>
+                      <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>Đáp án đúng:</span>
+                      <span style={{ fontWeight: 'var(--font-weight-bold)', fontSize: 'var(--font-size-base)', color: '#065f46' }}>
                         {correctAns}
                       </span>
                     </div>
                   )}
                 </div>
                 {!isCorrect && (
-                    <div style={{ marginTop: '15px' }}>
-                      <button 
+                    <div style={{ marginTop: 'var(--spacing-4)' }}>
+                      <Button 
                         onClick={() => handleExplainError(qId.toString(), studentAns)}
                         disabled={aiExplanations[qId]?.loading}
-                        style={{ padding: '8px 16px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                        style={{ padding: '8px 16px', backgroundColor: 'var(--color-primary)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
                         {aiExplanations[qId]?.loading ? '⏳ Đang phân tích...' : '✨ Nhờ AI Giải thích'}
-                      </button>
+                      </Button>
                       
                       {aiExplanations[qId]?.text && (
-                        <div style={{ marginTop: '15px', backgroundColor: '#eff6ff', padding: '15px', borderRadius: '8px', border: '1px solid #bfdbfe', color: '#1e3a8a', fontSize: '14px' }}>
+                        <div style={{ marginTop: 'var(--spacing-4)', backgroundColor: '#eff6ff', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe', color: '#1e3a8a', fontSize: 'var(--font-size-sm)' }}>
                           <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
                             {aiExplanations[qId].text}
                           </ReactMarkdown>
@@ -678,9 +674,9 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
       <div style={styles.header}>
         <div style={styles.headerTop}>
           {onBackToList ? (
-            <button style={styles.backBtn} onClick={onBackToList}>← Về danh sách đề</button>
+            <Button style={styles.backBtn} onClick={onBackToList}>← Về danh sách đề</Button>
           ) : <div />}
-          <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#bfdbfe' }}>{displayTitle}</h2>
+          <h2 style={{ margin: 0, fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', color: '#bfdbfe' }}>{displayTitle}</h2>
           <div style={{ width: '120px' }} />
         </div>
 
@@ -700,7 +696,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
               <div style={styles.statLabel}>CÂU ĐÚNG</div>
             </div>
             <div style={styles.statCard('rgba(59,130,246,0.9)')}>
-              <div style={{ ...styles.statValue, fontSize: '14px' }}>{formatDuration(displayTimeTaken)}</div>
+              <div style={{ ...styles.statValue, fontSize: 'var(--font-size-sm)' }}>{formatDuration(displayTimeTaken)}</div>
               <div style={styles.statLabel}>THỜI GIAN</div>
             </div>
             <div style={styles.statCard(cheatCount > 0 ? 'rgba(239,68,68,0.95)' : 'rgba(100,116,139,0.7)')}>
@@ -709,7 +705,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
             </div>
             {!isEnglishExam && (
               <div style={styles.statCard('rgba(168,85,247,0.9)')}>
-                <div style={{ ...styles.statValue, fontSize: '14px' }}>
+                <div style={{ ...styles.statValue, fontSize: 'var(--font-size-sm)' }}>
                   {p1Score} + {p2Score} + {p3Score}
                 </div>
                 <div style={styles.statLabel}>P1 + P2 + P3</div>
@@ -722,20 +718,20 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
       {/* ======== BREAKDOWN PER PART ======== */}
       <div style={styles.breakdownContainer}>
         <div style={styles.breakdownCard}>
-          <h3 style={{ margin: '0 0 15px 0', color: '#1e293b', fontSize: '16px' }}>📊 Chi tiết theo phần</h3>
+          <h3 style={{ margin: '0 0 15px 0', color: 'var(--color-text)', fontSize: 'var(--font-size-base)' }}>📊 Chi tiết theo phần</h3>
           <div style={styles.breakdownGrid}>
             {/* Part 1 */}
-            <div style={styles.partBox('#3b82f6')}>
-              <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', marginBottom: '8px' }}>
+            <div style={styles.partBox('var(--color-primary)')}>
+              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-2)' }}>
                 {isEnglishExam ? 'Trắc nghiệm' : 'Phần I — Trắc nghiệm'}
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: '#1e40af' }}>{p1Score}đ</div>
-              <div style={{ fontSize: '13px', color: '#64748b', marginTop: '5px' }}>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-primary-dark)' }}>{p1Score}đ</div>
+              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)' }}>
                 {p1Correct}/{p1Total} câu đúng
               </div>
-              <div style={{ marginTop: '8px', height: '6px', borderRadius: '3px', backgroundColor: '#e2e8f0', overflow: 'hidden' }}>
+              <div style={{ marginTop: 'var(--spacing-2)', height: '6px', borderRadius: '3px', backgroundColor: 'var(--color-border)', overflow: 'hidden' }}>
                 <div style={{
-                  height: '100%', borderRadius: '3px', backgroundColor: '#3b82f6',
+                  height: '100%', borderRadius: '3px', backgroundColor: 'var(--color-primary)',
                   width: p1Total > 0 ? `${(p1Correct / p1Total) * 100}%` : '0%', transition: 'width 0.5s ease'
                 }} />
               </div>
@@ -743,13 +739,13 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
 
             {/* Part 2 */}
             {!isEnglishExam && (
-              <div style={styles.partBox('#f59e0b')}>
-                <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', marginBottom: '8px' }}>Phần II — Đúng / Sai</div>
+              <div style={styles.partBox('var(--color-warning)')}>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-2)' }}>Phần II — Đúng / Sai</div>
                 <div style={{ fontSize: '28px', fontWeight: '800', color: '#d97706' }}>{p2Score}đ</div>
-                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '5px' }}>{p2Correct}/{p2Total} câu đúng hoàn toàn</div>
-                <div style={{ marginTop: '8px', height: '6px', borderRadius: '3px', backgroundColor: '#e2e8f0', overflow: 'hidden' }}>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)' }}>{p2Correct}/{p2Total} câu đúng hoàn toàn</div>
+                <div style={{ marginTop: 'var(--spacing-2)', height: '6px', borderRadius: '3px', backgroundColor: 'var(--color-border)', overflow: 'hidden' }}>
                   <div style={{
-                    height: '100%', borderRadius: '3px', backgroundColor: '#f59e0b',
+                    height: '100%', borderRadius: '3px', backgroundColor: 'var(--color-warning)',
                     width: p2Total > 0 ? `${(p2Correct / p2Total) * 100}%` : '0%', transition: 'width 0.5s ease'
                   }} />
                 </div>
@@ -759,10 +755,10 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
             {/* Part 3 */}
             {!isEnglishExam && (
               <div style={styles.partBox('#8b5cf6')}>
-                <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '600', marginBottom: '8px' }}>Phần III — Trả lời ngắn</div>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-2)' }}>Phần III — Trả lời ngắn</div>
                 <div style={{ fontSize: '28px', fontWeight: '800', color: '#7c3aed' }}>{p3Score}đ</div>
-                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '5px' }}>{p3Correct}/{p3Total} câu đúng</div>
-                <div style={{ marginTop: '8px', height: '6px', borderRadius: '3px', backgroundColor: '#e2e8f0', overflow: 'hidden' }}>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)' }}>{p3Correct}/{p3Total} câu đúng</div>
+                <div style={{ marginTop: 'var(--spacing-2)', height: '6px', borderRadius: '3px', backgroundColor: 'var(--color-border)', overflow: 'hidden' }}>
                   <div style={{
                     height: '100%', borderRadius: '3px', backgroundColor: '#8b5cf6',
                     width: p3Total > 0 ? `${(p3Correct / p3Total) * 100}%` : '0%', transition: 'width 0.5s ease'
@@ -774,13 +770,13 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
 
           {/* Nút xem đáp án chi tiết */}
           {allowViewAnswers && onViewAnswers && (
-            <div style={{ textAlign: 'center', marginTop: '20px' }}>
-              <button onClick={onViewAnswers} style={{
-                padding: '10px 25px', backgroundColor: '#f59e0b', color: 'white',
-                border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px'
+            <div style={{ textAlign: 'center', marginTop: 'var(--spacing-5)' }}>
+              <Button onClick={onViewAnswers} style={{
+                padding: '10px 25px', backgroundColor: 'var(--color-warning)', color: 'var(--color-surface)',
+                border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 'var(--font-weight-bold)', cursor: 'pointer', fontSize: 'var(--font-size-sm)'
               }}>
                 👁️ Xem đáp án chuẩn chi tiết
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -790,10 +786,10 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
       {details.length > 0 && (
         <div style={{ padding: isTeacherView ? '0' : '0 30px 60px 30px' }}>
           <div style={styles.reviewCard}>
-            <h2 style={{ margin: '0 0 10px 0', color: '#1e293b', fontSize: '20px', textAlign: 'center' }}>
+            <h2 style={{ margin: '0 0 10px 0', color: 'var(--color-text)', fontSize: 'var(--font-size-xl)', textAlign: 'center' }}>
               📝 CHI TIẾT BÀI LÀM
             </h2>
-            <p style={{ textAlign: 'center', color: '#64748b', fontSize: '14px', margin: '0 0 20px 0' }}>
+            <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', margin: '0 0 20px 0' }}>
               Xem lại từng câu hỏi với đáp án đã chọn và đáp án đúng
             </p>
 
