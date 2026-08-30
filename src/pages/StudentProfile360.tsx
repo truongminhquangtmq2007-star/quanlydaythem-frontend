@@ -12,7 +12,7 @@ import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
 
 interface Profile360 {
-  profile: Student;
+  student: Student;
   classes: any[];
   attendance: {
     total: number;
@@ -41,8 +41,8 @@ const StudentProfile360 = () => {
         const token = localStorage.getItem('token');
         const res = await axiosClient.get(`/api/students/${id}/profile360`);
         setData(res.data);
-        if (res.data.profile.learning_goals) {
-          setLearningGoals(res.data.profile.learning_goals);
+        if (res.data.student?.learning_goals) {
+          setLearningGoals(res.data.student?.learning_goals);
         }
       } catch (err) {
         console.error(err);
@@ -68,7 +68,7 @@ const StudentProfile360 = () => {
   if (loading) return <div style={{ padding: 'var(--spacing-10)' }}><EmptyState title="Đang tải hồ sơ..." /></div>;
   if (!data) return <div style={{ padding: 'var(--spacing-10)' }}><EmptyState title="Không tìm thấy học sinh." /></div>;
 
-  const { profile, classes, attendance } = data;
+  const { student: profile, classes, attendance } = data;
 
   const handleSaveGoals = async () => {
     setSavingGoals(true);
@@ -87,7 +87,7 @@ const StudentProfile360 = () => {
     setEvaluating(true);
     try {
       const res = await axiosClient.post(`/api/students/${id}/ai-evaluation`);
-      setData(prev => prev ? { ...prev, profile: { ...prev.profile, ai_evaluation: res.data.data } } : null);
+      setData(prev => prev ? { ...prev, student: { ...prev.student, ai_evaluation: res.data.data } } : null);
       alert('Đã tạo phân tích AI thành công!');
     } catch (err) {
       alert('Chức năng Phân tích & Định hướng AI đang lỗi API.');
@@ -139,12 +139,12 @@ const StudentProfile360 = () => {
 
       
       {/* AI EVALUATION SECTION */}
-      {data.profile.ai_evaluation && Object.keys(data.profile.ai_evaluation).length > 0 && (
+      {data.student.ai_evaluation && Object.keys(data.student.ai_evaluation).length > 0 && (
         <Card style={{ border: '1px solid #8b5cf6', boxShadow: '0 4px 15px rgba(139,92,246,0.1)', marginBottom: 'var(--spacing-8)' }}>
           <h3 style={{ margin: '0 0 15px 0', color: '#6d28d9', display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>✨ Phân tích & Định hướng AI</h3>
           <div style={{ color: '#334155', lineHeight: '1.6', fontSize: '15px' }}>
             <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-              {typeof data.profile.ai_evaluation === 'string' ? data.profile.ai_evaluation : JSON.stringify(data.profile.ai_evaluation)}
+              {typeof data.student.ai_evaluation === 'string' ? data.student.ai_evaluation : JSON.stringify(data.student.ai_evaluation)}
             </ReactMarkdown>
           </div>
         </Card>

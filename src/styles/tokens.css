@@ -1,4 +1,11 @@
 :root {
+  --gradient-primary: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  --gradient-soft: linear-gradient(135deg, var(--color-surface), var(--color-background));
+  --gradient-hero: linear-gradient(135deg, var(--color-primary-light), var(--color-surface));
+  --color-surface-elevated: #ffffff;
+  --color-surface-interactive: #f8fafc;
+  --transition-fast: 120ms;
+  --transition-normal: 180ms;
   /* ============================
      1. TYPOGRAPHY
      ============================ */

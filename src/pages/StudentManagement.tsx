@@ -121,9 +121,9 @@ const StudentManagement = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan={5} style={{ padding: 'var(--spacing-10)', textAlign: 'center' }}>Đang tải dữ liệu...</td></tr>
-              ) : students.length === 0 ? (
+              ) : (!Array.isArray(students) || students.length === 0) ? (
                 <tr><td colSpan={5}><EmptyState title="Không tìm thấy học sinh nào" description="Thử thay đổi bộ lọc hoặc thêm học sinh mới." /></td></tr>
-              ) : students.map(student => (
+              ) : (Array.isArray(students) ? students : []).map(student => (
                 <tr key={student.id} style={{ borderBottom: '1px solid var(--color-background)', cursor: 'pointer' }} onClick={() => navigate(`/students/${student.id}`)} onMouseOver={e => e.currentTarget.style.backgroundColor = 'var(--color-background)'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                   <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-bold)' }}>{student.student_code || student.id}</td>
                   <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', fontSize: 'var(--font-size-base)' }}>{student.full_name}</td>

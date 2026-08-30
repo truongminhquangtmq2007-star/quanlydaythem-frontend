@@ -1,32 +1,29 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axiosClient from '../api/axiosClient';
 import moment from 'moment';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Input } from '../components/ui/Input';
 
 const TuitionManager = () => {
   const [bills, setBills] = useState<any[]>([]);
-  // Mặc định chọn tháng hiện tại (Ví dụ: '2026-08')
   const [selectedMonth, setSelectedMonth] = useState(moment().format('YYYY-MM'));
   const [stats, setStats] = useState({ totalExpected: 0, totalReceived: 0, totalPending: 0 });
 
-  const [aiRemarkModal, setAiRemarkModal] = useState<{ show: boolean, studentId: number | null, studentName: string, text: string, loading: boolean }>({
-    show: false, studentId: null, studentName: '', text: '', loading: false
+  const [aiRemarkModal, setAiRemarkModal] = useState<{ show: boolean, studentId: number | null, studentName: string, text: string, dataSummary: any, loading: boolean }>({
+    show: false, studentId: null, studentName: '', text: '', dataSummary: null, loading: false
   });
 
   const fetchBills = useCallback(async () => {
-    const token = localStorage.getItem('token');
     try {
       const res = await axiosClient.get(`/api/payments`);
       const allBills = res.data;
       
-      // LỌC HÓA ĐƠN THEO THÁNG ĐƯỢC CHỌN
       const filteredBills = allBills.filter((b: any) => moment(b.created_at).format('YYYY-MM') === selectedMonth);
       setBills(filteredBills);
       
-      // TÍNH TOÁN THỐNG KÊ CHO THÁNG ĐÓ
       let expected = 0; let received = 0; let pending = 0;
       filteredBills.forEach((b: any) => {
         expected += b.total_amount;
@@ -42,7 +39,6 @@ const TuitionManager = () => {
   const handleConfirmPayment = async (id: number) => {
     const confirm = window.confirm('💰 Xác nhận phụ huynh đã chuyển khoản cho phiếu này?');
     if (!confirm) return;
-    const token = localStorage.getItem('token');
     try {
       await axiosClient.put(`/api/payments/${id}/pay`, {});
       alert('✅ Đã ghi nhận doanh thu thành công! Học sinh đã được cấp tem.');
@@ -50,15 +46,54 @@ const TuitionManager = () => {
     } catch (error) { alert('❌ Lỗi hệ thống.'); }
   };
 
-  const handleOpenAiRemark = async (studentId: number, studentName: string) => {
-    setAiRemarkModal({ show: true, studentId, studentName, text: '', loading: true });
-    const token = localStorage.getItem('token');
+  const loadExistingRemark = async (studentId: number, studentName: string) => {
+    setAiRemarkModal({ show: true, studentId, studentName, text: '', dataSummary: null, loading: true });
     try {
-      const res = await axiosClient.post('/api/ai/generate-remark', { student_id: studentId });
-      setAiRemarkModal(prev => ({ ...prev, text: res.data.remark, loading: false }));
+      const res = await axiosClient.get(`/api/ai/remark/${studentId}/${selectedMonth}`);
+      if (res.data.remark) {
+        setAiRemarkModal(prev => ({ ...prev, text: res.data.remark, loading: false }));
+      } else {
+        generateRemark(studentId, studentName);
+      }
+    } catch (err) {
+      generateRemark(studentId, studentName);
+    }
+  };
+
+  const generateRemark = async (studentId: number, studentName: string) => {
+    setAiRemarkModal(prev => ({ ...prev, loading: true, text: '' }));
+    try {
+      const res = await axiosClient.post('/api/ai/generate-remark', { student_id: studentId, month: selectedMonth });
+      setAiRemarkModal(prev => ({ ...prev, text: res.data.remark, dataSummary: res.data.data_summary, loading: false }));
     } catch (err) {
       setAiRemarkModal(prev => ({ ...prev, text: 'Lỗi: Không thể sinh nhận xét lúc này.', loading: false }));
     }
+  };
+
+  const handleSaveRemark = async () => {
+    if (!aiRemarkModal.studentId) return;
+    try {
+      await axiosClient.post('/api/ai/save-remark', {
+        student_id: aiRemarkModal.studentId,
+        month: selectedMonth,
+        remark_text: aiRemarkModal.text,
+        data_summary: aiRemarkModal.dataSummary
+      });
+      alert('✅ Đã lưu nhận xét thành công!');
+    } catch (err) {
+      alert('❌ Lỗi khi lưu nhận xét.');
+    }
+  };
+
+  const handlePrint = () => {
+    const printContent = document.getElementById('print-area');
+    if (!printContent) return;
+    
+    const originalContent = document.body.innerHTML;
+    document.body.innerHTML = printContent.innerHTML;
+    window.print();
+    document.body.innerHTML = originalContent;
+    window.location.reload();
   };
 
   return (
@@ -66,11 +101,10 @@ const TuitionManager = () => {
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 'var(--spacing-8)', paddingBottom: 'var(--spacing-4)' }}>
         <div>
-          <h1 style={{ margin: '0 0 8px 0', color: 'var(--color-text)', fontSize: '30px' }}>Quản lý Tài chính</h1>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '15px' }}>Lưu trữ phiếu học phí, xác nhận thanh toán và theo dõi doanh thu.</p>
+          <h1 style={{ margin: '0 0 8px 0', color: 'var(--color-text)', fontSize: '30px' }}>Quản lý Tài chính & Phiếu học phí</h1>
+          <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '15px' }}>Lưu trữ phiếu học phí, xác nhận thanh toán và gửi báo cáo hàng tháng.</p>
         </div>
         
-        {/* BỘ LỌC THÁNG DOANH THU */}
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', padding: 'var(--spacing-3)' }}>
             <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-secondary)' }}>📅 Kỳ kế toán:</span>
@@ -84,7 +118,6 @@ const TuitionManager = () => {
         </Card>
       </div>
 
-      {/* DASHBOARD THỐNG KÊ (Thay đổi theo tháng) */}
       <div style={{ display: 'flex', gap: 'var(--spacing-5)', marginBottom: 'var(--spacing-8)', flexWrap: 'wrap' }}>
         <Card style={{ flex: 1, minWidth: '220px' }}>
           <div style={{ padding: 'var(--spacing-6)' }}>
@@ -106,7 +139,6 @@ const TuitionManager = () => {
         </Card>
       </div>
 
-      {/* DANH SÁCH PHIẾU THU */}
       <Card style={{ overflow: 'hidden' }}>
         <div style={{ padding: 'var(--spacing-6)', borderBottom: '1px solid var(--color-border)' }}>
           <h3 style={{ margin: 0, color: 'var(--color-text)', fontSize: 'var(--font-size-xl)' }}>Chi tiết giao dịch {moment(selectedMonth).format('[Tháng] MM/YYYY')}</h3>
@@ -118,15 +150,15 @@ const TuitionManager = () => {
               <tr style={{ backgroundColor: 'var(--color-background)' }}>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Mã phiếu</th>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Học viên</th>
-                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Giai đoạn tính tiền</th>
-                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Thành tích (Điểm thi)</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Kỳ học phí</th>
+                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Điểm thi gần đây</th>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Tổng tiền</th>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', textAlign: 'center' }}>Trạng thái</th>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', textAlign: 'center' }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
-              {bills.length === 0 ? (
+              {(!Array.isArray(bills) || bills.length === 0) ? (
                 <tr><td colSpan={7} style={{ padding: 'var(--spacing-10)' }}>
                   <EmptyState title="Không có hóa đơn" description="Không có hóa đơn nào trong tháng này." />
                 </td></tr>
@@ -175,9 +207,9 @@ const TuitionManager = () => {
                     <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
                         <Button 
-                          onClick={() => handleOpenAiRemark(b.student_id, b.full_name)}
-                          variant="primary" size="sm" style={{ backgroundColor: '#8b5cf6' }}>
-                          ✨ AI Nhận xét
+                          onClick={() => loadExistingRemark(b.student_id, b.full_name)}
+                          variant="secondary" size="sm" style={{ borderColor: 'var(--color-primary-light)', color: 'var(--color-primary-dark)' }}>
+                          ✨ Nhận xét Tháng
                         </Button>
                         {!b.is_paid ? (
                           <Button 
@@ -201,31 +233,73 @@ const TuitionManager = () => {
 
       {/* Modal AI Nhận xét */}
       {aiRemarkModal.show && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <Card style={{ width: '500px', padding: 'var(--spacing-8)' }}>
-            <h2 style={{ marginTop: 0, color: 'var(--color-text)' }}>✨ Nhận xét cho {aiRemarkModal.studentName}</h2>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 'var(--spacing-4)' }}>
+          <Card style={{ width: '100%', maxWidth: '800px', padding: 'var(--spacing-8)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
+                <h2 style={{ margin: 0, color: 'var(--color-text)' }}>✨ Báo cáo Tháng {moment(selectedMonth).format('MM/YYYY')} - {aiRemarkModal.studentName}</h2>
+                <Badge variant="info">AI Hỗ trợ giáo viên</Badge>
+            </div>
+            
             {aiRemarkModal.loading ? (
-              <div style={{ textAlign: 'center', padding: 'var(--spacing-10)', color: '#8b5cf6', fontWeight: 'var(--font-weight-bold)' }}>⏳ AI đang viết nhận xét...</div>
+              <div style={{ textAlign: 'center', padding: 'var(--spacing-10)', color: 'var(--color-primary)', fontWeight: 'var(--font-weight-bold)' }}>
+                 <div style={{ fontSize: '24px', marginBottom: '10px' }}>⏳</div>
+                 Gemini đang phân tích dữ liệu...
+              </div>
             ) : (
-              <div>
-                <textarea 
-                  value={aiRemarkModal.text}
-                  onChange={(e) => setAiRemarkModal(prev => ({...prev, text: e.target.value}))}
-                  style={{ width: '100%', height: '150px', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', fontSize: '15px', outline: 'none', resize: 'vertical' }}
-                />
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-5)' }}>
-                  <Button onClick={() => setAiRemarkModal({ show: false, studentId: null, studentName: '', text: '', loading: false })} variant="ghost">Hủy</Button>
-                  <Button onClick={() => {
-                    alert('Đã copy nhận xét vào Clipboard!');
-                    navigator.clipboard.writeText(aiRemarkModal.text);
-                    setAiRemarkModal({ show: false, studentId: null, studentName: '', text: '', loading: false });
-                  }} variant="primary">Copy & Đóng</Button>
+              <div id="print-area">
+                <div style={{ padding: 'var(--spacing-4)', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--spacing-6)' }}>
+                    <h4 style={{ margin: '0 0 var(--spacing-2) 0', color: 'var(--color-text-secondary)' }}>Bản nháp AI (Giáo viên có thể chỉnh sửa)</h4>
+                    <textarea 
+                    value={aiRemarkModal.text}
+                    onChange={(e) => setAiRemarkModal(prev => ({...prev, text: e.target.value}))}
+                    style={{ width: '100%', height: '300px', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', fontSize: '15px', outline: 'none', resize: 'vertical', lineHeight: '1.6', fontFamily: 'inherit' }}
+                    />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--spacing-5)' }} className="no-print">
+                  <div>
+                    <Button onClick={() => generateRemark(aiRemarkModal.studentId!, aiRemarkModal.studentName)} variant="outline">Tạo lại với AI</Button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
+                    <Button onClick={() => setAiRemarkModal({ show: false, studentId: null, studentName: '', text: '', dataSummary: null, loading: false })} variant="ghost">Đóng</Button>
+                    <Button onClick={handleSaveRemark} variant="secondary">Lưu báo cáo</Button>
+                    <Button onClick={handlePrint} variant="primary">In báo cáo (A4)</Button>
+                  </div>
                 </div>
               </div>
             )}
           </Card>
         </div>
       )}
+      
+      <style>
+          {`
+            @media print {
+                body * {
+                    visibility: hidden;
+                }
+                #print-area, #print-area * {
+                    visibility: visible;
+                }
+                #print-area {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                }
+                .no-print {
+                    display: none !important;
+                }
+                textarea {
+                    border: none !important;
+                    height: auto !important;
+                    overflow: visible !important;
+                    background: transparent !important;
+                    box-shadow: none !important;
+                }
+            }
+          `}
+      </style>
     </div>
   );
 };

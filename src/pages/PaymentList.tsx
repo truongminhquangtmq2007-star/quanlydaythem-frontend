@@ -126,7 +126,7 @@ const PaymentList = () => {
             <div style={{ display: 'flex', gap: 'var(--spacing-4)' }}>
               <select value={studentId} onChange={(e) => setStudentId(e.target.value)} style={{ padding: 'var(--spacing-2)', flex: 1, borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }} required>
                 <option value="">-- Chọn Học Sinh --</option>
-                {students.map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                {(Array.isArray(students) ? students : []).map(s => <option key={s.id} value={s.id}>{s.full_name}</option>)}
               </select>
 
               <select 

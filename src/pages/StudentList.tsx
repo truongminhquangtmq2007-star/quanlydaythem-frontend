@@ -217,14 +217,14 @@ const StudentList = () => {
               </tr>
             </thead>
             <tbody>
-              {students.length === 0 ? (
+              {(!Array.isArray(students) || students.length === 0) ? (
                 <tr>
                   <td colSpan={5} style={{ padding: 'var(--spacing-10)' }}>
                     <EmptyState title="Chưa có dữ liệu học sinh" />
                   </td>
                 </tr>
               ) : (
-                students.map((student) => (
+                (Array.isArray(students) ? students : []).map((student) => (
                   <tr key={student.id} style={{ borderBottom: '1px solid var(--color-background)', transition: '0.2s', backgroundColor: editingId === student.id ? 'var(--color-background)' : 'var(--color-surface)' }}>
                     <td style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-bold)' }}>#{student.id}</td>
                     <td style={{ padding: 'var(--spacing-4) var(--spacing-5)', color: 'var(--color-text)', fontWeight: 'var(--font-weight-bold)' }}>{student.full_name}</td>
