@@ -13,7 +13,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 const ClassManagement = () => {
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [newClass, setNewClass] = useState({ class_code: '', name: '', subject: '', max_students: 20, class_type: 'OFFLINE', meet_link: '' });
+  const [newClass, setNewClass] = useState({ class_name: '', description: '', class_type: 'OFFLINE', meet_link: '', schedule: '', tuition_fee: 0 });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -40,7 +40,7 @@ const ClassManagement = () => {
       const token = localStorage.getItem('token');
       await axiosClient.post('/api/classes', newClass);
       setShowModal(false);
-      setNewClass({ class_code: '', name: '', subject: '', max_students: 20, class_type: 'OFFLINE', meet_link: '' });
+      setNewClass({ class_name: '', description: '', class_type: 'OFFLINE', meet_link: '', schedule: '', tuition_fee: 0 });
       fetchClasses();
     } catch (err) {
       alert('Lỗi tạo lớp học');
@@ -71,9 +71,8 @@ const ClassManagement = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid var(--color-border)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                  <th style={{ padding: 'var(--spacing-3)' }}>Mã Lớp</th>
                   <th style={{ padding: 'var(--spacing-3)' }}>Tên Lớp</th>
-                  <th style={{ padding: 'var(--spacing-3)' }}>Môn Học</th>
+                  <th style={{ padding: 'var(--spacing-3)' }}>Lịch Học</th>
                   <th style={{ padding: 'var(--spacing-3)' }}>Sĩ số</th>
                   <th style={{ padding: 'var(--spacing-3)' }}>Hình thức</th>
                   <th style={{ padding: 'var(--spacing-3)', textAlign: 'right' }}>Thao tác</th>
@@ -82,10 +81,9 @@ const ClassManagement = () => {
               <tbody>
                 {classes.map(cls => (
                   <tr key={cls.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: 'var(--spacing-3)', fontWeight: 'var(--font-weight-medium)' }}>{cls.class_code}</td>
-                    <td style={{ padding: 'var(--spacing-3)' }}>{cls.name}</td>
-                    <td style={{ padding: 'var(--spacing-3)' }}>{cls.subject}</td>
-                    <td style={{ padding: 'var(--spacing-3)' }}>0/{cls.max_students}</td>
+                    <td style={{ padding: 'var(--spacing-3)', fontWeight: 'var(--font-weight-medium)' }}>{cls.class_name}</td>
+                    <td style={{ padding: 'var(--spacing-3)' }}>{cls.schedule || 'Chưa xếp'}</td>
+                    <td style={{ padding: 'var(--spacing-3)' }}>{cls.current_students || 0}</td>
                     <td style={{ padding: 'var(--spacing-3)' }}>
                       <Badge variant={cls.class_type === 'ONLINE' ? 'info' : 'primary'}>{cls.class_type}</Badge>
                     </td>
@@ -103,32 +101,23 @@ const ClassManagement = () => {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Tạo Lớp Học Mới">
         <form onSubmit={handleCreate} className="flex flex-col gap-4">
           <Input 
-            label="Mã Lớp" 
-            placeholder="VD: TOAN10-A" 
-            value={newClass.class_code} 
-            onChange={e => setNewClass({...newClass, class_code: e.target.value})} 
-            required 
-          />
-          <Input 
             label="Tên Lớp" 
             placeholder="VD: Toán 10 Nâng cao" 
-            value={newClass.name} 
-            onChange={e => setNewClass({...newClass, name: e.target.value})} 
+            value={newClass.class_name} 
+            onChange={e => setNewClass({...newClass, class_name: e.target.value})} 
             required 
           />
           <Input 
-            label="Môn học" 
+            label="Mô tả / Môn học" 
             placeholder="VD: Toán học" 
-            value={newClass.subject} 
-            onChange={e => setNewClass({...newClass, subject: e.target.value})} 
-            required 
+            value={newClass.description} 
+            onChange={e => setNewClass({...newClass, description: e.target.value})} 
           />
           <Input 
-            label="Sĩ số tối đa" 
+            label="Học phí (VND)" 
             type="number"
-            value={newClass.max_students} 
-            onChange={e => setNewClass({...newClass, max_students: parseInt(e.target.value)})} 
-            required 
+            value={newClass.tuition_fee} 
+            onChange={e => setNewClass({...newClass, tuition_fee: parseInt(e.target.value) || 0})} 
           />
           <div className="flex flex-col gap-2">
             <label style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>Hình thức</label>
@@ -136,6 +125,7 @@ const ClassManagement = () => {
               className="input-base"
               value={newClass.class_type} 
               onChange={e => setNewClass({...newClass, class_type: e.target.value as any})}
+              style={{ width: '100%', padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
             >
               <option value="OFFLINE">Học Trực tiếp (Offline)</option>
               <option value="ONLINE">Học Trực tuyến (Online)</option>

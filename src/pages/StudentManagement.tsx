@@ -15,7 +15,7 @@ const StudentManagement = () => {
   const [gradeFilter, setGradeFilter] = useState('ALL');
   
   const [showModal, setShowModal] = useState(false);
-  const [newStudent, setNewStudent] = useState({ full_name: '', parent_phone: '', school: '', grade: '' });
+  const [newStudent, setNewStudent] = useState({ full_name: '', phone_number: '', school_name: '' });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [newPassword, setNewPassword] = useState('');
@@ -63,10 +63,12 @@ const StudentManagement = () => {
     try {
       const token = localStorage.getItem('token');
       // Thêm default phone để pass qua validation cũ nếu có
-      await axiosClient.post('/api/students', { ...newStudent, phone: newStudent.parent_phone });
+      const createRes = await axiosClient.post('/api/students', { ...newStudent });
       setShowModal(false);
-      setNewStudent({ full_name: '', parent_phone: '', school: '', grade: '' });
-      fetchStudents();
+      setNewStudent({ full_name: '', phone_number: '', school_name: '' });
+      if (createRes.data && createRes.data.student) {
+        setStudents(prev => [createRes.data.student, ...(Array.isArray(prev) ? prev : [])]);
+      }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Lỗi tạo học sinh');
     }
@@ -128,10 +130,10 @@ const StudentManagement = () => {
                   <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-bold)' }}>{student.student_code || student.id}</td>
                   <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', fontSize: 'var(--font-size-base)' }}>{student.full_name}</td>
                   <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>
-                    {student.school || 'Chưa cập nhật'} <br/>
+                    {student.school_name || 'Chưa cập nhật'} <br/>
                     <Badge variant={student.grade ? 'info' : 'neutral'}>Khối: {student.grade || '---'}</Badge>
                   </td>
-                  <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>{student.parent_phone || '---'}</td>
+                  <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>{student.phone_number || '---'}</td>
                   <td style={{ padding: 'var(--spacing-4)', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: 'var(--spacing-2)', justifyContent: 'flex-end' }}>
                       <Button 
@@ -169,28 +171,20 @@ const StudentManagement = () => {
                 <Input 
                   label="SĐT Phụ huynh (dùng đăng nhập)"
                   required 
-                  value={newStudent.parent_phone} 
-                  onChange={e => setNewStudent({...newStudent, parent_phone: e.target.value})} 
+                  value={newStudent.phone_number} 
+                  onChange={e => setNewStudent({...newStudent, phone_number: e.target.value})} 
                   placeholder="VD: 0912345678" 
                 />
               </div>
               <div style={{ marginBottom: 'var(--spacing-4)' }}>
                 <Input 
                   label="Trường"
-                  value={newStudent.school} 
-                  onChange={e => setNewStudent({...newStudent, school: e.target.value})} 
+                  value={newStudent.school_name} 
+                  onChange={e => setNewStudent({...newStudent, school_name: e.target.value})} 
                   placeholder="VD: THPT Chuyên Sư Phạm" 
                 />
               </div>
-              <div style={{ marginBottom: 'var(--spacing-4)' }}>
-                <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>Khối</label>
-                <select value={newStudent.grade} onChange={e => setNewStudent({...newStudent, grade: e.target.value})} style={{ width: '100%', padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box', outline: 'none', backgroundColor: 'var(--color-background)', color: 'var(--color-text)' }}>
-                  <option value="">Chọn khối</option>
-                  <option value="10">Khối 10</option>
-                  <option value="11">Khối 11</option>
-                  <option value="12">Khối 12</option>
-                </select>
-              </div>
+              
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)', marginTop: 'var(--spacing-6)' }}>
                 <Button variant="ghost" type="button" onClick={() => setShowModal(false)}>Hủy</Button>
                 <Button variant="primary" type="submit">Thêm Học Sinh</Button>
