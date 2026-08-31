@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemePicker } from './ui/ThemePicker';
 
@@ -8,7 +8,16 @@ const AdminLayout = () => {
   const location = useLocation();
   const { user, logout } = useContext(AuthContext);
   
-  const role = localStorage.getItem('role') || user?.role?.toLowerCase();
+  const token = localStorage.getItem('token');
+  const role = (localStorage.getItem('role') || user?.role || '').toLowerCase();
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role === 'student') {
+    return <Navigate to="/student/dashboard" replace />;
+  }
 
   const handleLogout = () => {
     logout();

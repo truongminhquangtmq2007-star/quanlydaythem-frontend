@@ -110,28 +110,53 @@ const ClassDetail = () => {
     }
   };
 
+  const [savingSession, setSavingSession] = useState(false);
+
   const handleCreateSession = () => {
-    setEditingSession({ class_id: id, session_date: new Date().toISOString().split('T')[0], start_time: '18:00', content: '', homework: '' });
+    setEditingSession({ 
+      class_id: id, 
+      session_date: new Date().toISOString().split('T')[0], 
+      start_time: '18:00', 
+      end_time: '19:30',
+      content: '', 
+      homework: '' 
+    });
     setShowSessionModal(true);
   };
 
   const handleEditSession = (sess: any) => {
-    setEditingSession({ ...sess, start_time: sess.start_time ? sess.start_time.substring(0,5) : '18:00' });
+    setEditingSession({ 
+      ...sess, 
+      start_time: sess.start_time ? sess.start_time.substring(0,5) : '18:00',
+      end_time: sess.end_time ? sess.end_time.substring(0,5) : '19:30',
+      content: sess.content || '',
+      homework: sess.homework || ''
+    });
     setShowSessionModal(true);
   };
 
-  const handleSaveSession = async () => {
+  const handleSaveSession = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editingSession || !editingSession.session_date) {
+      alert('Vui lòng chọn ngày học!');
+      return;
+    }
+    setSavingSession(true);
     try {
       if (editingSession.id) {
-         await axiosClient.post('/api/sessions/upsert', editingSession);
+        await axiosClient.post('/api/sessions/upsert', editingSession);
       } else {
-         await axiosClient.post('/api/sessions/upsert', editingSession);
+        await axiosClient.post(`/api/classes/${id}/sessions`, editingSession);
       }
       setShowSessionModal(false);
       const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
       setSessions(sessionsRes.data);
-    } catch (err) {
-      alert('Lỗi lưu buổi học');
+      alert('Lưu buổi học thành công!');
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Lỗi khi lưu buổi học');
+    } finally {
+      setSavingSession(false);
     }
   };
   
@@ -250,12 +275,12 @@ const ClassDetail = () => {
     } catch(e) { alert("Lỗi lưu nhận xét"); }
   };
   
-  const handleUpdateAttendance = async (studentId: number, status: string) => {
+  const handleUpdateAttendance = async (studentId: number, status: string, notes?: string) => {
     if (!activeSession) return;
-    setAttendanceList(prev => prev.map(a => a.student_id === studentId ? { ...a, status: status as any } : a));
+    setAttendanceList(prev => prev.map(a => a.student_id === studentId ? { ...a, status: status as any, notes: notes !== undefined ? notes : a.notes } : a));
     try {
       await axiosClient.put(`/api/classes/sessions/${activeSession.id}/attendance`, 
-        { student_id: studentId, status }
+        { student_id: studentId, status, note: notes || '', absent_reason: notes || '' }
       );
     } catch (err) {
       alert('Lỗi cập nhật điểm danh');
@@ -454,7 +479,7 @@ const ClassDetail = () => {
                               >⏰ Đi muộn</Button>
                               
                               <Button 
-                                onClick={() => handleUpdateAttendance(a.student_id, 'ABSENT_EXCUSED')}
+                                onClick={() => setShowAbsentModal({ student_id: a.student_id, full_name: a.full_name || 'Học viên', notes: a.notes || '' })}
                                 variant={a.status === 'ABSENT_EXCUSED' ? 'danger' : 'outline'}
                               >📝 Vắng phép</Button>
                               {a.status === 'ABSENT_EXCUSED' && a.notes && (
@@ -619,6 +644,205 @@ const ClassDetail = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)', marginTop: 'auto' }}>
               <Button type="button" onClick={() => { setShowAddMember(false); setNewStudentId(''); setSearchQuery(''); }} variant="ghost">Hủy</Button>
               <Button type="button" onClick={handleAddMember} disabled={!newStudentId} variant="primary">Thêm Vào Lớp</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal Tạo / Sửa Buổi Học */}
+      {showSessionModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <Card style={{ width: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ margin: '0 0 20px 0', color: 'var(--color-text)' }}>
+              {editingSession?.id ? '✏️ Chỉnh Sửa Buổi Học' : '📅 Tạo Buổi Học Mới'}
+            </h2>
+            <form onSubmit={handleSaveSession}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+                <Input 
+                  type="date" 
+                  label="Ngày học" 
+                  value={editingSession?.session_date || ''} 
+                  onChange={e => setEditingSession({ ...editingSession, session_date: e.target.value })} 
+                  required 
+                />
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
+                  <Input 
+                    type="time" 
+                    label="Giờ bắt đầu" 
+                    value={editingSession?.start_time || '18:00'} 
+                    onChange={e => setEditingSession({ ...editingSession, start_time: e.target.value })} 
+                    required 
+                  />
+                  <Input 
+                    type="time" 
+                    label="Giờ kết thúc" 
+                    value={editingSession?.end_time || '19:30'} 
+                    onChange={e => setEditingSession({ ...editingSession, end_time: e.target.value })} 
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
+                    Nội dung buổi học:
+                  </label>
+                  <textarea 
+                    value={editingSession?.content || ''} 
+                    onChange={e => setEditingSession({ ...editingSession, content: e.target.value })} 
+                    placeholder="VD: Ôn tập Hàm số bậc 2, giải các bài tập nâng cao..."
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: 'var(--spacing-3)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-border)',
+                      backgroundColor: 'var(--color-surface)',
+                      color: 'var(--color-text)',
+                      fontFamily: 'inherit',
+                      fontSize: 'var(--font-size-base)',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
+                    Bài tập về nhà:
+                  </label>
+                  <textarea 
+                    value={editingSession?.homework || ''} 
+                    onChange={e => setEditingSession({ ...editingSession, homework: e.target.value })} 
+                    placeholder="VD: Làm bài 1 -> 5 trang 42 SGK..."
+                    rows={2}
+                    style={{
+                      width: '100%',
+                      padding: 'var(--spacing-3)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-border)',
+                      backgroundColor: 'var(--color-surface)',
+                      color: 'var(--color-text)',
+                      fontFamily: 'inherit',
+                      fontSize: 'var(--font-size-base)',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
+                <Button type="button" onClick={() => setShowSessionModal(false)} variant="ghost" disabled={savingSession}>
+                  Hủy
+                </Button>
+                <Button type="submit" variant="primary" disabled={savingSession}>
+                  {savingSession ? 'Đang lưu...' : (editingSession?.id ? 'Cập nhật' : 'Tạo buổi học')}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal Nhận Xét Học Sinh */}
+      {showEvalModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <Card style={{ width: '480px' }}>
+            <h2 style={{ margin: '0 0 15px 0', color: 'var(--color-text)' }}>
+              💬 Nhận Xét Buổi Học
+            </h2>
+            <div style={{ marginBottom: '15px', color: 'var(--color-text-secondary)', fontWeight: 'bold' }}>
+              Học sinh: <span style={{ color: 'var(--color-primary)' }}>{evalData.student_name}</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
+                  Mức độ tập trung:
+                </label>
+                <select 
+                  value={evalData.focus_level} 
+                  onChange={e => setEvalData({ ...evalData, focus_level: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-surface)',
+                    color: 'var(--color-text)',
+                    fontFamily: 'inherit',
+                    fontSize: 'var(--font-size-base)',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="Rất tốt">🌟 Rất tốt / Tích cực</option>
+                  <option value="Bình thường">👍 Bình thường</option>
+                  <option value="Chưa tập trung">⚠️ Chưa tập trung / Cần nhắc nhở</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
+                  Lời nhận xét của giáo viên:
+                </label>
+                <textarea 
+                  value={evalData.teacher_notes} 
+                  onChange={e => setEvalData({ ...evalData, teacher_notes: e.target.value })} 
+                  placeholder="Nhập nhận xét chi tiết về bài học, thái độ học tập..."
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-surface)',
+                    color: 'var(--color-text)',
+                    fontFamily: 'inherit',
+                    fontSize: 'var(--font-size-base)',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
+              <Button type="button" onClick={() => setShowEvalModal(false)} variant="ghost">Hủy</Button>
+              <Button type="button" onClick={handleSaveEval} variant="primary">Lưu nhận xét</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal Nhập Lý Do Vắng Phép */}
+      {showAbsentModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <Card style={{ width: '450px' }}>
+            <h2 style={{ margin: '0 0 15px 0', color: 'var(--color-text)' }}>
+              📝 Ghi Chú Lý Do Vắng Phép
+            </h2>
+            <div style={{ marginBottom: '15px', color: 'var(--color-text-secondary)', fontWeight: 'bold' }}>
+              Học sinh: <span style={{ color: 'var(--color-primary)' }}>{showAbsentModal.full_name}</span>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <Input 
+                label="Lý do nghỉ" 
+                placeholder="VD: Bị ốm, bận việc gia đình có xin trước..." 
+                value={showAbsentModal.notes || ''} 
+                onChange={e => setShowAbsentModal({ ...showAbsentModal, notes: e.target.value })}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
+              <Button type="button" onClick={() => setShowAbsentModal(null)} variant="ghost">Hủy</Button>
+              <Button 
+                type="button" 
+                onClick={() => {
+                  handleUpdateAttendance(showAbsentModal.student_id, 'ABSENT_EXCUSED', showAbsentModal.notes);
+                  setShowAbsentModal(null);
+                }} 
+                variant="danger"
+              >
+                Xác nhận Vắng phép
+              </Button>
             </div>
           </Card>
         </div>

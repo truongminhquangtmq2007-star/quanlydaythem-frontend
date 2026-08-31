@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemePicker } from './ui/ThemePicker';
 
@@ -7,7 +7,17 @@ const StudentLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useContext(AuthContext);
+  const token = localStorage.getItem('token');
+  const role = (localStorage.getItem('role') || user?.role || '').toLowerCase();
   const studentName = user?.full_name || localStorage.getItem('studentName') || 'Học viên';
+
+  if (!token) {
+    return <Navigate to="/student/login" replace />;
+  }
+
+  if (role === 'teacher' || role === 'admin') {
+    return <Navigate to="/classes" replace />;
+  }
 
   const handleLogout = () => {
     logout();

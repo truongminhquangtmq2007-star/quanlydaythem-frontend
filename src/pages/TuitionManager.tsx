@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../api/axiosClient';
 import moment from 'moment';
 import { Button } from '../components/ui/Button';
@@ -10,7 +10,6 @@ import { Input } from '../components/ui/Input';
 const TuitionManager = () => {
   const [bills, setBills] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(moment().format('YYYY-MM'));
-  const [invoiceTemplate, setInvoiceTemplate] = useState('Classic');
   const [stats, setStats] = useState({ totalExpected: 0, totalReceived: 0, totalPending: 0 });
 
   const [invoiceModal, setInvoiceModal] = useState<any>({ show: false, bill: null, sessions: [], teacher_note: '' });
@@ -23,28 +22,40 @@ const TuitionManager = () => {
     show: false, studentId: null, studentName: '', text: '', dataSummary: null, loading: false
   });
 
-  
   useEffect(() => {
     if (showCreateModal && students.length === 0) {
       axiosClient.get('/api/students').then(res => setStudents(res.data)).catch(()=>{});
     }
-  }, [showCreateModal]);
+  }, [showCreateModal, students.length]);
   
   const handlePreview = async () => {
-    if (!createData.student_id || !createData.start_date || !createData.end_date) return alert("Nhập đủ thông tin");
+    if (!createData.student_id || !createData.start_date || !createData.end_date) {
+      alert("Vui lòng chọn học sinh và khoảng thời gian");
+      return;
+    }
     try {
       const res = await axiosClient.get(`/api/payments/preview?student_id=${createData.student_id}&start_date=${createData.start_date}&end_date=${createData.end_date}`);
       setPreviewData(res.data);
-    } catch(e) { alert("Lỗi preview"); }
+    } catch(e) { 
+      alert("Lỗi xem trước học phí"); 
+    }
   };
   
   const handleCreateBill = async () => {
+    if (!createData.student_id || !createData.start_date || !createData.end_date) {
+      alert("Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
     try {
       await axiosClient.post('/api/payments/create', createData);
       setShowCreateModal(false);
       setPreviewData(null);
+      setCreateData({ student_id: '', start_date: '', end_date: '', bill_note: '' });
       fetchBills();
-    } catch(e) { alert("Lỗi tạo phiếu"); }
+      alert("Đã tạo phiếu thu thành công!");
+    } catch(e: any) { 
+      alert(e.response?.data?.error || "Lỗi tạo phiếu thu"); 
+    }
   };
   
   const fetchBills = useCallback(async () => {
@@ -62,19 +73,23 @@ const TuitionManager = () => {
         else pending += b.total_amount;
       });
       setStats({ totalExpected: expected, totalReceived: received, totalPending: pending });
-    } catch (error) { console.error("Lỗi tải hóa đơn"); }
+    } catch (error) { 
+      console.error("Lỗi tải hóa đơn"); 
+    }
   }, [selectedMonth]);
 
   useEffect(() => { fetchBills(); }, [fetchBills]);
 
   const handleConfirmPayment = async (id: number) => {
-    const confirm = window.confirm('💰 Xác nhận phụ huynh đã chuyển khoản cho phiếu này?');
+    const confirm = window.confirm('💰 Xác nhận phụ huynh đã thanh toán cho phiếu này?');
     if (!confirm) return;
     try {
       await axiosClient.put(`/api/payments/${id}/pay`, {});
-      alert('✅ Đã ghi nhận doanh thu thành công! Học sinh đã được cấp tem.');
+      alert('✅ Đã xác nhận thanh toán thành công!');
       fetchBills(); 
-    } catch (error) { alert('❌ Lỗi hệ thống.'); }
+    } catch (error) { 
+      alert('❌ Lỗi hệ thống.'); 
+    }
   };
 
   const loadExistingRemark = async (studentId: number, studentName: string, billId: number) => {
@@ -94,8 +109,11 @@ const TuitionManager = () => {
   const generateRemark = async (studentId: number, studentName: string, billId?: number) => {
     setAiRemarkModal(prev => ({ ...prev, loading: true, text: '' }));
     try {
-      const res = await axiosClient.post('/api/ai/generate-remark', { student_id: studentId, month: selectedMonth,
-        bill_id: billId || aiRemarkModal.billId });
+      const res = await axiosClient.post('/api/ai/generate-remark', { 
+        student_id: studentId, 
+        month: selectedMonth,
+        bill_id: billId || aiRemarkModal.billId 
+      });
       setAiRemarkModal(prev => ({ ...prev, text: res.data.remark, dataSummary: res.data.data_summary, loading: false }));
     } catch (err) {
       setAiRemarkModal(prev => ({ ...prev, text: 'Lỗi: Không thể sinh nhận xét lúc này.', loading: false }));
@@ -111,16 +129,12 @@ const TuitionManager = () => {
         month: moment(invoiceModal.bill.start_date).format('YYYY-MM'),
         bill_id: invoiceModal.bill.id
       });
-      setInvoiceModal({ ...invoiceModal, teacher_note: res.data.remark });
+      setInvoiceModal((prev: any) => ({ ...prev, teacher_note: res.data.remark }));
     } catch(e) {
       alert("Lỗi tạo nhận xét");
+    } finally {
+      setAiLoading(false);
     }
-    setAiLoading(false);
-  };
-  
-  const handleSaveInvoiceNote = async () => {
-    // Actually just update the bill_note in DB (if needed) or just print it.
-    // We will just keep it in state for printing.
   };
 
   const handleSaveRemark = async () => {
@@ -141,41 +155,42 @@ const TuitionManager = () => {
   const handlePrintInvoice = async (billId: number) => {
     try {
       const res = await axiosClient.get(`/api/payments/bill/${billId}/invoice`);
-      setInvoiceModal({ show: true, bill: res.data.bill, sessions: res.data.sessions, teacher_note: res.data.bill.bill_note || '' });
-    } catch(e) { alert("Lỗi tải phiếu thu"); }
+      setInvoiceModal({ show: true, bill: res.data.bill, sessions: res.data.sessions || [], teacher_note: res.data.bill.bill_note || '' });
+    } catch(e) { 
+      alert("Lỗi tải phiếu thu"); 
+    }
   };
   
   const handlePrint = () => {
-    const printContent = document.getElementById('print-area');
-    if (!printContent) return;
-    
-    const originalContent = document.body.innerHTML;
-    document.body.innerHTML = printContent.innerHTML;
     window.print();
-    document.body.innerHTML = originalContent;
-    window.location.reload();
   };
 
   return (
     <div style={{ padding: 'var(--spacing-10)', maxWidth: '100%', boxSizing: 'border-box' }}>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 'var(--spacing-8)', paddingBottom: 'var(--spacing-4)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 'var(--spacing-8)', paddingBottom: 'var(--spacing-4)', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
         <div>
           <h1 style={{ margin: '0 0 8px 0', color: 'var(--color-text)', fontSize: '30px' }}>Quản lý Tài chính & Phiếu học phí</h1>
           <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '15px' }}>Lưu trữ phiếu học phí, xác nhận thanh toán và gửi báo cáo hàng tháng.</p>
         </div>
         
-        <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', padding: 'var(--spacing-3)' }}>
-            <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-secondary)' }}>📅 Kỳ kế toán:</span>
-            <input 
-              type="month" 
-              value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(e.target.value)} 
-              style={{ padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', outline: 'none', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)', cursor: 'pointer' }}
-            />
-          </div>
-        </Card>
+        <div style={{ display: 'flex', gap: 'var(--spacing-3)', alignItems: 'center' }}>
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            + Tạo Phiếu Thu Mới
+          </Button>
+
+          <Card>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', padding: 'var(--spacing-3)' }}>
+              <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-secondary)' }}>📅 Kỳ kế toán:</span>
+              <input 
+                type="month" 
+                value={selectedMonth} 
+                onChange={(e) => setSelectedMonth(e.target.value)} 
+                style={{ padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', outline: 'none', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)', cursor: 'pointer' }}
+              />
+            </div>
+          </Card>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--spacing-5)', marginBottom: 'var(--spacing-8)', flexWrap: 'wrap' }}>
@@ -211,7 +226,6 @@ const TuitionManager = () => {
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Mã phiếu</th>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Học viên</th>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Kỳ học phí</th>
-                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Điểm thi gần đây</th>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)' }}>Tổng tiền</th>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', textAlign: 'center' }}>Trạng thái</th>
                 <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', textAlign: 'center' }}>Thao tác</th>
@@ -219,40 +233,17 @@ const TuitionManager = () => {
             </thead>
             <tbody>
               {(!Array.isArray(bills) || bills.length === 0) ? (
-                <tr><td colSpan={7} style={{ padding: 'var(--spacing-10)' }}>
+                <tr><td colSpan={6} style={{ padding: 'var(--spacing-10)' }}>
                   <EmptyState title="Không có hóa đơn" description="Không có hóa đơn nào trong tháng này." />
                 </td></tr>
               ) : (
                 bills.map((b) => {
-                  let parsedScores: any[] = [];
-                  if (b.exam_scores) {
-                    parsedScores = typeof b.exam_scores === 'string' ? JSON.parse(b.exam_scores) : b.exam_scores;
-                  }
-
                   return (
                   <tr key={b.id} style={{ borderBottom: '1px solid var(--color-border)', transition: '0.2s', backgroundColor: b.is_paid ? 'var(--color-surface)' : 'var(--color-danger-light)' }}>
                     <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-secondary)' }}>#{b.id}</td>
                     <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>{b.full_name}</td>
                     <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>
                       {new Date(b.start_date).toLocaleDateString('vi-VN')} - {new Date(b.end_date).toLocaleDateString('vi-VN')}
-                    </td>
-                    <td style={{ padding: 'var(--spacing-4)' }}>
-                      {parsedScores.length === 0 ? <span style={{ color: 'var(--color-text-secondary)' }}>-</span> : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          {parsedScores.map((s: any, idx: number) => {
-                            const scoreNum = Number(s.score);
-                            let variant: 'primary' | 'danger' | 'info' = 'info';
-                            if (scoreNum >= 8) { variant = 'primary'; }
-                            else if (scoreNum < 5) { variant = 'danger'; }
-                            
-                            return (
-                              <Badge key={idx} variant={variant}>
-                                {s.exam_title}: {s.score}đ
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      )}
                     </td>
                     <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>
                       {b.total_amount.toLocaleString('vi-VN')}đ
@@ -265,20 +256,23 @@ const TuitionManager = () => {
                       )}
                     </td>
                     <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
+                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <Button 
+                          onClick={() => handlePrintInvoice(b.id)}
+                          variant="outline" size="sm">
+                          📄 In Phiếu
+                        </Button>
                         <Button 
                           onClick={() => loadExistingRemark(b.student_id, b.full_name, b.id)}
-                          variant="secondary" size="sm" style={{ borderColor: 'var(--color-primary-light)', color: 'var(--color-primary-dark)' }}>
-                          ✨ Nhận xét Tháng
+                          variant="secondary" size="sm">
+                          ✨ Nhận xét
                         </Button>
-                        {!b.is_paid ? (
+                        {!b.is_paid && (
                           <Button 
                             onClick={() => handleConfirmPayment(b.id)}
                             variant="primary" size="sm">
-                            ✓ Đã chuyển
+                            ✓ Đã thu
                           </Button>
-                        ) : (
-                          <span style={{ color: 'var(--color-success)', fontWeight: 'var(--font-weight-bold)', fontSize: 'var(--font-size-sm)' }}>🟢 Đã thanh toán</span>
                         )}
                       </div>
                     </td>
@@ -291,7 +285,187 @@ const TuitionManager = () => {
         </div>
       </Card>
 
-      {/* Modal AI Nhận xét */}
+      {/* Modal Tạo Phiếu Thu Mới */}
+      {showCreateModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 'var(--spacing-4)', backdropFilter: 'blur(4px)' }}>
+          <Card style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ margin: '0 0 20px 0', color: 'var(--color-text)' }}>💰 Tạo Phiếu Thu Học Phí</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>Học sinh:</label>
+                <select 
+                  value={createData.student_id} 
+                  onChange={e => setCreateData({ ...createData, student_id: e.target.value })}
+                  style={{ width: '100%', padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}
+                >
+                  <option value="">-- Chọn học sinh --</option>
+                  {students.map(st => (
+                    <option key={st.id} value={st.id}>{st.full_name} ({st.phone_number || 'Chưa có SĐT'})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
+                <Input 
+                  type="date" 
+                  label="Từ ngày" 
+                  value={createData.start_date} 
+                  onChange={e => setCreateData({ ...createData, start_date: e.target.value })} 
+                />
+                <Input 
+                  type="date" 
+                  label="Đến ngày" 
+                  value={createData.end_date} 
+                  onChange={e => setCreateData({ ...createData, end_date: e.target.value })} 
+                />
+              </div>
+
+              <Input 
+                label="Ghi chú hóa đơn" 
+                placeholder="VD: Học phí tháng 9, đã trừ 1 buổi nghỉ có phép..." 
+                value={createData.bill_note} 
+                onChange={e => setCreateData({ ...createData, bill_note: e.target.value })} 
+              />
+
+              <Button onClick={handlePreview} variant="outline">🔍 Xem trước buổi học & Số tiền</Button>
+
+              {previewData && (
+                <div style={{ backgroundColor: 'var(--color-background)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: 'var(--spacing-2)', color: 'var(--color-primary)' }}>
+                    Tổng tiền dự kiến: {previewData.total_amount?.toLocaleString('vi-VN')} đ ({previewData.sessions?.length || 0} buổi có mặt)
+                  </div>
+                  <div style={{ maxHeight: '150px', overflowY: 'auto', fontSize: 'var(--font-size-sm)' }}>
+                    {previewData.sessions?.map((s: any, idx: number) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--color-border)' }}>
+                        <span>📅 {new Date(s.attendance_date).toLocaleDateString('vi-VN')} - {s.class_name}</span>
+                        <span style={{ fontWeight: 'bold' }}>{s.tuition_fee?.toLocaleString('vi-VN')} đ</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
+              <Button onClick={() => { setShowCreateModal(false); setPreviewData(null); }} variant="ghost">Hủy</Button>
+              <Button onClick={handleCreateBill} variant="primary">Tạo Phiếu Thu</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal In Phiếu Thu / Invoice */}
+      {invoiceModal.show && invoiceModal.bill && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 'var(--spacing-4)', backdropFilter: 'blur(4px)' }}>
+          <Card style={{ width: '100%', maxWidth: '850px', maxHeight: '90vh', overflowY: 'auto', padding: 'var(--spacing-8)' }}>
+            <div id="invoice-print-area">
+              <div style={{ textAlign: 'center', borderBottom: '2px solid var(--color-border)', paddingBottom: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+                <h2 style={{ margin: '0 0 6px 0', color: 'var(--color-primary)', fontSize: '26px' }}>PHIẾU THU HỌC PHÍ</h2>
+                <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+                  Kỳ thu: {new Date(invoiceModal.bill.start_date).toLocaleDateString('vi-VN')} — {new Date(invoiceModal.bill.end_date).toLocaleDateString('vi-VN')}
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)', backgroundColor: 'var(--color-background)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)' }}>
+                <div>
+                  <div style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>Học viên:</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--color-text)' }}>{invoiceModal.bill.full_name}</div>
+                  <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>SĐT: {invoiceModal.bill.phone_number || invoiceModal.bill.parent_phone || '---'}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>Trạng thái thanh toán:</div>
+                  <div style={{ marginTop: '4px' }}>
+                    {invoiceModal.bill.is_paid ? (
+                      <Badge variant="success">🟢 ĐÃ THANH TOÁN</Badge>
+                    ) : (
+                      <Badge variant="warning">🟠 CHƯA THANH TOÁN</Badge>
+                    )}
+                  </div>
+                  <div style={{ marginTop: '8px', fontSize: '18px', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                    Tổng: {invoiceModal.bill.total_amount?.toLocaleString('vi-VN')} đ
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <h4 style={{ margin: '0 0 var(--spacing-3) 0', color: 'var(--color-text)' }}>📋 Chi tiết các buổi học trong kỳ:</h4>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: 'var(--color-background)', borderBottom: '2px solid var(--color-border)' }}>
+                      <th style={{ padding: '8px', width: '100px' }}>Ngày</th>
+                      <th style={{ padding: '8px', width: '130px' }}>Lớp học</th>
+                      <th style={{ padding: '8px', width: '110px' }}>Trạng thái</th>
+                      <th style={{ padding: '8px' }}>Nội dung bài học / Lý do vắng</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoiceModal.sessions.length === 0 ? (
+                      <tr><td colSpan={4} style={{ padding: '16px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>Không có buổi học nào trong kỳ này.</td></tr>
+                    ) : invoiceModal.sessions.map((s: any, idx: number) => {
+                      const isPresent = s.status === 'PRESENT';
+                      const isExcused = s.status === 'ABSENT_EXCUSED';
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          <td style={{ padding: '8px', fontWeight: '500' }}>{new Date(s.session_date).toLocaleDateString('vi-VN')}</td>
+                          <td style={{ padding: '8px' }}>{s.class_name}</td>
+                          <td style={{ padding: '8px' }}>
+                            {isPresent && <span style={{ color: 'var(--color-success)', fontWeight: 'bold' }}>✅ Có mặt</span>}
+                            {isExcused && <span style={{ color: 'var(--color-warning)', fontWeight: 'bold' }}>📝 Vắng phép</span>}
+                            {!isPresent && !isExcused && <span style={{ color: 'var(--color-danger)', fontWeight: 'bold' }}>❌ Vắng K/P</span>}
+                          </td>
+                          <td style={{ padding: '8px', color: isPresent ? 'var(--color-text)' : 'var(--color-danger)' }}>
+                            {isPresent ? (s.content || 'Buổi học định kỳ') : (s.absent_reason ? `Lý do: ${s.absent_reason}` : 'Không có lý do')}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ marginBottom: 'var(--spacing-6)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>
+                  <label style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--color-text)' }}>💬 Nhận xét của giáo viên:</label>
+                  <Button 
+                    onClick={handleGenerateInvoiceRemark} 
+                    variant="outline" 
+                    size="sm" 
+                    className="no-print"
+                    disabled={aiLoading}
+                  >
+                    {aiLoading ? '⏳ AI đang viết...' : '✨ Tạo nhận xét bằng AI'}
+                  </Button>
+                </div>
+                <textarea 
+                  value={invoiceModal.teacher_note}
+                  onChange={e => setInvoiceModal((prev: any) => ({ ...prev, teacher_note: e.target.value }))}
+                  placeholder="Nhập lời nhận xét gửi phụ huynh..."
+                  rows={3}
+                  style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontFamily: 'inherit', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', paddingTop: '20px', borderTop: '1px dashed var(--color-border)' }}>
+                <div style={{ textAlign: 'center', width: '200px' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '50px' }}>Phụ huynh học sinh</div>
+                  <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>(Ký và ghi rõ họ tên)</div>
+                </div>
+                <div style={{ textAlign: 'center', width: '200px' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '50px' }}>Giáo viên phụ trách</div>
+                  <div style={{ color: 'var(--color-text-secondary)', fontSize: '12px' }}>(Ký và ghi rõ họ tên)</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)', marginTop: 'var(--spacing-6)' }} className="no-print">
+              <Button onClick={() => setInvoiceModal({ show: false, bill: null, sessions: [], teacher_note: '' })} variant="ghost">Đóng</Button>
+              <Button onClick={handlePrint} variant="primary">🖨️ In Phiếu Thu (A4)</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal AI Nhận xét Riêng */}
       {aiRemarkModal.show && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 'var(--spacing-4)' }}>
           <Card style={{ width: '100%', maxWidth: '800px', padding: 'var(--spacing-8)', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -310,9 +484,9 @@ const TuitionManager = () => {
                 <div style={{ padding: 'var(--spacing-4)', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--spacing-6)' }}>
                     <h4 style={{ margin: '0 0 var(--spacing-2) 0', color: 'var(--color-text-secondary)' }}>Bản nháp AI (Giáo viên có thể chỉnh sửa)</h4>
                     <textarea 
-                    value={aiRemarkModal.text}
-                    onChange={(e) => setAiRemarkModal(prev => ({...prev, text: e.target.value}))}
-                    style={{ width: '100%', height: '300px', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', fontSize: '15px', outline: 'none', resize: 'vertical', lineHeight: '1.6', fontFamily: 'inherit' }}
+                      value={aiRemarkModal.text}
+                      onChange={(e) => setAiRemarkModal(prev => ({...prev, text: e.target.value}))}
+                      style={{ width: '100%', height: '300px', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', fontSize: '15px', outline: 'none', resize: 'vertical', lineHeight: '1.6', fontFamily: 'inherit' }}
                     />
                 </div>
 
@@ -347,12 +521,7 @@ const TuitionManager = () => {
                     top: 0;
                     width: 100%;
                 }
-                .only-print { display: none !important; }
-            @media print {
-              .no-print { display: none !important; }
-              .only-print { display: block !important; }
-                    display: none !important;
-                }
+                .no-print { display: none !important; }
                 textarea {
                     border: none !important;
                     height: auto !important;
