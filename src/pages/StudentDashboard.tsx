@@ -3,7 +3,6 @@ import { toast } from 'react-toastify';
 import axiosClient from '../api/axiosClient';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import AIInsightCard from '../components/AIInsightCard';
 import { Skeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Modal } from '../components/ui/Modal';
@@ -195,11 +194,6 @@ const StudentDashboard = () => {
           </div>
         )}
       </Card>
-      
-      {/* AI EVALUATION SECTION */}
-      <div style={{ marginBottom: 'var(--spacing-4)' }}>
-        <AIInsightCard />
-      </div>
 
       {/* WEAK TOPICS */}
       <Card style={{ padding: 'var(--spacing-6)' }}>

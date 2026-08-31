@@ -735,13 +735,14 @@ const TuitionManager = () => {
                   display: 'grid', 
                   gridTemplateColumns: invoiceModal.template === 'compact' 
                     ? '1fr 140px' 
-                    : invoiceModal.paperSize === 'A5' ? '1fr 135px' : '1fr 175px', 
+                    : invoiceModal.paperSize === 'A5' ? '1fr 125px' : '1fr 170px', 
                   gap: '16px', 
                   marginBottom: '20px', 
                   backgroundColor: currentTheme.lightBg, 
-                  padding: '14px 18px', 
+                  padding: invoiceModal.paperSize === 'A5' ? '10px 14px' : '14px 18px', 
                   borderRadius: invoiceModal.template === 'soft' ? '14px' : '8px', 
-                  border: `1px solid ${currentTheme.secondary}25` 
+                  border: `1px solid ${currentTheme.secondary}25`,
+                  alignItems: 'center'
                 }}
               >
                 
@@ -766,18 +767,21 @@ const TuitionManager = () => {
                   </div>
                 </div>
 
-                {/* Cột phải: QR VIETCOMBANK CHUẨN */}
-                <div style={{ textAlign: 'center', backgroundColor: '#ffffff', padding: '8px', borderRadius: '8px', border: `1px solid ${currentTheme.secondary}35`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                {/* Cột phải: QR VIETCOMBANK PHÓNG LỚN TỐI ĐA (KHÔNG CHỮ TO) */}
+                <div style={{ textAlign: 'center', backgroundColor: '#ffffff', padding: '6px', borderRadius: '8px', border: `1px solid ${currentTheme.secondary}35`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                   <img 
                     src={`https://img.vietqr.io/image/VCB-1034244823-compact2.png?amount=${Number(invoiceModal.bill.total_amount) || 0}&addInfo=HP%20${encodeURIComponent(invoiceModal.bill.full_name || '')}%20T${moment(invoiceModal.bill.start_date).format('MM')}`}
                     alt="Mã QR Chuyển khoản VCB"
-                    style={{ width: invoiceModal.paperSize === 'A5' ? '85px' : '110px', height: invoiceModal.paperSize === 'A5' ? '85px' : '110px', objectFit: 'contain' }}
+                    style={{ 
+                      width: '100%', 
+                      maxWidth: invoiceModal.paperSize === 'A5' ? '112px' : '156px', 
+                      aspectRatio: '1/1', 
+                      objectFit: 'contain',
+                      display: 'block'
+                    }}
                   />
-                  <div style={{ fontSize: '10px', fontWeight: 'bold', color: currentTheme.primary, marginTop: '3px' }}>
-                    VIETCOMBANK (VCB)
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#374151', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                    1034244823
+                  <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '4px', whiteSpace: 'nowrap' }}>
+                    VCB • 1034244823
                   </div>
                 </div>
               </div>
