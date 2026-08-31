@@ -110,14 +110,27 @@ const DocumentLibrary = () => {
     }
   };
 
-  const handleDeleteDoc = async (id: number) => {
-    if (!window.confirm('Xóa tài liệu này?')) return;
+  // Delete Modal state
+  const [docToDelete, setDocToDelete] = useState<DocumentInfo | null>(null);
+  const [deletingDoc, setDeletingDoc] = useState(false);
+
+  const confirmDeleteDoc = async () => {
+    if (!docToDelete) return;
+    setDeletingDoc(true);
     try {
-      await axiosClient.delete(`/api/documents/${id}`);
+      await axiosClient.delete(`/api/documents/${docToDelete.id}`);
+      setDocToDelete(null);
       fetchContents(currentFolderId);
-    } catch (err) {
-      alert('Lỗi xóa tài liệu');
+      alert('Đã xóa tài liệu thành công!');
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.response?.data?.error || 'Lỗi khi xóa tài liệu');
+    } finally {
+      setDeletingDoc(false);
     }
+  };
+
+  const handleDeleteDoc = (doc: DocumentInfo) => {
+    setDocToDelete(doc);
   };
 
   const handleDeleteFolder = async (id: number) => {
@@ -223,7 +236,7 @@ const DocumentLibrary = () => {
             <div style={{ display: 'flex', gap: 'var(--spacing-1)', flexWrap: 'wrap', justifyContent: 'center' }}>
               <Button variant="primary" size="sm" onClick={() => window.open(d.file_url, '_blank')}>Mở</Button>
               <Button variant="secondary" size="sm" onClick={() => openMoveModal(d.id)}>Di chuyển</Button>
-              <Button variant="danger" size="sm" onClick={() => handleDeleteDoc(d.id)}>Xóa</Button>
+              <Button variant="danger" size="sm" onClick={() => handleDeleteDoc(d)}>Xóa</Button>
             </div>
           </Card>
         ))}
@@ -354,6 +367,27 @@ const DocumentLibrary = () => {
               <Button variant="ghost" onClick={() => setShowMoveModal(false)} disabled={moving}>Hủy</Button>
               <Button variant="primary" onClick={handleMoveItem} disabled={moving}>
                 {moving ? 'Đang di chuyển...' : 'Di chuyển ngay'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal Xác Nhận Xóa Tài Liệu */}
+      {docToDelete && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <Card style={{ padding: 'var(--spacing-6)', width: '450px' }}>
+            <h3 style={{ margin: '0 0 12px 0', color: 'var(--color-danger)' }}>🗑️ Xác Nhận Xóa Tài Liệu</h3>
+            <p style={{ margin: '0 0 16px 0', color: 'var(--color-text)', fontSize: '15px' }}>
+              Bạn có chắc chắn muốn xóa tài liệu: <strong style={{ color: 'var(--color-primary)' }}>{docToDelete.title}</strong>?
+            </p>
+            <div style={{ padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '13px', color: '#991b1b', marginBottom: '20px' }}>
+              ⚠️ Thao tác này sẽ xóa tài liệu khỏi kho và dọn dẹp các liên kết bài tập đã gán vào lớp.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
+              <Button variant="ghost" onClick={() => setDocToDelete(null)} disabled={deletingDoc}>Hủy</Button>
+              <Button variant="danger" onClick={confirmDeleteDoc} disabled={deletingDoc}>
+                {deletingDoc ? 'Đang xóa...' : 'Xác nhận xóa'}
               </Button>
             </div>
           </Card>

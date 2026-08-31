@@ -198,7 +198,11 @@ const CreateExamAI = () => {
       clearTimeout(t1);
       clearTimeout(t2);
 
-      const responseData = response?.data?.status === 'primary' ? response.data.data : response?.data;
+      let responseData = response?.data;
+      if (responseData?.status === 'success' && responseData.data) {
+          responseData = responseData.data;
+      }
+
       if (responseData && responseData.examContent) {
         const content = responseData.examContent;
         if (!content.sharedContexts) content.sharedContexts = [];
@@ -216,9 +220,11 @@ const CreateExamAI = () => {
             class_id: Number(classId)
         };
         
+        setIsLoading(false);
         // Chuyển hướng sang màn hình ExamEditor (Phase 3)
         navigate('/exam-editor', { state: { examContent: content, meta } });
       } else {
+        setIsLoading(false);
         toast.error("Không nhận được dữ liệu hợp lệ từ AI.");
       }
     } catch (error: any) {

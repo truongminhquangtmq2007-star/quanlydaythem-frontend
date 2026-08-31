@@ -233,7 +233,7 @@ const ExamRoom = () => {
       const fetchExamContent = async () => {
         try {
           const token = localStorage.getItem('token');
-          const res = await axiosClient.get(`/api/exams/key/${selectedExam.id}`);
+          const res = await axiosClient.get(`/api/exams/key/${selectedExam.id}?contentOnly=true`);
 
           if (res.data && res.data.exam_content) {
             setExamData(res.data.exam_content);
@@ -616,7 +616,7 @@ const ExamRoom = () => {
               <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-4)' }}>🚨</div>
               <h2 style={{ color: 'var(--color-danger)', marginBottom: 'var(--spacing-4)' }}>CẢNH BÁO GIAN LẬN!</h2>
               <p style={{ marginBottom: 'var(--spacing-6)' }}>{cheatReason}</p>
-              <Button variant="danger" onClick={forceSubmit} isLoading={isSubmitting}>Nộp bài bắt buộc</Button>
+              <Button variant="danger" onClick={() => setShowCheatModal(false)}>Đã hiểu, Tiếp tục làm bài</Button>
             </div>
           </div>
         )}

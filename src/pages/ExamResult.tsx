@@ -783,7 +783,7 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
       </div>
 
       {/* ======== REVIEW CHI TIẾT BÀI LÀM ======== */}
-      {details.length > 0 && (
+      {(isTeacherView || allowViewAnswers) && details.length > 0 && (
         <div style={{ padding: isTeacherView ? '0' : '0 30px 60px 30px' }}>
           <div style={styles.reviewCard}>
             <h2 style={{ margin: '0 0 10px 0', color: 'var(--color-text)', fontSize: 'var(--font-size-xl)', textAlign: 'center' }}>

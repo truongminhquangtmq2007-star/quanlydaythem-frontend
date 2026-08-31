@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import axiosClient from '../api/axiosClient';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import AIInsightCard from '../components/AIInsightCard';
 import { Skeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Modal } from '../components/ui/Modal';
@@ -122,41 +123,10 @@ const StudentDashboard = () => {
         </Card>
       </div>
 
+      
       {/* AI EVALUATION SECTION */}
-      <div>
-        <h2 style={{ marginBottom: 'var(--spacing-4)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-          <span>🤖</span> Đánh giá & Định hướng
-        </h2>
-        {!data.profile.ai_evaluation || Object.keys(data.profile.ai_evaluation).length === 0 ? (
-          <EmptyState 
-            title="Chưa có đánh giá" 
-            description="Giáo viên chưa có đánh giá định kỳ cho bạn. Hãy hoàn thành các bài kiểm tra để hệ thống phân tích!" 
-            icon="📊" 
-          />
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-4)' }}>
-            <Card style={{ padding: 'var(--spacing-5)', backgroundColor: 'var(--color-success-soft)', border: 'none' }}>
-              <h3 style={{ color: 'var(--color-success)', fontSize: 'var(--font-size-base)', marginBottom: 'var(--spacing-3)' }}>💪 Điểm mạnh</h3>
-              <ul style={{ margin: 0, paddingLeft: 'var(--spacing-5)', color: 'var(--color-text)', fontSize: 'var(--font-size-sm)' }}>
-                {Array.isArray(data.profile.ai_evaluation.strong_points) ? data.profile.ai_evaluation.strong_points.map((p: string, i: number) => <li key={i} style={{ marginBottom: 'var(--spacing-1)' }}>{p}</li>) : <li>{data.profile.ai_evaluation.strong_points || 'Không có dữ liệu'}</li>}
-              </ul>
-            </Card>
-            <Card style={{ padding: 'var(--spacing-5)', backgroundColor: 'var(--color-danger-soft)', border: 'none' }}>
-              <h3 style={{ color: 'var(--color-danger)', fontSize: 'var(--font-size-base)', marginBottom: 'var(--spacing-3)' }}>🎯 Cần cải thiện</h3>
-              <ul style={{ margin: 0, paddingLeft: 'var(--spacing-5)', color: 'var(--color-text)', fontSize: 'var(--font-size-sm)' }}>
-                {Array.isArray(data.profile.ai_evaluation.weak_points) ? data.profile.ai_evaluation.weak_points.map((p: string, i: number) => <li key={i} style={{ marginBottom: 'var(--spacing-1)' }}>{p}</li>) : <li>{data.profile.ai_evaluation.weak_points || 'Không có dữ liệu'}</li>}
-              </ul>
-            </Card>
-            <Card style={{ padding: 'var(--spacing-5)', backgroundColor: 'var(--color-warning-soft)', border: 'none' }}>
-              <h3 style={{ color: 'var(--color-warning)', fontSize: 'var(--font-size-base)', marginBottom: 'var(--spacing-3)' }}>💡 Lưu ý</h3>
-              <p style={{ margin: 0, color: 'var(--color-text)', fontSize: 'var(--font-size-sm)' }}>{data.profile.ai_evaluation.attention_note || 'Không có'}</p>
-            </Card>
-            <Card style={{ padding: 'var(--spacing-5)', backgroundColor: 'var(--color-info-soft)', border: 'none' }}>
-              <h3 style={{ color: 'var(--color-info)', fontSize: 'var(--font-size-base)', marginBottom: 'var(--spacing-3)' }}>🚀 Hành động</h3>
-              <p style={{ margin: 0, color: 'var(--color-text)', fontSize: 'var(--font-size-sm)' }}>{data.profile.ai_evaluation.action_plan || 'Không có'}</p>
-            </Card>
-          </div>
-        )}
+      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+          <AIInsightCard />
       </div>
 
       {/* WEAK TOPICS */}

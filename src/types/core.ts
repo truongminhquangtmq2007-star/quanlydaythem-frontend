@@ -33,12 +33,13 @@ export interface ClassMember {
   id: number;
   class_id: number;
   student_id: number;
-  enroll_date: string;
-  status: string;
+  enroll_date?: string;
+  status?: string;
   // Bổ sung các cột JOIN từ students
   full_name?: string;
   student_code?: string;
   phone?: string;
+  school_name?: string;
 }
 
 export interface Session {
@@ -49,8 +50,9 @@ export interface Session {
   end_time?: string;
   content?: string;
   document_ids?: any;
-  status: string;
-  created_at: string;
+  status?: string;
+  is_published?: boolean;
+  created_at?: string;
 }
 
 export interface Attendance {
