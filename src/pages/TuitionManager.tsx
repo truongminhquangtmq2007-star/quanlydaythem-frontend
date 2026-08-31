@@ -259,9 +259,9 @@ const TuitionManager = () => {
                     </td>
                     <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
                       {b.is_paid ? (
-                        <Badge variant="success">Đã thu</Badge>
+                        <Badge variant="success">🟢 Đã thanh toán</Badge>
                       ) : (
-                        <Badge variant="danger">Chờ thanh toán</Badge>
+                        <Badge variant="warning">🟠 Chưa thanh toán</Badge>
                       )}
                     </td>
                     <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
@@ -275,10 +275,10 @@ const TuitionManager = () => {
                           <Button 
                             onClick={() => handleConfirmPayment(b.id)}
                             variant="primary" size="sm">
-                            Xác nhận Đã Thu
+                            ✓ Đã chuyển
                           </Button>
                         ) : (
-                          <span style={{ color: 'var(--color-border)', fontWeight: 'var(--font-weight-bold)', fontSize: 'var(--font-size-sm)' }}>Hoàn tất</span>
+                          <span style={{ color: 'var(--color-success)', fontWeight: 'var(--font-weight-bold)', fontSize: 'var(--font-size-sm)' }}>🟢 Đã thanh toán</span>
                         )}
                       </div>
                     </td>
