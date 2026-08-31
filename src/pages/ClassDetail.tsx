@@ -20,6 +20,7 @@ const ClassDetail = () => {
   const [editingSession, setEditingSession] = useState<any>(null);
   const [attendanceList, setAttendanceList] = useState<Attendance[]>([]);
   const [showAbsentModal, setShowAbsentModal] = useState<any>(null);
+  const [absentReasonInput, setAbsentReasonInput] = useState('');
   const [showEvalModal, setShowEvalModal] = useState(false);
   const [evalData, setEvalData] = useState<any>({ 
     student_id: 0, 
@@ -149,46 +150,45 @@ const ClassDetail = () => {
       ...sess, 
       start_time: sess.start_time ? sess.start_time.substring(0,5) : '18:00',
       end_time: sess.end_time ? sess.end_time.substring(0,5) : '19:30',
-      content: sess.content || ''
+      session_date: sess.session_date ? new Date(sess.session_date).toISOString().split('T')[0] : ''
     });
     setShowSessionModal(true);
   };
 
-  const handleSaveSession = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!editingSession || !editingSession.session_date) {
-      alert('Vui lòng chọn ngày học!');
-      return;
-    }
+  const handleSaveSession = async (e: React.FormEvent) => {
+    e.preventDefault();
     setSavingSession(true);
     try {
       if (editingSession.id) {
-        await axiosClient.post('/api/sessions/upsert', editingSession);
+        await axiosClient.put(`/api/sessions/${editingSession.id}`, editingSession);
+        alert('Cập nhật buổi học thành công!');
       } else {
-        await axiosClient.post(`/api/classes/${id}/sessions`, editingSession);
+        await axiosClient.post('/api/sessions', editingSession);
+        alert('Tạo buổi học thành công!');
       }
       setShowSessionModal(false);
       const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
       setSessions(sessionsRes.data || []);
-      alert('Lưu buổi học thành công!');
     } catch (err: any) {
-      console.error(err);
-      alert(err.response?.data?.message || 'Lỗi khi lưu buổi học');
+      alert(err.response?.data?.message || 'Lỗi lưu buổi học');
     } finally {
       setSavingSession(false);
     }
   };
-  
-  const handleDeleteSession = async (sessId: number) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa buổi học này?")) return;
+
+  const handleDeleteSession = async (sessionId: number) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa buổi học này không? Tất cả dữ liệu điểm danh sẽ bị xóa.')) return;
     try {
-       await axiosClient.delete(`/api/sessions/${sessId}`);
-       if (activeSession?.id === sessId) setActiveSession(null);
-       const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
-       setSessions(sessionsRes.data || []);
-       alert("Đã xóa buổi học.");
-    } catch(err) {
-       alert('Lỗi khi xóa buổi học');
+      await axiosClient.delete(`/api/sessions/${sessionId}`);
+      alert('Đã xóa buổi học!');
+      const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
+      setSessions(sessionsRes.data || []);
+      if (activeSession?.id === sessionId) {
+        setActiveSession(null);
+        setAttendanceList([]);
+      }
+    } catch (err) {
+      alert('Lỗi xóa buổi học');
     }
   };
 
@@ -261,7 +261,7 @@ const ClassDetail = () => {
     if (!activeSession) return;
     try {
       await axiosClient.post(`/api/sessions/${activeSession.id}/sync-calendar`);
-      alert('Đồng bộ lại Google Calendar thành công!');
+      alert('✓ Đồng bộ Google Calendar thành công!');
     } catch (err: any) {
       alert(err.response?.data?.message || 'Lỗi đồng bộ lịch Google');
     }
@@ -275,6 +275,9 @@ const ClassDetail = () => {
   const handleUpdateAttendance = async (studentId: number, status: string, notes?: string) => {
     if (!activeSession) return;
     try {
+      // Optimistic local update
+      setAttendanceList(prev => prev.map(a => a.student_id === studentId ? { ...a, status: status as any, notes: notes || undefined, absent_reason: notes || undefined } : a));
+
       await axiosClient.put(`/api/classes/sessions/${activeSession.id}/attendance`, {
         student_id: studentId,
         status,
@@ -284,7 +287,21 @@ const ClassDetail = () => {
       fetchAttendance(activeSession.id);
     } catch (err) {
       alert('Lỗi cập nhật điểm danh');
+      if (activeSession) fetchAttendance(activeSession.id);
     }
+  };
+
+  const handleOpenAbsentModal = (student: any) => {
+    setShowAbsentModal(student);
+    setAbsentReasonInput(student.absent_reason || student.notes || '');
+  };
+
+  const handleSaveAbsentExcused = async () => {
+    if (!showAbsentModal || !activeSession) return;
+    const finalReason = absentReasonInput.trim() || 'Nghỉ học có phép';
+    await handleUpdateAttendance(showAbsentModal.student_id, 'ABSENT_EXCUSED', finalReason);
+    setShowAbsentModal(null);
+    setAbsentReasonInput('');
   };
 
   const handleOpenEval = async (studentId: number, studentName: string) => {
@@ -336,71 +353,73 @@ const ClassDetail = () => {
   };
 
   return (
-    <div style={{ padding: 'var(--spacing-10)', maxWidth: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: 'var(--spacing-4)', maxWidth: '100%', boxSizing: 'border-box' }}>
       
       {/* HEADER LỚP HỌC */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-8)', paddingBottom: 'var(--spacing-6)', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-6)', paddingBottom: 'var(--spacing-4)', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', marginBottom: 'var(--spacing-2)' }}>
-            <h1 style={{ margin: 0, color: 'var(--color-text)', fontSize: '32px' }}>{classInfo?.class_name || 'Đang tải...'}</h1>
-            <Badge variant="primary">Mã lớp: {id}</Badge>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+            <h1 style={{ margin: 0, color: 'var(--color-text)', fontSize: '24px' }}>{classInfo?.class_name || 'Đang tải...'}</h1>
+            <Badge variant="primary">Mã: {id}</Badge>
             <Badge variant={classInfo?.is_active ? 'success' : 'danger'}>{classInfo?.is_active ? 'Đang hoạt động' : 'Tạm dừng'}</Badge>
           </div>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '15px' }}>
+          <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '14px' }}>
             Học phí: <strong>{classInfo?.tuition_fee ? classInfo.tuition_fee.toLocaleString('vi-VN') + ' đ/buổi' : 'Chưa thiết lập'}</strong> — Lịch: {classInfo?.schedule || 'Chưa thiết lập'}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
-          <Button onClick={() => navigate('/classes')} variant="outline">Quay lại danh sách</Button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button onClick={() => navigate('/classes')} variant="outline" size="sm" style={{ minHeight: '44px' }}>
+            Quay lại danh sách
+          </Button>
         </div>
       </div>
 
-      {/* TABS NAVIGATION */}
-      <div style={{ display: 'flex', gap: 'var(--spacing-3)', marginBottom: 'var(--spacing-8)', borderBottom: '1px solid var(--color-border)', paddingBottom: 'var(--spacing-3)' }}>
-        <Button 
+      {/* TABS NAVIGATION (SCROLLABLE ON MOBILE) */}
+      <div className="class-tabs-container" style={{ display: 'flex', gap: '8px', marginBottom: 'var(--spacing-6)', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <button 
           onClick={() => setActiveTab('MEMBERS')} 
-          variant={activeTab === 'MEMBERS' ? 'primary' : 'ghost'}
+          className={`tab-btn ${activeTab === 'MEMBERS' ? 'active' : ''}`}
         >
-          👥 Danh Sách Học Sinh ({members.length})
-        </Button>
-        <Button 
+          👥 Học Sinh ({members.length})
+        </button>
+        <button 
           onClick={() => setActiveTab('SESSIONS')} 
-          variant={activeTab === 'SESSIONS' ? 'primary' : 'ghost'}
+          className={`tab-btn ${activeTab === 'SESSIONS' ? 'active' : ''}`}
         >
           📅 Buổi Học & Điểm Danh ({sessions.length})
-        </Button>
-        <Button 
+        </button>
+        <button 
           onClick={() => setActiveTab('ASSIGNMENTS')} 
-          variant={activeTab === 'ASSIGNMENTS' ? 'primary' : 'ghost'}
+          className={`tab-btn ${activeTab === 'ASSIGNMENTS' ? 'active' : ''}`}
         >
-          📚 Tài Liệu & Bài Tập ({assignments.length})
-        </Button>
-        <Button 
+          📚 Tài Liệu ({assignments.length})
+        </button>
+        <button 
           onClick={() => setActiveTab('ANALYTICS')} 
-          variant={activeTab === 'ANALYTICS' ? 'primary' : 'ghost'}
+          className={`tab-btn ${activeTab === 'ANALYTICS' ? 'active' : ''}`}
         >
-          📊 Phân Tích Chuyên Đề
-        </Button>
+          📊 Phân Tích
+        </button>
       </div>
 
       {/* TAB CONTENT: MEMBERS */}
       {activeTab === 'MEMBERS' && (
-        <Card>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)' }}>
-            <h2 style={{ margin: 0, color: 'var(--color-text)' }}>Danh sách thành viên lớp</h2>
-            <Button onClick={() => { setShowAddMember(true); setSearchQuery(''); setSearchResults([]); }} variant="primary">
+        <Card style={{ padding: 'var(--spacing-4)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)', flexWrap: 'wrap', gap: '10px' }}>
+            <h2 style={{ margin: 0, fontSize: '18px', color: 'var(--color-text)' }}>Danh sách thành viên lớp</h2>
+            <Button onClick={() => { setShowAddMember(true); setSearchQuery(''); setSearchResults([]); }} variant="primary" style={{ minHeight: '44px' }}>
               + Thêm Học Sinh Vào Lớp
             </Button>
           </div>
           
-          <div className="overflow-x-auto">
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--color-background)' }}>
-                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', borderTopLeftRadius: '10px' }}>Họ và Tên</th>
-                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Số Điện Thoại</th>
-                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Trường</th>
-                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', borderTopRightRadius: '10px', textAlign: 'right' }}>Thao tác</th>
+                  <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Họ và Tên</th>
+                  <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Số Điện Thoại</th>
+                  <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Trường</th>
+                  <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', textAlign: 'right' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -413,11 +432,11 @@ const ClassDetail = () => {
                 ) : (
                   members.map(m => (
                     <tr key={m.id} style={{ borderBottom: '1px solid var(--color-background)', transition: '0.2s' }}>
-                      <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>{m.full_name}</td>
-                      <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>{m.phone || 'Chưa cập nhật'}</td>
-                      <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>{m.school_name || '---'}</td>
-                      <td style={{ padding: 'var(--spacing-4)', textAlign: 'right' }}>
-                        <Button onClick={() => navigate(`/students/${m.id}`)} variant="outline" size="sm">Hồ sơ 360°</Button>
+                      <td style={{ padding: 'var(--spacing-3)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>{m.full_name}</td>
+                      <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)' }}>{m.phone || 'Chưa cập nhật'}</td>
+                      <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)' }}>{m.school_name || '---'}</td>
+                      <td style={{ padding: 'var(--spacing-3)', textAlign: 'right' }}>
+                        <Button onClick={() => navigate(`/students/${m.id}`)} variant="outline" size="sm" style={{ minHeight: '36px' }}>Hồ sơ 360°</Button>
                       </td>
                     </tr>
                   ))
@@ -430,16 +449,16 @@ const ClassDetail = () => {
 
       {/* TAB CONTENT: SESSIONS & ATTENDANCE */}
       {activeTab === 'SESSIONS' && (
-        <div style={{ display: 'flex', gap: 'var(--spacing-6)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <div className="sessions-layout-container" style={{ display: 'flex', gap: 'var(--spacing-5)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           
           {/* Cột trái: Danh sách Buổi Học */}
-          <Card style={{ flex: '0 0 320px', display: 'flex', flexDirection: 'column', height: '650px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)', paddingBottom: 'var(--spacing-3)', borderBottom: '1px solid var(--color-border)' }}>
-              <h3 style={{ margin: 0, color: 'var(--color-text)' }}>Buổi học</h3>
-              <Button onClick={handleCreateSession} variant="primary" size="sm">+ Tạo buổi</Button>
+          <Card className="sessions-list-panel" style={{ flex: '0 0 300px', display: 'flex', flexDirection: 'column', maxHeight: '600px', padding: 'var(--spacing-4)', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)', paddingBottom: 'var(--spacing-2)', borderBottom: '1px solid var(--color-border)' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--color-text)' }}>Buổi học ({sessions.length})</h3>
+              <Button onClick={handleCreateSession} variant="primary" size="sm" style={{ minHeight: '40px' }}>+ Tạo buổi</Button>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)', overflowY: 'auto', flex: 1, paddingRight: 'var(--spacing-1)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1 }}>
               {sessions.length === 0 ? (
                 <EmptyState title="Chưa có buổi học nào" description="Bấm '+ Tạo buổi' để lên lịch học mới." />
               ) : sessions.map(sess => (
@@ -447,79 +466,80 @@ const ClassDetail = () => {
                   key={sess.id} 
                   onClick={() => selectSession(sess)}
                   style={{ 
-                    padding: 'var(--spacing-4)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', border: '2px solid', transition: '0.2s',
-                    borderColor: activeSession?.id === sess.id ? 'var(--color-primary)' : 'var(--color-background)', 
-                    backgroundColor: activeSession?.id === sess.id ? '#eff6ff' : 'var(--color-surface)' 
+                    padding: '10px 12px', borderRadius: '8px', cursor: 'pointer', border: '2px solid', transition: '0.15s',
+                    borderColor: activeSession?.id === sess.id ? 'var(--color-primary)' : 'var(--color-border)', 
+                    backgroundColor: activeSession?.id === sess.id ? 'var(--color-primary-soft, #eff6ff)' : 'var(--color-surface)' 
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <div style={{ fontWeight: 'var(--font-weight-bold)', fontSize: '15px', color: activeSession?.id === sess.id ? 'var(--color-primary)' : '#334155' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px', color: activeSession?.id === sess.id ? 'var(--color-primary)' : 'var(--color-text)' }}>
                       Ngày {new Date(sess.session_date).toLocaleDateString('vi-VN')}
                     </div>
                     <Badge variant={sess.is_published ? 'primary' : 'warning'}>
-                      {sess.is_published ? '🔵 Đã công bố' : '🟡 Nháp'}
+                      {sess.is_published ? '🔵 Công bố' : '🟡 Nháp'}
                     </Badge>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: '4px', fontWeight: 'var(--font-weight-medium)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
                     🕒 {sess.start_time ? String(sess.start_time).substring(0,5) : '18:00'}
                   </div>
                   {sess.content && (
-                    <div style={{ fontSize: '13px', color: 'var(--color-text)', marginTop: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text)', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       📖 {sess.content}
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: '4px', marginTop: '10px' }}>
-                    <Button onClick={(e) => { e.stopPropagation(); handleEditSession(sess); }} variant="outline" size="sm" style={{ padding: '2px 8px', fontSize: '12px' }}>Sửa</Button>
-                    <Button onClick={(e) => { e.stopPropagation(); handleDeleteSession(sess.id); }} variant="danger" size="sm" style={{ padding: '2px 8px', fontSize: '12px' }}>Xóa</Button>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                    <Button onClick={(e) => { e.stopPropagation(); handleEditSession(sess); }} variant="outline" size="sm" style={{ padding: '2px 8px', fontSize: '11px', minHeight: '32px' }}>Sửa</Button>
+                    <Button onClick={(e) => { e.stopPropagation(); handleDeleteSession(sess.id); }} variant="danger" size="sm" style={{ padding: '2px 8px', fontSize: '11px', minHeight: '32px' }}>Xóa</Button>
                   </div>
                 </div>
               ))}
             </div>
           </Card>
 
-          {/* Cột phải: Chi tiết Điểm danh & Nhận xét */}
-          <Card style={{ flex: 1, minWidth: '450px' }}>
+          {/* Cột phải: Bảng Điểm danh / Thẻ Điểm danh Mobile */}
+          <Card className="attendance-main-panel" style={{ flex: 1, minWidth: '320px', padding: 'var(--spacing-4)', width: '100%', boxSizing: 'border-box' }}>
             {!activeSession ? (
-              <EmptyState title="Chọn một buổi học bên trái để xem và điểm danh" />
+              <EmptyState title="Chọn một buổi học để xem và điểm danh" />
             ) : (
               <div>
-                <div style={{ marginBottom: 'var(--spacing-6)', paddingBottom: 'var(--spacing-5)', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
+                <div style={{ marginBottom: 'var(--spacing-4)', paddingBottom: 'var(--spacing-3)', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
-                      <h2 style={{ margin: '0', color: 'var(--color-text)', fontSize: 'var(--font-size-2xl)' }}>
-                        Bảng Điểm Danh — {new Date(activeSession.session_date).toLocaleDateString('vi-VN')}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <h2 style={{ margin: 0, color: 'var(--color-text)', fontSize: '18px' }}>
+                        Điểm danh — {new Date(activeSession.session_date).toLocaleDateString('vi-VN')}
                       </h2>
                       {!activeSession.is_published && (
-                        <Button onClick={handlePublishSession} variant="primary" size="sm">🚀 Công bố buổi học</Button>
+                        <Button onClick={handlePublishSession} variant="primary" size="sm" style={{ minHeight: '36px' }}>🚀 Công bố</Button>
                       )}
-                      <Button onClick={handleSyncCalendar} variant="secondary" size="sm">🔄 Đồng bộ Calendar</Button>
+                      <Button onClick={handleSyncCalendar} variant="secondary" size="sm" style={{ minHeight: '36px' }}>🔄 Sync Calendar</Button>
                     </div>
-                    <div style={{ color: 'var(--color-text-secondary)', fontSize: '14px', marginTop: '6px' }}>
-                      Nội dung: <strong>{activeSession.content || 'Chưa có nội dung cụ thể'}</strong>
+                    <div style={{ color: 'var(--color-text-secondary)', fontSize: '13px', marginTop: '4px' }}>
+                      Nội dung: <strong>{activeSession.content || 'Buổi học theo chương trình'}</strong>
                     </div>
                   </div>
-                  <div style={{ padding: '8px 16px', backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius-md)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-bold)' }}>
-                    Sĩ số lớp: {attendanceList.length} học sinh
+                  <div style={{ padding: '4px 10px', backgroundColor: 'var(--color-background)', borderRadius: '6px', color: 'var(--color-text-secondary)', fontSize: '12px', fontWeight: 'bold' }}>
+                    Sĩ số: {attendanceList.length} học sinh
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* DESKTOP ATTENDANCE TABLE */}
+                <div className="desktop-attendance-table" style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                       <tr style={{ backgroundColor: 'var(--color-background)' }}>
-                        <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', width: '30%' }}>Học sinh</th>
-                        <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Trạng thái Điểm danh</th>
-                        <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', textAlign: 'center', width: '20%' }}>Nhận xét & BTVN</th>
+                        <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Học sinh</th>
+                        <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Trạng thái Điểm danh</th>
+                        <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', textAlign: 'center' }}>Nhận xét & BTVN</th>
                       </tr>
                     </thead>
                     <tbody>
                       {attendanceList.length === 0 ? (
-                        <tr><td colSpan={3} style={{ padding: 'var(--spacing-10)' }}><EmptyState title="Lớp chưa có học sinh nào để điểm danh." /></td></tr>
+                        <tr><td colSpan={3} style={{ padding: 'var(--spacing-6)' }}><EmptyState title="Lớp chưa có học sinh nào." /></td></tr>
                       ) : attendanceList.map(a => {
                         const isRecorded = !!a.status;
                         return (
                           <tr key={a.student_id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                            <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', fontSize: 'var(--font-size-base)' }}>
+                            <td style={{ padding: 'var(--spacing-3)', fontWeight: 'bold', color: 'var(--color-text)' }}>
                               {a.full_name} <br/>
                               {!isRecorded && (
                                 <span style={{ color: 'var(--color-text-secondary)', fontSize: '12px', fontWeight: 'normal' }}>
@@ -527,40 +547,44 @@ const ClassDetail = () => {
                                 </span>
                               )}
                             </td>
-                            <td style={{ padding: 'var(--spacing-4)' }}>
-                              <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+                            <td style={{ padding: 'var(--spacing-3)' }}>
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                 <Button 
                                   onClick={() => handleUpdateAttendance(a.student_id, 'PRESENT')}
                                   variant={a.status === 'PRESENT' ? 'primary' : 'outline'}
                                   size="sm"
+                                  style={{ minHeight: '36px' }}
                                 >✅ Có mặt</Button>
                                 
                                 <Button 
                                   onClick={() => handleUpdateAttendance(a.student_id, 'LATE')}
                                   variant={a.status === 'LATE' ? 'secondary' : 'outline'}
                                   size="sm"
+                                  style={{ minHeight: '36px' }}
                                 >⏰ Đi muộn</Button>
                                 
                                 <Button 
-                                  onClick={() => setShowAbsentModal({ student_id: a.student_id, full_name: a.full_name || 'Học viên', notes: a.notes || a.absent_reason || '' })}
+                                  onClick={() => handleOpenAbsentModal(a)}
                                   variant={a.status === 'ABSENT_EXCUSED' ? 'danger' : 'outline'}
                                   size="sm"
-                                >📝 Vắng phép</Button>
+                                  style={{ minHeight: '36px' }}
+                                >🟡 Vắng phép</Button>
                                 
                                 <Button 
                                   onClick={() => handleUpdateAttendance(a.student_id, 'ABSENT_UNEXCUSED')}
                                   variant={a.status === 'ABSENT_UNEXCUSED' ? 'danger' : 'outline'}
                                   size="sm"
+                                  style={{ minHeight: '36px' }}
                                 >❌ Vắng K/P</Button>
                               </div>
                               {a.status === 'ABSENT_EXCUSED' && (a.absent_reason || a.notes) && (
-                                <div style={{ fontSize: '13px', color: 'var(--color-danger)', marginTop: '6px', fontWeight: '500' }}>
+                                <div style={{ fontSize: '12px', color: 'var(--color-danger)', marginTop: '4px', fontWeight: '500' }}>
                                   📌 Lý do: {a.absent_reason || a.notes}
                                 </div>
                               )}
                             </td>
-                            <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
-                              <Button onClick={() => handleOpenEval(a.student_id, a.full_name || 'Học viên')} variant="outline" size="sm">
+                            <td style={{ padding: 'var(--spacing-3)', textAlign: 'center' }}>
+                              <Button onClick={() => handleOpenEval(a.student_id, a.full_name || 'Học viên')} variant="outline" size="sm" style={{ minHeight: '36px' }}>
                                 💬 Nhận xét / BTVN
                               </Button>
                             </td>
@@ -570,63 +594,184 @@ const ClassDetail = () => {
                     </tbody>
                   </table>
                 </div>
+
+                {/* MOBILE ATTENDANCE CARDS (P0 — ONE-HAND THUMB FRIENDLY) */}
+                <div className="mobile-attendance-cards" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {attendanceList.length === 0 ? (
+                    <EmptyState title="Lớp chưa có học sinh nào." />
+                  ) : attendanceList.map(a => {
+                    const statusText = a.status === 'PRESENT' ? '✅ Có mặt' 
+                                    : a.status === 'LATE' ? '⏰ Đi muộn'
+                                    : a.status === 'ABSENT_EXCUSED' ? '🟡 Vắng có phép'
+                                    : a.status === 'ABSENT_UNEXCUSED' ? '❌ Vắng không phép'
+                                    : '⚪ Chưa điểm danh';
+                    const statusVariant = a.status === 'PRESENT' ? 'success'
+                                      : a.status === 'LATE' ? 'warning'
+                                      : a.status === 'ABSENT_EXCUSED' ? 'warning'
+                                      : a.status === 'ABSENT_UNEXCUSED' ? 'danger'
+                                      : 'neutral';
+
+                    return (
+                      <div 
+                        key={a.student_id}
+                        style={{
+                          padding: '12px',
+                          borderRadius: '8px',
+                          backgroundColor: 'var(--color-surface)',
+                          border: '1px solid var(--color-border)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '10px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <strong style={{ fontSize: '15px', color: 'var(--color-text)' }}>{a.full_name}</strong>
+                          <Badge variant={statusVariant}>{statusText}</Badge>
+                        </div>
+
+                        {/* Large Touch Targets for Quick Attendance */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                          <button
+                            onClick={() => handleUpdateAttendance(a.student_id, 'PRESENT')}
+                            style={{
+                              padding: '10px',
+                              borderRadius: '6px',
+                              border: a.status === 'PRESENT' ? '2px solid #059669' : '1px solid var(--color-border)',
+                              backgroundColor: a.status === 'PRESENT' ? '#ecfdf5' : 'var(--color-surface)',
+                              color: a.status === 'PRESENT' ? '#047857' : 'var(--color-text)',
+                              fontWeight: a.status === 'PRESENT' ? 'bold' : 'normal',
+                              fontSize: '13px',
+                              minHeight: '44px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✅ Có mặt
+                          </button>
+                          
+                          <button
+                            onClick={() => handleUpdateAttendance(a.student_id, 'LATE')}
+                            style={{
+                              padding: '10px',
+                              borderRadius: '6px',
+                              border: a.status === 'LATE' ? '2px solid #ea580c' : '1px solid var(--color-border)',
+                              backgroundColor: a.status === 'LATE' ? '#fff7ed' : 'var(--color-surface)',
+                              color: a.status === 'LATE' ? '#c2410c' : 'var(--color-text)',
+                              fontWeight: a.status === 'LATE' ? 'bold' : 'normal',
+                              fontSize: '13px',
+                              minHeight: '44px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ⏰ Đi muộn
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenAbsentModal(a)}
+                            style={{
+                              padding: '10px',
+                              borderRadius: '6px',
+                              border: a.status === 'ABSENT_EXCUSED' ? '2px solid #d97706' : '1px solid var(--color-border)',
+                              backgroundColor: a.status === 'ABSENT_EXCUSED' ? '#fef3c7' : 'var(--color-surface)',
+                              color: a.status === 'ABSENT_EXCUSED' ? '#b45309' : 'var(--color-text)',
+                              fontWeight: a.status === 'ABSENT_EXCUSED' ? 'bold' : 'normal',
+                              fontSize: '13px',
+                              minHeight: '44px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🟡 Vắng phép
+                          </button>
+
+                          <button
+                            onClick={() => handleUpdateAttendance(a.student_id, 'ABSENT_UNEXCUSED')}
+                            style={{
+                              padding: '10px',
+                              borderRadius: '6px',
+                              border: a.status === 'ABSENT_UNEXCUSED' ? '2px solid #dc2626' : '1px solid var(--color-border)',
+                              backgroundColor: a.status === 'ABSENT_UNEXCUSED' ? '#fee2e2' : 'var(--color-surface)',
+                              color: a.status === 'ABSENT_UNEXCUSED' ? '#b91c1c' : 'var(--color-text)',
+                              fontWeight: a.status === 'ABSENT_UNEXCUSED' ? 'bold' : 'normal',
+                              fontSize: '13px',
+                              minHeight: '44px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ❌ Vắng K/P
+                          </button>
+                        </div>
+
+                        {a.status === 'ABSENT_EXCUSED' && (a.absent_reason || a.notes) && (
+                          <div style={{ fontSize: '12px', color: '#b45309', backgroundColor: '#fef3c7', padding: '6px 8px', borderRadius: '4px' }}>
+                            📌 Lý do: <strong>{a.absent_reason || a.notes}</strong>
+                          </div>
+                        )}
+
+                        <Button 
+                          onClick={() => handleOpenEval(a.student_id, a.full_name || 'Học viên')} 
+                          variant="outline" 
+                          size="sm"
+                          style={{ width: '100%', minHeight: '44px' }}
+                        >
+                          💬 Nhận xét / BTVN
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+
               </div>
             )}
           </Card>
         </div>
       )}
 
-      {/* TAB CONTENT: ASSIGNMENTS & DOCUMENTS */}
+      {/* TAB CONTENT: ASSIGNMENTS */}
       {activeTab === 'ASSIGNMENTS' && (
-        <Card>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-6)', flexWrap: 'wrap', gap: 'var(--spacing-3)' }}>
+        <Card style={{ padding: 'var(--spacing-4)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)', flexWrap: 'wrap', gap: '10px' }}>
             <div>
-              <h2 style={{ margin: '0 0 4px 0', color: 'var(--color-text)' }}>Tài Liệu & Bài Tập Đã Giao ({assignments.length})</h2>
-              <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '14px' }}>Tài liệu và bài tập được gán trực tiếp cho lớp {classInfo?.class_name}.</p>
+              <h2 style={{ margin: '0 0 2px 0', fontSize: '18px', color: 'var(--color-text)' }}>Tài Liệu & Bài Tập ({assignments.length})</h2>
+              <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '13px' }}>Tài liệu và bài tập gán cho lớp {classInfo?.class_name}.</p>
             </div>
-            <Button onClick={handleOpenAssignModal} variant="primary">+ Giao bài tập / Gán tài liệu</Button>
+            <Button onClick={handleOpenAssignModal} variant="primary" style={{ minHeight: '44px' }}>+ Giao bài tập</Button>
           </div>
           
-          <div className="overflow-x-auto">
+          <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ backgroundColor: 'var(--color-background)' }}>
-                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Tiêu đề giao bài</th>
-                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Loại</th>
-                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Gắn với buổi học</th>
-                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Hạn chót</th>
-                  <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', textAlign: 'right' }}>Thao tác</th>
+                  <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Tiêu đề giao bài</th>
+                  <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Loại</th>
+                  <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Gắn với buổi học</th>
+                  <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Hạn chót</th>
+                  <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', textAlign: 'right' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {assignments.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: 'var(--spacing-10)' }}><EmptyState title="Chưa có tài liệu hoặc bài tập nào được giao cho lớp này." description="Bấm '+ Giao bài tập / Gán tài liệu' để giao tài liệu từ kho của bạn cho lớp." /></td></tr>
+                  <tr><td colSpan={5} style={{ padding: 'var(--spacing-6)' }}><EmptyState title="Chưa có tài liệu nào được gán." /></td></tr>
                 ) : assignments.map(a => (
-                  <tr key={a.id} style={{ borderBottom: '1px solid var(--color-border)', transition: '0.2s' }}>
-                    <td style={{ padding: 'var(--spacing-4)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>
+                  <tr key={a.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td style={{ padding: 'var(--spacing-3)', fontWeight: 'bold', color: 'var(--color-text)' }}>
                       📄 {a.title || a.doc_title || 'Tài liệu'}
                     </td>
-                    <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>
-                      <Badge variant={a.category === 'EXAM' ? 'primary' : 'info'}>
-                        {a.category === 'EXAM' ? 'Đề thi' : 'Tài liệu học'}
-                      </Badge>
+                    <td style={{ padding: 'var(--spacing-3)' }}>
+                      <Badge variant={a.category === 'EXAM' ? 'primary' : 'info'}>{a.category === 'EXAM' ? 'Đề thi' : 'Tài liệu'}</Badge>
                     </td>
-                    <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)' }}>
-                      {a.session_info || 'Tài liệu chung'}
-                    </td>
-                    <td style={{ padding: 'var(--spacing-4)' }}>
+                    <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)' }}>{a.session_info || 'Tài liệu chung'}</td>
+                    <td style={{ padding: 'var(--spacing-3)' }}>
                       {a.due_at ? (
                         <Badge variant={new Date(a.due_at) < new Date() ? 'danger' : 'warning'}>
-                          ⏰ {new Date(a.due_at).toLocaleDateString('vi-VN')} {new Date(a.due_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
+                          ⏰ {new Date(a.due_at).toLocaleDateString('vi-VN')}
                         </Badge>
                       ) : (
                         <span style={{ color: 'var(--color-text-secondary)' }}>Không có hạn</span>
                       )}
                     </td>
-                    <td style={{ padding: 'var(--spacing-4)', textAlign: 'right' }}>
+                    <td style={{ padding: 'var(--spacing-3)', textAlign: 'right' }}>
                       {a.file_url ? (
                         <a href={a.file_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                          <Button variant="secondary" size="sm">Mở Tài Liệu</Button>
+                          <Button variant="secondary" size="sm" style={{ minHeight: '36px' }}>Mở file</Button>
                         </a>
                       ) : (
                         <span style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>Đã gán</span>
@@ -642,175 +787,66 @@ const ClassDetail = () => {
 
       {/* TAB CONTENT: ANALYTICS */}
       {activeTab === 'ANALYTICS' && (
-        <Card>
-          <h2 style={{ margin: '0 0 20px 0', color: 'var(--color-text)' }}>📊 Phân Tích Những Chuyên Đề Yếu Nhất Lớp</h2>
+        <Card style={{ padding: 'var(--spacing-4)' }}>
+          <h2 style={{ margin: '0 0 16px 0', fontSize: '18px', color: 'var(--color-text)' }}>📊 Phân Tích Chuyên Đề Yếu Nhất Lớp</h2>
           {weakTopics.length === 0 ? (
             <EmptyState title="Chưa có đủ dữ liệu bài làm để phân tích lớp." />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)' }}>
-              {weakTopics.map((t, idx) => {
-                const rate = Number(t.accuracy_rate);
-                let color = 'var(--color-success)';
-                let icon = '✅';
-                if (rate < 50) {
-                  color = 'var(--color-danger)';
-                  icon = '⚠️';
-                } else if (rate < 80) {
-                  color = 'var(--color-warning)';
-                  icon = '⚡';
-                }
-
-                return (
-                  <div key={idx}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-2)' }}>
-                      <span style={{ fontWeight: 'var(--font-weight-bold)', color: '#334155' }}>{icon} {t.topic}</span>
-                      <span style={{ fontWeight: 'var(--font-weight-bold)', color }}>{rate}% ({t.total_corrects}/{t.total_attempts})</span>
-                    </div>
-                    <div style={{ width: '100%', height: '12px', backgroundColor: 'var(--color-background)', borderRadius: '6px', overflow: 'hidden' }}>
-                      <div style={{ width: `${rate}%`, height: '100%', backgroundColor: color, borderRadius: '6px', transition: 'width 0.5s' }}></div>
-                    </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {weakTopics.map((t, idx) => (
+                <div key={idx} style={{ padding: '12px', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <strong style={{ fontSize: '14px', color: 'var(--color-text)' }}>{t.topic_name}</strong>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>Tỷ lệ làm đúng: {Math.round(t.avg_accuracy || 0)}%</div>
                   </div>
-                );
-              })}
+                  <Badge variant={t.avg_accuracy < 50 ? 'danger' : 'warning'}>{Math.round(t.avg_accuracy || 0)}%</Badge>
+                </div>
+              ))}
             </div>
           )}
         </Card>
       )}
 
-      {/* Modal Thêm Học Sinh Vào Lớp */}
-      {showAddMember && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: 'var(--spacing-4)' }}>
-          <Card style={{ width: '520px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
-            <h2 style={{ margin: '0 0 15px 0', color: 'var(--color-text)' }}>➕ Thêm Học Sinh Vào Lớp {classInfo?.class_name}</h2>
-            
-            <div style={{ marginBottom: '15px' }}>
-              <Input 
-                placeholder="🔍 Nhập họ tên hoặc số điện thoại học sinh..." 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
-              />
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', maxHeight: '350px', paddingRight: '5px' }}>
-              {isSearching ? (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-primary)' }}>
-                  ⏳ Đang tìm kiếm...
-                </div>
-              ) : searchResults.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--color-text-secondary)' }}>
-                  {searchQuery.trim() ? 'Không tìm thấy học sinh phù hợp.' : 'Gõ tên hoặc số điện thoại để tìm kiếm học sinh.'}
-                </div>
-              ) : (
-                searchResults.map(st => {
-                  const isAlreadyMember = members.some(m => m.id === st.id);
-                  return (
-                    <div 
-                      key={st.id} 
-                      style={{ 
-                        padding: '12px', 
-                        borderRadius: '8px', 
-                        border: '1px solid var(--color-border)',
-                        backgroundColor: isAlreadyMember ? 'var(--color-background)' : 'var(--color-surface)',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '4px' }}>{st.full_name}</div>
-                        <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', gap: '10px' }}>
-                          <span>📱 {st.phone_number || 'Chưa có SĐT'}</span>
-                          <span>🏫 {st.school_name || '---'}</span>
-                        </div>
-                      </div>
-                      {isAlreadyMember ? (
-                        <Badge variant="success">✓ Đã trong lớp</Badge>
-                      ) : (
-                        <Button 
-                          onClick={() => handleAddMember(st.id)}
-                          variant="primary" 
-                          size="sm"
-                        >
-                          + Thêm vào lớp
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)', marginTop: 'auto', borderTop: '1px solid var(--color-border)', paddingTop: '15px' }}>
-              <Button type="button" onClick={() => { setShowAddMember(false); setSearchQuery(''); setSearchResults([]); }} variant="ghost">Đóng</Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Modal Tạo / Sửa Buổi Học (Không còn bắt BTVN) */}
+      {/* MODAL TẠO / SỬA BUỔI HỌC (MOBILE OPTIMIZED VERTICAL FORM) */}
       {showSessionModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: 'var(--spacing-4)' }}>
-          <Card style={{ width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ margin: '0 0 20px 0', color: 'var(--color-text)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', padding: '20px' }}>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', color: 'var(--color-text)' }}>
               {editingSession?.id ? '✏️ Chỉnh Sửa Buổi Học' : '📅 Tạo Buổi Học Mới'}
             </h2>
-            <form onSubmit={handleSaveSession}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+            <form onSubmit={handleSaveSession} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <Input 
+                type="date"
+                label="Ngày học"
+                value={editingSession?.session_date || ''}
+                onChange={e => setEditingSession({ ...editingSession, session_date: e.target.value })}
+                required
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <Input 
-                  type="date" 
-                  label="Ngày học" 
-                  value={editingSession?.session_date || ''} 
-                  onChange={e => setEditingSession({ ...editingSession, session_date: e.target.value })} 
-                  required 
+                  type="time"
+                  label="Giờ bắt đầu"
+                  value={editingSession?.start_time || '18:00'}
+                  onChange={e => setEditingSession({ ...editingSession, start_time: e.target.value })}
+                  required
                 />
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
-                  <Input 
-                    type="time" 
-                    label="Giờ bắt đầu" 
-                    value={editingSession?.start_time || '18:00'} 
-                    onChange={e => setEditingSession({ ...editingSession, start_time: e.target.value })} 
-                    required 
-                  />
-                  <Input 
-                    type="time" 
-                    label="Giờ kết thúc" 
-                    value={editingSession?.end_time || '19:30'} 
-                    onChange={e => setEditingSession({ ...editingSession, end_time: e.target.value })} 
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
-                    Nội dung buổi học:
-                  </label>
-                  <textarea 
-                    value={editingSession?.content || ''} 
-                    onChange={e => setEditingSession({ ...editingSession, content: e.target.value })} 
-                    placeholder="VD: Ôn tập Hàm số bậc 2, chữa đề kiểm tra..."
-                    rows={4}
-                    style={{
-                      width: '100%',
-                      padding: 'var(--spacing-3)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--color-border)',
-                      backgroundColor: 'var(--color-surface)',
-                      color: 'var(--color-text)',
-                      fontFamily: 'inherit',
-                      fontSize: 'var(--font-size-base)',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
+                <Input 
+                  type="time"
+                  label="Giờ kết thúc"
+                  value={editingSession?.end_time || '19:30'}
+                  onChange={e => setEditingSession({ ...editingSession, end_time: e.target.value })}
+                />
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
-                <Button type="button" onClick={() => setShowSessionModal(false)} variant="ghost" disabled={savingSession}>
-                  Hủy
-                </Button>
-                <Button type="submit" variant="primary" disabled={savingSession}>
-                  {savingSession ? 'Đang lưu...' : (editingSession?.id ? 'Cập nhật' : 'Tạo buổi học')}
+              <Input 
+                label="Nội dung bài học"
+                placeholder="VD: Chuyên đề Phương trình bậc hai..."
+                value={editingSession?.content || ''}
+                onChange={e => setEditingSession({ ...editingSession, content: e.target.value })}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+                <Button type="button" variant="ghost" onClick={() => setShowSessionModal(false)} style={{ minHeight: '44px' }}>Hủy</Button>
+                <Button type="submit" variant="primary" disabled={savingSession} style={{ minHeight: '44px' }}>
+                  {savingSession ? 'Đang lưu...' : 'Lưu buổi học'}
                 </Button>
               </div>
             </form>
@@ -818,262 +854,199 @@ const ClassDetail = () => {
         </div>
       )}
 
-      {/* Modal Nhận Xét Học Sinh & Giao BTVN Sau Buổi Học */}
-      {showEvalModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: 'var(--spacing-4)' }}>
-          <Card style={{ width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ margin: '0 0 15px 0', color: 'var(--color-text)' }}>
-              💬 Nhận Xét & Giao Bài Tập
-            </h2>
-            <div style={{ marginBottom: '15px', color: 'var(--color-text-secondary)', fontWeight: 'bold' }}>
-              Học sinh: <span style={{ color: 'var(--color-primary)' }}>{evalData.student_name}</span>
+      {/* MODAL VẮNG PHÉP (BOTTOM SHEET / QUICK MODAL) */}
+      {showAbsentModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ width: '100%', maxWidth: '440px', padding: '20px' }}>
+            <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--color-text)' }}>
+              🟡 Điểm danh Vắng Có Phép
+            </h3>
+            <p style={{ margin: '0 0 14px 0', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+              Học sinh: <strong>{showAbsentModal.full_name}</strong>
+            </p>
+
+            <div style={{ marginBottom: '12px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', display: 'block', marginBottom: '6px' }}>Lý do thường gặp:</span>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {['🤒 Ốm / Nghỉ bệnh', '🏡 Việc gia đình', '⏳ Trùng lịch học trường', '🚗 Đi xa'].map(reason => (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => setAbsentReasonInput(reason)}
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--color-border)',
+                      backgroundColor: absentReasonInput === reason ? '#fef3c7' : 'var(--color-surface)',
+                      color: absentReasonInput === reason ? '#b45309' : 'var(--color-text)',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+            <Input 
+              label="Lý do chi tiết:"
+              placeholder="Nhập lý do nghỉ học..."
+              value={absentReasonInput}
+              onChange={e => setAbsentReasonInput(e.target.value)}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+              <Button variant="ghost" onClick={() => setShowAbsentModal(null)} style={{ minHeight: '44px' }}>Đóng</Button>
+              <Button variant="primary" onClick={handleSaveAbsentExcused} style={{ minHeight: '44px' }}>Xác nhận Vắng phép</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* MODAL THÊM HỌC SINH VÀO LỚP */}
+      {showAddMember && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', padding: '20px' }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', color: 'var(--color-text)' }}>
+              🔎 Thêm Học Sinh Vào Lớp
+            </h3>
+            
+            <Input 
+              placeholder="Tìm kiếm theo Tên hoặc Số Điện Thoại..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+
+            <div style={{ marginTop: '12px', maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {isSearching ? (
+                <div style={{ padding: '12px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>Đang tìm...</div>
+              ) : searchResults.length === 0 && searchQuery.trim() ? (
+                <div style={{ padding: '12px', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '13px' }}>Không tìm thấy học sinh phù hợp.</div>
+              ) : (
+                searchResults.map(st => (
+                  <div key={st.id} style={{ padding: '10px 12px', backgroundColor: 'var(--color-background)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--color-border)' }}>
+                    <div>
+                      <strong style={{ fontSize: '14px', color: 'var(--color-text)' }}>{st.full_name}</strong>
+                      <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>📞 {st.phone_number || st.phone || 'Chưa có SĐT'} {st.school_name ? `• ${st.school_name}` : ''}</div>
+                    </div>
+                    <Button onClick={() => handleAddMember(st.id)} variant="primary" size="sm" style={{ minHeight: '36px' }}>
+                      + Thêm
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <Button variant="ghost" onClick={() => setShowAddMember(false)} style={{ minHeight: '44px' }}>Đóng</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* MODAL NHẬN XÉT & BTVN */}
+      {showEvalModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', padding: '20px' }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', color: 'var(--color-text)' }}>
+              💬 Nhận Xét & Giao BTVN Cho {evalData.student_name}
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
-                  Mức độ tập trung:
-                </label>
+                <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'block', marginBottom: '4px' }}>Mức độ tập trung:</label>
                 <select 
-                  value={evalData.focus_level} 
+                  value={evalData.focus_level}
                   onChange={e => setEvalData({ ...evalData, focus_level: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--spacing-3)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-surface)',
-                    color: 'var(--color-text)',
-                    fontFamily: 'inherit',
-                    fontSize: 'var(--font-size-base)',
-                    boxSizing: 'border-box'
-                  }}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)', minHeight: '44px' }}
                 >
-                  <option value="Rất tốt">🌟 Rất tốt / Tích cực</option>
-                  <option value="Bình thường">👍 Bình thường</option>
-                  <option value="Chưa tập trung">⚠️ Chưa tập trung / Cần nhắc nhở</option>
+                  <option value="Rất tốt">🌟 Rất tốt</option>
+                  <option value="Tốt">👍 Tốt</option>
+                  <option value="Bình thường">👌 Bình thường</option>
+                  <option value="Cần tập trung hơn">⚠️ Cần tập trung hơn</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
-                  Lời nhận xét của giáo viên:
-                </label>
+                <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'block', marginBottom: '4px' }}>Nhận xét giáo viên:</label>
                 <textarea 
-                  value={evalData.teacher_notes} 
-                  onChange={e => setEvalData({ ...evalData, teacher_notes: e.target.value })} 
-                  placeholder="Nhập nhận xét chi tiết về bài học, thái độ học tập..."
                   rows={3}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--spacing-3)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-surface)',
-                    color: 'var(--color-text)',
-                    fontFamily: 'inherit',
-                    fontSize: 'var(--font-size-base)',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>
-                  Bài tập về nhà giao riêng:
-                </label>
-                <textarea 
-                  value={evalData.homework} 
-                  onChange={e => setEvalData({ ...evalData, homework: e.target.value })} 
-                  placeholder="VD: Làm thêm bài 4, 5 trang 30 SGK..."
-                  rows={2}
-                  style={{
-                    width: '100%',
-                    padding: 'var(--spacing-3)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-surface)',
-                    color: 'var(--color-text)',
-                    fontFamily: 'inherit',
-                    fontSize: 'var(--font-size-base)',
-                    boxSizing: 'border-box'
-                  }}
+                  value={evalData.teacher_notes}
+                  onChange={e => setEvalData({ ...evalData, teacher_notes: e.target.value })}
+                  placeholder="Nhập nhận xét về buổi học hôm nay..."
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)', boxSizing: 'border-box' }}
                 />
               </div>
 
               <Input 
+                label="Bài tập về nhà (BTVN):"
+                placeholder="VD: Làm bài tập 1, 2, 3 trang 45..."
+                value={evalData.homework}
+                onChange={e => setEvalData({ ...evalData, homework: e.target.value })}
+              />
+
+              <Input 
                 type="date"
-                label="Hạn hoàn thành bài tập"
+                label="Hạn nộp BTVN:"
                 value={evalData.due_date}
                 onChange={e => setEvalData({ ...evalData, due_date: e.target.value })}
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
-              <Button type="button" onClick={() => setShowEvalModal(false)} variant="ghost">Hủy</Button>
-              <Button type="button" onClick={handleSaveEval} variant="primary">Lưu Nhận Xét</Button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+              <Button variant="ghost" onClick={() => setShowEvalModal(false)} style={{ minHeight: '44px' }}>Hủy</Button>
+              <Button variant="primary" onClick={handleSaveEval} style={{ minHeight: '44px' }}>Lưu nhận xét</Button>
             </div>
           </Card>
         </div>
       )}
 
-      {/* Modal Nhập Lý Do Vắng Phép */}
-      {showAbsentModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: 'var(--spacing-4)' }}>
-          <Card style={{ width: '460px' }}>
-            <h2 style={{ margin: '0 0 15px 0', color: 'var(--color-text)' }}>
-              📝 Ghi Chú Lý Do Vắng Phép
-            </h2>
-            <div style={{ marginBottom: '15px', color: 'var(--color-text-secondary)', fontWeight: 'bold' }}>
-              Học sinh: <span style={{ color: 'var(--color-primary)' }}>{showAbsentModal.full_name}</span>
-            </div>
-            
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text-secondary)' }}>Chọn nhanh lý do:</label>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['Ốm / Khám bệnh', 'Việc gia đình', 'Trùng lịch thi trường', 'Bận việc cá nhân'].map((reason, idx) => (
-                  <Button 
-                    key={idx} 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowAbsentModal({ ...showAbsentModal, notes: reason })}
-                  >
-                    {reason}
-                  </Button>
-                ))}
-              </div>
-            </div>
+      <style>{`
+        .tab-btn {
+          padding: 8px 16px;
+          border-radius: 8px;
+          border: 1px solid var(--color-border);
+          background: var(--color-surface);
+          color: var(--color-text-secondary);
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          white-space: nowrap;
+          min-height: 40px;
+          transition: all 0.15s;
+        }
+        .tab-btn.active {
+          background: var(--color-primary);
+          color: #ffffff;
+          border-color: var(--color-primary);
+          font-weight: bold;
+        }
 
-            <div style={{ marginBottom: '20px' }}>
-              <Input 
-                label="Lý do chi tiết" 
-                placeholder="Nhập lý do nghỉ của học sinh..." 
-                value={showAbsentModal.notes || ''} 
-                onChange={e => setShowAbsentModal({ ...showAbsentModal, notes: e.target.value })}
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
-              <Button type="button" onClick={() => setShowAbsentModal(null)} variant="ghost">Hủy</Button>
-              <Button 
-                type="button" 
-                onClick={() => {
-                  handleUpdateAttendance(showAbsentModal.student_id, 'ABSENT_EXCUSED', showAbsentModal.notes);
-                  setShowAbsentModal(null);
-                }} 
-                variant="danger"
-              >
-                Xác nhận Vắng phép
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Modal Giao Bài Tập & Gán Tài Liệu Vào Lớp */}
-      {showAssignModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: 'var(--spacing-4)' }}>
-          <Card style={{ width: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ margin: '0 0 10px 0', color: 'var(--color-text)' }}>📚 Gán Tài Liệu / Giao Bài Cho Lớp</h2>
-            <p style={{ margin: '0 0 20px 0', color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-              Lớp nhận: <strong>{classInfo?.class_name}</strong>
-            </p>
-            
-            <form onSubmit={handleCreateAssignment}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-5)' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>
-                    📅 Gắn với buổi học cụ thể:
-                  </label>
-                  <select 
-                    value={assignForm.session_id} 
-                    onChange={e => setAssignForm({ ...assignForm, session_id: e.target.value })}
-                    style={{ width: '100%', padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}
-                  >
-                    <option value="">-- [Không gắn buổi học cụ thể / Tài liệu chung] --</option>
-                    {sessions.map(s => (
-                      <option key={s.id} value={s.id}>
-                        {new Date(s.session_date).toLocaleDateString('vi-VN')} {s.content ? `— ${s.content}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
-                  <Input 
-                    type="datetime-local" 
-                    label="Hạn chót hoàn thành (tùy chọn)" 
-                    value={assignForm.due_at} 
-                    onChange={e => setAssignForm({ ...assignForm, due_at: e.target.value })} 
-                  />
-                  <Input 
-                    label="Tiêu đề giao bài (tùy chọn)" 
-                    placeholder="Mặc định lấy tên file" 
-                    value={assignForm.title} 
-                    onChange={e => setAssignForm({ ...assignForm, title: e.target.value })} 
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>
-                    📁 Chọn tài liệu từ kho của bạn:
-                  </label>
-                  <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-3)', backgroundColor: 'var(--color-background)' }}>
-                    {Object.values(
-                      allDocs.reduce((acc, doc) => {
-                        const key = doc.folder_id ? `${doc.folder_id}_${doc.folder_name}` : 'null_Chưa phân loại';
-                        if (!acc[key]) acc[key] = { folder_id: doc.folder_id, folder_name: doc.folder_name || 'Chưa phân loại', docs: [] };
-                        acc[key].docs.push(doc);
-                        return acc;
-                      }, {} as Record<string, any>)
-                    ).map((group: any) => (
-                      <div key={group.folder_id || 'null'} style={{ marginBottom: 'var(--spacing-3)' }}>
-                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#334155', marginBottom: '4px' }}>
-                          📁 {group.folder_name}
-                        </div>
-                        <div style={{ paddingLeft: '15px' }}>
-                          {group.docs.map((doc: any) => (
-                            <label key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', cursor: 'pointer', fontSize: '14px' }}>
-                              <input 
-                                type="checkbox" 
-                                checked={selectedDocIds.includes(doc.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedDocIds([...selectedDocIds, doc.id]);
-                                  } else {
-                                    setSelectedDocIds(selectedDocIds.filter(dId => dId !== doc.id));
-                                  }
-                                }}
-                              />
-                              <span>📄 {doc.title}</span>
-                              <Badge variant={doc.category === 'EXAM' ? 'primary' : 'info'} style={{ fontSize: '11px' }}>
-                                {doc.category === 'EXAM' ? 'Đề thi' : 'Tài liệu'}
-                              </Badge>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    {allDocs.length === 0 && <EmptyState title="Kho tài liệu của bạn đang trống" />}
-                  </div>
-                </div>
-              </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--color-primary)' }}>
-                  Đã chọn: {selectedDocIds.length} tài liệu
-                </span>
-                <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
-                  <Button type="button" onClick={() => setShowAssignModal(false)} variant="ghost">Hủy</Button>
-                  <Button type="submit" disabled={isAssigning || selectedDocIds.length === 0} variant="primary">
-                    {isAssigning ? 'Đang gán...' : 'Gán vào lớp'}
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+        @media (max-width: 768px) {
+          .sessions-layout-container {
+            flex-direction: column !important;
+          }
+          .sessions-list-panel {
+            flex: 1 1 100% !important;
+            max-height: 240px !important;
+          }
+          .desktop-attendance-table {
+            display: none !important;
+          }
+          .mobile-attendance-cards {
+            display: flex !important;
+          }
+        }
+        @media (min-width: 769px) {
+          .desktop-attendance-table {
+            display: block !important;
+          }
+          .mobile-attendance-cards {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -918,7 +918,8 @@ const TuitionManager = () => {
           <h3 style={{ margin: 0, color: 'var(--color-text)', fontSize: 'var(--font-size-xl)' }}>Danh sách phiếu học phí {moment(selectedMonth).format('[Tháng] MM/YYYY')}</h3>
         </div>
         
-        <div className="overflow-x-auto" style={{ overflowX: 'auto' }}>
+        {/* DESKTOP TABLE */}
+        <div className="desktop-bills-table" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ backgroundColor: 'var(--color-background)' }}>
@@ -974,6 +975,61 @@ const TuitionManager = () => {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* MOBILE CARDS LIST */}
+        <div className="mobile-bills-cards" style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px' }}>
+          {(!Array.isArray(bills) || bills.length === 0) ? (
+            <EmptyState title="Không có phiếu học phí" description="Bấm '+ Tạo Phiếu Thu Mới' để lập phiếu." />
+          ) : (
+            bills.map(b => (
+              <div 
+                key={b.id} 
+                style={{ 
+                  padding: '14px', 
+                  borderRadius: '8px', 
+                  backgroundColor: b.is_paid ? 'var(--color-surface)' : 'var(--color-danger-light)', 
+                  border: '1px solid var(--color-border)', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '8px' 
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong style={{ fontSize: '16px', color: 'var(--color-text)' }}>{b.full_name}</strong>
+                  <Badge variant={b.is_paid ? 'success' : 'warning'}>
+                    {b.is_paid ? '🟢 ĐÃ THU' : '⏳ CHỜ THU'}
+                  </Badge>
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                  📅 Kỳ: {new Date(b.start_date).toLocaleDateString('vi-VN')} — {new Date(b.end_date).toLocaleDateString('vi-VN')} • #{b.id}
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                  {Number(b.total_amount).toLocaleString('vi-VN')} đ
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <Button 
+                    onClick={() => handleOpenInvoice(b.id)} 
+                    variant="outline" 
+                    size="sm" 
+                    style={{ flex: 1, minHeight: '44px' }}
+                  >
+                    📄 Xem / In Phiếu
+                  </Button>
+                  {!b.is_paid && (
+                    <Button 
+                      onClick={() => handleConfirmPayment(b.id)} 
+                      variant="primary" 
+                      size="sm" 
+                      style={{ minHeight: '44px' }}
+                    >
+                      ✓ Đã thu
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </Card>
 
@@ -1337,9 +1393,26 @@ const TuitionManager = () => {
         </div>
       )}
 
-      {/* PRINT STYLES WITH EXACT COLOR FIDELITY */}
+      {/* PRINT & RESPONSIVE STYLES */}
       <style>
         {`
+          @media (max-width: 768px) {
+            .desktop-bills-table {
+              display: none !important;
+            }
+            .mobile-bills-cards {
+              display: flex !important;
+            }
+          }
+          @media (min-width: 769px) {
+            .desktop-bills-table {
+              display: block !important;
+            }
+            .mobile-bills-cards {
+              display: none !important;
+            }
+          }
+
           @media print {
             body * {
               visibility: hidden;

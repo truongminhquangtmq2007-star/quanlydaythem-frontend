@@ -41,6 +41,10 @@ const DocumentLibrary = () => {
   const [folderSearch, setFolderSearch] = useState('');
   const [moving, setMoving] = useState(false);
 
+  // Delete Modal state
+  const [docToDelete, setDocToDelete] = useState<DocumentInfo | null>(null);
+  const [deletingDoc, setDeletingDoc] = useState(false);
+
   useEffect(() => {
     fetchContents(currentFolderId);
   }, [currentFolderId]);
@@ -110,10 +114,6 @@ const DocumentLibrary = () => {
     }
   };
 
-  // Delete Modal state
-  const [docToDelete, setDocToDelete] = useState<DocumentInfo | null>(null);
-  const [deletingDoc, setDeletingDoc] = useState(false);
-
   const confirmDeleteDoc = async () => {
     if (!docToDelete) return;
     setDeletingDoc(true);
@@ -121,9 +121,8 @@ const DocumentLibrary = () => {
       await axiosClient.delete(`/api/documents/${docToDelete.id}`);
       setDocToDelete(null);
       fetchContents(currentFolderId);
-      alert('Đã xóa tài liệu thành công!');
-    } catch (err: any) {
-      alert(err.response?.data?.message || err.response?.data?.error || 'Lỗi khi xóa tài liệu');
+    } catch (err) {
+      alert('Lỗi xóa tài liệu');
     } finally {
       setDeletingDoc(false);
     }
@@ -133,13 +132,13 @@ const DocumentLibrary = () => {
     setDocToDelete(doc);
   };
 
-  const handleDeleteFolder = async (id: number) => {
-    if (!window.confirm('Xóa thư mục này? (Phải trống mới xóa được)')) return;
+  const handleDeleteFolder = async (folderId: number) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa thư mục này và các thư mục/tài liệu bên trong?')) return;
     try {
-      await axiosClient.delete(`/api/folders/${id}`);
+      await axiosClient.delete(`/api/folders/${folderId}`);
       fetchContents(currentFolderId);
     } catch (err) {
-      alert('Không thể xóa thư mục (có thể không trống)');
+      alert('Lỗi xóa thư mục');
     }
   };
 
@@ -147,39 +146,37 @@ const DocumentLibrary = () => {
     setItemToMove({ type: 'DOC', id: docId });
     setTargetFolderId(currentFolderId);
     setFolderSearch('');
+    setShowMoveModal(true);
+    
     try {
-      const res = await axiosClient.get('/api/folders/drive?category=STORAGE');
-      setAllFolders(res.data.folders || []);
+      const res = await axiosClient.get('/api/folders');
+      setAllFolders(res.data || []);
     } catch (err) {
       console.error('Lỗi tải danh sách thư mục:', err);
     }
-    setShowMoveModal(true);
   };
 
-  const handleMoveItem = async () => {
+  const handleConfirmMove = async () => {
     if (!itemToMove) return;
     setMoving(true);
     try {
       if (itemToMove.type === 'DOC') {
-        const doc = documents.find(d => d.id === itemToMove.id);
-        const title = doc ? doc.title : undefined;
-        await axiosClient.put(`/api/documents/${itemToMove.id}`, { title, folder_id: targetFolderId });
+        await axiosClient.put(`/api/documents/${itemToMove.id}/move`, { folder_id: targetFolderId });
       }
       setShowMoveModal(false);
+      setItemToMove(null);
       fetchContents(currentFolderId);
-      alert('Di chuyển tài liệu thành công!');
     } catch (err: any) {
-      alert('Lỗi di chuyển: ' + (err?.response?.data?.error || err?.response?.data?.message || 'Thao tác không hợp lệ'));
+      alert(err.response?.data?.message || 'Lỗi di chuyển tài liệu');
     } finally {
       setMoving(false);
     }
   };
 
-  // Helper to build folder tree hierarchy
-  const buildFolderTree = (parentId: number | null = null, depth: number = 0): { folder: Folder; depth: number }[] => {
-    const directChildren = allFolders.filter(f => f.parent_id === parentId);
+  const buildFolderTree = (parentId: number | null = null, depth = 0): { folder: Folder; depth: number }[] => {
+    const children = allFolders.filter(f => f.parent_id === parentId);
     let result: { folder: Folder; depth: number }[] = [];
-    for (const child of directChildren) {
+    for (const child of children) {
       result.push({ folder: child, depth });
       result = result.concat(buildFolderTree(child.id, depth + 1));
     }
@@ -187,32 +184,34 @@ const DocumentLibrary = () => {
   };
 
   const folderTree = buildFolderTree(null, 0);
-  const filteredFolderTree = folderSearch.trim() 
-    ? allFolders.filter(f => f.name.toLowerCase().includes(folderSearch.toLowerCase())).map(f => ({ folder: f, depth: 0 }))
+  const filteredFolderTree = folderSearch.trim()
+    ? folderTree.filter(item => item.folder.name.toLowerCase().includes(folderSearch.toLowerCase()))
     : folderTree;
 
-  const selectedTargetName = targetFolderId === null 
-    ? '🏠 Thư mục gốc (Trang chủ)' 
-    : (allFolders.find(f => f.id === targetFolderId)?.name || 'Thư mục đã chọn');
-
   return (
-    <div style={{ padding: 'var(--spacing-8)', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-5)' }}>
-        <h2>📚 Kho Tài Liệu</h2>
-        <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-          <Button variant="outline" onClick={() => setShowFolderModal(true)}>
+    <div style={{ padding: 'var(--spacing-4)', maxWidth: '100%', boxSizing: 'border-box' }}>
+      
+      {/* HEADER */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-5)', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 style={{ margin: '0 0 4px 0', fontSize: '24px', color: 'var(--color-text)' }}>📚 Kho Tài Liệu</h1>
+          <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '14px' }}>Lưu trữ bài giảng, đề thi và tài liệu học tập của bạn</p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button variant="outline" onClick={() => setShowFolderModal(true)} style={{ minHeight: '44px' }}>
             + Tạo thư mục
           </Button>
-          <Button variant="primary" onClick={() => setShowDocModal(true)}>
+          <Button variant="primary" onClick={() => setShowDocModal(true)} style={{ minHeight: '44px' }}>
             + Thêm tài liệu
           </Button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-5)', fontSize: 'var(--font-size-base)', color: 'var(--color-primary)', cursor: 'pointer' }}>
+      {/* BREADCRUMBS WITH HORIZONTAL SCROLL ON MOBILE */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: 'var(--spacing-5)', fontSize: '14px', color: 'var(--color-primary)', overflowX: 'auto', paddingBottom: '4px', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch' }}>
         {breadcrumbs.map((b, idx) => (
           <React.Fragment key={idx}>
-            <span onClick={() => navigateTo(b.id, b.name)} style={{ fontWeight: idx === breadcrumbs.length - 1 ? 'var(--font-weight-bold)' : 'var(--font-weight-medium)', textDecoration: 'underline' }}>
+            <span onClick={() => navigateTo(b.id, b.name)} style={{ fontWeight: idx === breadcrumbs.length - 1 ? 'bold' : 'normal', textDecoration: 'underline', cursor: 'pointer' }}>
               {b.name}
             </span>
             {idx < breadcrumbs.length - 1 && <span style={{ color: 'var(--color-text-secondary)', textDecoration: 'none' }}> / </span>}
@@ -220,43 +219,50 @@ const DocumentLibrary = () => {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--spacing-5)' }}>
+      {/* GRID ITEMS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
         {folders.map(f => (
-          <Card key={`f-${f.id}`} style={{ padding: 'var(--spacing-5)', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
-            <div onClick={() => navigateTo(f.id, f.name)} style={{ fontSize: '40px', marginBottom: 'var(--spacing-2)' }}>📁</div>
-            <div onClick={() => navigateTo(f.id, f.name)} style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', textAlign: 'center', marginBottom: 'var(--spacing-2)', wordBreak: 'break-all' }}>{f.name}</div>
-            <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f.id); }}>Xóa</Button>
+          <Card key={`f-${f.id}`} style={{ padding: '14px', display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', textAlign: 'center' }}>
+            <div onClick={() => navigateTo(f.id, f.name)} style={{ fontSize: '36px', marginBottom: '6px' }}>📁</div>
+            <div onClick={() => navigateTo(f.id, f.name)} style={{ fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '8px', wordBreak: 'break-word', fontSize: '14px' }}>
+              {f.name}
+            </div>
+            <Button variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteFolder(f.id); }} style={{ minHeight: '36px', width: '100%' }}>
+              Xóa
+            </Button>
           </Card>
         ))}
 
         {documents.map(d => (
-          <Card key={`d-${d.id}`} style={{ padding: 'var(--spacing-5)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ fontSize: '40px', marginBottom: 'var(--spacing-2)' }}>📄</div>
-            <div style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', textAlign: 'center', marginBottom: 'var(--spacing-4)', wordBreak: 'break-all' }}>{d.title}</div>
-            <div style={{ display: 'flex', gap: 'var(--spacing-1)', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <Button variant="primary" size="sm" onClick={() => window.open(d.file_url, '_blank')}>Mở</Button>
-              <Button variant="secondary" size="sm" onClick={() => openMoveModal(d.id)}>Di chuyển</Button>
-              <Button variant="danger" size="sm" onClick={() => handleDeleteDoc(d)}>Xóa</Button>
+          <Card key={`d-${d.id}`} style={{ padding: '14px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <div style={{ fontSize: '36px', marginBottom: '6px' }}>📄</div>
+            <div style={{ fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '10px', wordBreak: 'break-word', fontSize: '13.5px', lineHeight: '1.3' }}>
+              {d.title}
+            </div>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', width: '100%', justifyContent: 'center' }}>
+              <Button variant="primary" size="sm" onClick={() => window.open(d.file_url, '_blank')} style={{ flex: 1, minHeight: '36px' }}>Mở</Button>
+              <Button variant="secondary" size="sm" onClick={() => openMoveModal(d.id)} style={{ flex: 1, minHeight: '36px' }}>Chuyển</Button>
+              <Button variant="danger" size="sm" onClick={() => handleDeleteDoc(d)} style={{ minHeight: '36px' }}>✕</Button>
             </div>
           </Card>
         ))}
       </div>
 
       {folders.length === 0 && documents.length === 0 && (
-        <div style={{ marginTop: 'var(--spacing-10)' }}>
+        <div style={{ marginTop: 'var(--spacing-8)' }}>
           <EmptyState title="Thư mục trống" description="Chưa có thư mục hoặc tài liệu nào ở đây." />
         </div>
       )}
 
       {/* Modal Tạo Thư Mục */}
       {showFolderModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <Card style={{ padding: 'var(--spacing-8)', width: '400px' }}>
-            <h3 style={{ margin: '0 0 var(--spacing-5) 0' }}>Tạo thư mục mới</h3>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ padding: '20px', width: '100%', maxWidth: '400px' }}>
+            <h3 style={{ margin: '0 0 14px 0', fontSize: '18px' }}>Tạo thư mục mới</h3>
             <Input value={folderName} onChange={e => setFolderName(e.target.value)} placeholder="Tên thư mục..." />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-5)' }}>
-              <Button variant="ghost" onClick={() => setShowFolderModal(false)}>Hủy</Button>
-              <Button variant="primary" onClick={handleCreateFolder}>Tạo</Button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+              <Button variant="ghost" onClick={() => setShowFolderModal(false)} style={{ minHeight: '44px' }}>Hủy</Button>
+              <Button variant="primary" onClick={handleCreateFolder} style={{ minHeight: '44px' }}>Tạo</Button>
             </div>
           </Card>
         </div>
@@ -264,38 +270,38 @@ const DocumentLibrary = () => {
 
       {/* Modal Thêm Tài Liệu */}
       {showDocModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <Card style={{ padding: 'var(--spacing-8)', width: '400px' }}>
-            <h3 style={{ margin: '0 0 var(--spacing-5) 0' }}>Thêm tài liệu</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ padding: '20px', width: '100%', maxWidth: '440px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 14px 0', fontSize: '18px' }}>Thêm tài liệu mới</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <Input label="Tên tài liệu" value={docForm.title} onChange={e => setDocForm({...docForm, title: e.target.value})} placeholder="Tên tài liệu..." />
               <div>
-                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>Tải file lên (PDF, Word...):</label>
-                <input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: 'var(--spacing-2)', backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--color-border)' }} />
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', color: 'var(--color-text)' }}>Tải file lên (PDF, Word...):</label>
+                <input type="file" onChange={e => setDocFile(e.target.files?.[0] || null)} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--color-background)', borderRadius: '6px', border: '1px dashed var(--color-border)', boxSizing: 'border-box' }} />
               </div>
-              <div style={{ textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>Hoặc nhập URL trực tiếp:</div>
+              <div style={{ textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '13px' }}>Hoặc nhập URL trực tiếp:</div>
               <Input label="URL tài liệu" value={docForm.file_url} onChange={e => setDocForm({...docForm, file_url: e.target.value})} placeholder="URL tài liệu (VD: https://...)" />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-5)' }}>
-              <Button variant="ghost" onClick={() => setShowDocModal(false)} disabled={uploadingDoc}>Hủy</Button>
-              <Button variant="primary" onClick={handleAddDoc} isLoading={uploadingDoc} disabled={uploadingDoc}>
-                Lưu
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+              <Button variant="ghost" onClick={() => setShowDocModal(false)} disabled={uploadingDoc} style={{ minHeight: '44px' }}>Hủy</Button>
+              <Button variant="primary" onClick={handleAddDoc} isLoading={uploadingDoc} disabled={uploadingDoc} style={{ minHeight: '44px' }}>
+                Lưu tài liệu
               </Button>
             </div>
           </Card>
         </div>
       )}
 
-      {/* Modal Di Chuyển Tài Liệu Trực Quan (Folder Picker) */}
+      {/* Modal Di Chuyển Tài Liệu (Folder Picker) */}
       {showMoveModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <Card style={{ padding: 'var(--spacing-6)', width: '480px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <h3 style={{ margin: '0 0 var(--spacing-3) 0', color: 'var(--color-text)' }}>📁 Chọn Thư Mục Đích</h3>
-            <p style={{ margin: '0 0 var(--spacing-4) 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px', backdropFilter: 'blur(4px)' }}>
+          <Card style={{ padding: '20px', width: '100%', maxWidth: '460px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', color: 'var(--color-text)' }}>📁 Chọn Thư Mục Đích</h3>
+            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
               Chọn thư mục bạn muốn chuyển tài liệu vào:
             </p>
 
-            <div style={{ marginBottom: 'var(--spacing-3)' }}>
+            <div style={{ marginBottom: '10px' }}>
               <Input 
                 placeholder="🔎 Tìm thư mục theo tên..." 
                 value={folderSearch} 
@@ -303,13 +309,12 @@ const DocumentLibrary = () => {
               />
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: 'var(--spacing-3)', marginBottom: 'var(--spacing-4)', display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '300px', backgroundColor: 'var(--color-background)' }}>
-              {/* Root option */}
+            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '10px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '260px', backgroundColor: 'var(--color-background)' }}>
               <div 
                 onClick={() => setTargetFolderId(null)}
                 style={{
-                  padding: '10px 14px',
-                  borderRadius: 'var(--radius-md)',
+                  padding: '10px 12px',
+                  borderRadius: '6px',
                   cursor: 'pointer',
                   border: targetFolderId === null ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                   backgroundColor: targetFolderId === null ? '#eff6ff' : 'var(--color-surface)',
@@ -324,7 +329,6 @@ const DocumentLibrary = () => {
                 {targetFolderId === null && <span style={{ color: 'var(--color-primary)' }}>✓ Đã chọn</span>}
               </div>
 
-              {/* Folder list / tree */}
               {filteredFolderTree.map(({ folder, depth }) => {
                 const isSelected = targetFolderId === folder.id;
                 return (
@@ -332,9 +336,9 @@ const DocumentLibrary = () => {
                     key={`target-${folder.id}`}
                     onClick={() => setTargetFolderId(folder.id)}
                     style={{
-                      padding: '10px 14px',
-                      paddingLeft: `${14 + depth * 20}px`,
-                      borderRadius: 'var(--radius-md)',
+                      padding: '10px 12px',
+                      paddingLeft: `${12 + depth * 16}px`,
+                      borderRadius: '6px',
                       cursor: 'pointer',
                       border: isSelected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                       backgroundColor: isSelected ? '#eff6ff' : 'var(--color-surface)',
@@ -342,8 +346,7 @@ const DocumentLibrary = () => {
                       color: 'var(--color-text)',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
-                      transition: 'all 0.15s ease'
+                      justifyContent: 'space-between'
                     }}
                   >
                     <span>{depth > 0 ? '└── ' : ''}📁 {folder.name}</span>
@@ -351,22 +354,12 @@ const DocumentLibrary = () => {
                   </div>
                 );
               })}
-
-              {filteredFolderTree.length === 0 && folderSearch.trim() && (
-                <div style={{ textAlign: 'center', padding: '16px', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                  Không tìm thấy thư mục nào phù hợp với từ khóa.
-                </div>
-              )}
             </div>
 
-            <div style={{ marginBottom: 'var(--spacing-4)', padding: '8px 12px', backgroundColor: 'var(--color-primary-soft)', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', color: 'var(--color-primary)', fontWeight: 'var(--font-weight-medium)' }}>
-              Đích đến: <strong>{selectedTargetName}</strong>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-2)' }}>
-              <Button variant="ghost" onClick={() => setShowMoveModal(false)} disabled={moving}>Hủy</Button>
-              <Button variant="primary" onClick={handleMoveItem} disabled={moving}>
-                {moving ? 'Đang di chuyển...' : 'Di chuyển ngay'}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <Button variant="ghost" onClick={() => setShowMoveModal(false)} disabled={moving} style={{ minHeight: '44px' }}>Hủy</Button>
+              <Button variant="primary" onClick={handleConfirmMove} isLoading={moving} disabled={moving} style={{ minHeight: '44px' }}>
+                Xác nhận chuyển
               </Button>
             </div>
           </Card>
@@ -375,24 +368,22 @@ const DocumentLibrary = () => {
 
       {/* Modal Xác Nhận Xóa Tài Liệu */}
       {docToDelete && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <Card style={{ padding: 'var(--spacing-6)', width: '450px' }}>
-            <h3 style={{ margin: '0 0 12px 0', color: 'var(--color-danger)' }}>🗑️ Xác Nhận Xóa Tài Liệu</h3>
-            <p style={{ margin: '0 0 16px 0', color: 'var(--color-text)', fontSize: '15px' }}>
-              Bạn có chắc chắn muốn xóa tài liệu: <strong style={{ color: 'var(--color-primary)' }}>{docToDelete.title}</strong>?
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ padding: '20px', width: '100%', maxWidth: '400px' }}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: 'var(--color-danger)' }}>Xóa Tài Liệu?</h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: 'var(--color-text)' }}>
+              Bạn có chắc chắn muốn xóa tài liệu <strong>"{docToDelete.title}"</strong> không?
             </p>
-            <div style={{ padding: '10px 14px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '13px', color: '#991b1b', marginBottom: '20px' }}>
-              ⚠️ Thao tác này sẽ xóa tài liệu khỏi kho và dọn dẹp các liên kết bài tập đã gán vào lớp.
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
-              <Button variant="ghost" onClick={() => setDocToDelete(null)} disabled={deletingDoc}>Hủy</Button>
-              <Button variant="danger" onClick={confirmDeleteDoc} disabled={deletingDoc}>
-                {deletingDoc ? 'Đang xóa...' : 'Xác nhận xóa'}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <Button variant="ghost" onClick={() => setDocToDelete(null)} disabled={deletingDoc} style={{ minHeight: '44px' }}>Hủy</Button>
+              <Button variant="danger" onClick={confirmDeleteDoc} isLoading={deletingDoc} disabled={deletingDoc} style={{ minHeight: '44px' }}>
+                Xóa vĩnh viễn
               </Button>
             </div>
           </Card>
         </div>
       )}
+
     </div>
   );
 };
