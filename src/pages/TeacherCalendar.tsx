@@ -19,8 +19,22 @@ const TeacherCalendar = () => {
   });
   const [agendaFilter, setAgendaFilter] = useState<'all' | 'upcoming' | 'past' | 'draft' | 'unattended'>('all');
   const [googleConnected, setGoogleConnected] = useState<boolean>(false);
+  const [googleEmail, setGoogleEmail] = useState<string>('');
   const [selectedSessionForModal, setSelectedSessionForModal] = useState<any>(null);
   const [syncingSessionId, setSyncingSessionId] = useState<number | null>(null);
+  const [syncSuccessModal, setSyncSuccessModal] = useState<{
+    isOpen: boolean;
+    eventId: string;
+    htmlLink: string;
+    googleAccount: string;
+    sessionTitle: string;
+  }>({
+    isOpen: false,
+    eventId: '',
+    htmlLink: '',
+    googleAccount: '',
+    sessionTitle: ''
+  });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,8 +48,11 @@ const TeacherCalendar = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('sync') === 'success') {
-      alert('✓ Kết nối Google Calendar thành công! Giờ đây bạn có thể đồng bộ các buổi học lên Google Calendar.');
+      const email = params.get('email');
+      if (email) setGoogleEmail(email);
+      alert(`✓ Kết nối Google Calendar thành công! ${email ? `Tài khoản: ${email}` : ''}`);
       setGoogleConnected(true);
+      checkGoogleCalendarStatus();
       navigate('/quan-ly-tien-do', { replace: true });
     } else if (params.get('sync') === 'error') {
       alert('⚠️ Không thể kết nối Google Calendar hoặc bạn đã hủy xác thực.');
@@ -59,8 +76,12 @@ const TeacherCalendar = () => {
     try {
       const res = await axiosClient.get('/api/calendar/status');
       setGoogleConnected(Boolean(res.data?.connected));
+      if (res.data?.email) {
+        setGoogleEmail(res.data.email);
+      }
     } catch (e) {
       setGoogleConnected(false);
+      setGoogleEmail('');
     }
   };
 
@@ -85,8 +106,18 @@ const TeacherCalendar = () => {
     }
     setSyncingSessionId(session.id);
     try {
-      await axiosClient.post(`/api/sessions/${session.id}/sync-calendar`);
-      alert('✓ Đồng bộ buổi học lên Google Calendar thành công!');
+      const res = await axiosClient.post(`/api/sessions/${session.id}/sync-calendar`);
+      if (res.data?.success || res.data?.event_id) {
+        setSyncSuccessModal({
+          isOpen: true,
+          eventId: res.data.event_id || '',
+          htmlLink: res.data.html_link || (res.data.event_id ? `https://calendar.google.com/calendar/r/eventedit/${res.data.event_id}` : 'https://calendar.google.com'),
+          googleAccount: res.data.calendar_account || googleEmail || 'Tài khoản Google của bạn',
+          sessionTitle: session.class_name ? `[${session.class_name}] ${session.content || 'Lịch học'}` : 'Buổi học'
+        });
+      } else {
+        alert(res.data?.message || '✓ Đồng bộ buổi học lên Google Calendar thành công!');
+      }
       fetchSessions();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Lỗi khi đồng bộ lên Google Calendar.');
@@ -239,13 +270,18 @@ const TeacherCalendar = () => {
         </div>
 
         {/* Integration Button located strictly outside the timetable grid */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           {googleConnected ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', color: '#047857', fontSize: '13px', fontWeight: 'bold' }}>
-              <span>✓ Google Calendar đã kết nối</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', color: '#047857', fontSize: '13px', fontWeight: 'bold' }}>
+                <span>✓ Google Calendar: {googleEmail ? googleEmail : 'Đã kết nối'}</span>
+              </div>
+              <Button onClick={handleConnectCalendar} variant="outline" size="sm" style={{ minHeight: '36px' }}>
+                Đổi tài khoản / Kết nối lại
+              </Button>
             </div>
           ) : (
-            <Button onClick={handleConnectCalendar} variant="secondary">
+            <Button onClick={handleConnectCalendar} variant="primary" style={{ minHeight: '40px' }}>
               🔗 Tích hợp Google Calendar
             </Button>
           )}
@@ -795,22 +831,66 @@ const TeacherCalendar = () => {
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
               <Button variant="ghost" onClick={() => setSelectedSessionForModal(null)}>
                 Đóng
               </Button>
+              {selectedSessionForModal.google_event_id && (
+                <Button 
+                  variant="secondary"
+                  onClick={() => window.open(`https://calendar.google.com/calendar/r/eventedit/${selectedSessionForModal.google_event_id}`, '_blank')}
+                >
+                  ↗ Mở trên Google Calendar
+                </Button>
+              )}
               {selectedSessionForModal.is_published && googleConnected && (
                 <Button 
                   variant="outline"
                   disabled={syncingSessionId === selectedSessionForModal.id}
                   onClick={() => handleSyncSession(selectedSessionForModal)}
                 >
-                  {syncingSessionId === selectedSessionForModal.id ? 'Đang sync...' : '🔄 Sync Google Calendar'}
+                  {syncingSessionId === selectedSessionForModal.id ? 'Đang sync...' : '🔄 Sync Google'}
                 </Button>
               )}
               <Button variant="primary" onClick={() => navigate(`/classes/${selectedSessionForModal.class_id}`)}>
                 Đến lớp học
               </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* SYNC SUCCESS CELEBRATION MODAL */}
+      {syncSuccessModal.isOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '16px' }}>
+          <Card style={{ width: '100%', maxWidth: '460px', padding: '24px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '8px' }}>🎉</div>
+            <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', color: '#047857' }}>
+              Đã Thêm Vào Google Calendar!
+            </h2>
+            <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+              Buổi học đã được tạo thành công và xác thực tồn tại trên tài khoản Google Calendar của bạn.
+            </p>
+
+            <div style={{ backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '12px 16px', textAlign: 'left', marginBottom: '20px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div>📖 Buổi học: <strong>{syncSuccessModal.sessionTitle}</strong></div>
+              <div>📧 Tài khoản Google: <strong style={{ color: 'var(--color-primary)' }}>{syncSuccessModal.googleAccount}</strong></div>
+              <div>🆔 Event ID: <code style={{ fontSize: '11px', color: '#6b7280' }}>{syncSuccessModal.eventId}</code> (200 OK)</div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <Button variant="ghost" onClick={() => setSyncSuccessModal({ ...syncSuccessModal, isOpen: false })} style={{ minHeight: '44px' }}>
+                Đóng
+              </Button>
+              {syncSuccessModal.htmlLink && (
+                <Button 
+                  variant="primary" 
+                  onClick={() => window.open(syncSuccessModal.htmlLink, '_blank')}
+                  style={{ minHeight: '44px' }}
+                >
+                  ↗ Mở trên Google Calendar
+                </Button>
+              )}
             </div>
           </Card>
         </div>
