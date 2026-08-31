@@ -65,14 +65,33 @@ export function numberToVietnameseWords(num: number): string {
   return result;
 }
 
-// Color theme definitions
+// 12 Professional Color Themes
 const COLOR_THEMES: Record<string, { primary: string; secondary: string; lightBg: string; text: string; name: string }> = {
-  blue: { primary: '#1d4ed8', secondary: '#2563eb', lightBg: '#eff6ff', text: '#1e3a8a', name: 'Xanh dương' },
-  purple: { primary: '#6d28d9', secondary: '#7c3aed', lightBg: '#f5f3ff', text: '#4c1d95', name: 'Tím quý tộc' },
-  emerald: { primary: '#047857', secondary: '#059669', lightBg: '#ecfdf5', text: '#064e3b', name: 'Xanh ngọc' },
-  amber: { primary: '#b45309', secondary: '#d97706', lightBg: '#fffbeb', text: '#78350f', name: 'Cam ấm' },
-  monochrome: { primary: '#111827', secondary: '#374151', lightBg: '#f3f4f6', text: '#111827', name: 'Đen trắng' }
+  navy: { primary: '#1e3a8a', secondary: '#172554', lightBg: '#f0f4ff', text: '#172554', name: '01 Navy' },
+  blue: { primary: '#2563eb', secondary: '#1d4ed8', lightBg: '#eff6ff', text: '#1e3a8a', name: '02 Blue' },
+  sky: { primary: '#0284c7', secondary: '#0369a1', lightBg: '#f0f9ff', text: '#0c4a6e', name: '03 Sky' },
+  purple: { primary: '#7c3aed', secondary: '#6d28d9', lightBg: '#f5f3ff', text: '#4c1d95', name: '04 Purple' },
+  violet: { primary: '#8b5cf6', secondary: '#6b21a8', lightBg: '#faf5ff', text: '#581c87', name: '05 Violet' },
+  emerald: { primary: '#059669', secondary: '#047857', lightBg: '#ecfdf5', text: '#064e3b', name: '06 Emerald' },
+  teal: { primary: '#0d9488', secondary: '#0f766e', lightBg: '#f0fdfa', text: '#134e4a', name: '07 Teal' },
+  green: { primary: '#16a34a', secondary: '#15803d', lightBg: '#f0fdf4', text: '#14532d', name: '08 Green' },
+  amber: { primary: '#d97706', secondary: '#b45309', lightBg: '#fffbeb', text: '#78350f', name: '09 Amber' },
+  orange: { primary: '#ea580c', secondary: '#c2410c', lightBg: '#fff7ed', text: '#7c2d12', name: '10 Orange' },
+  rose: { primary: '#e11d48', secondary: '#be123c', lightBg: '#fff1f2', text: '#881337', name: '11 Rose' },
+  monochrome: { primary: '#111827', secondary: '#374151', lightBg: '#f3f4f6', text: '#111827', name: '12 Monochrome' }
 };
+
+// 8 Distinct Templates Metadata
+const TEMPLATES = [
+  { id: 'classic', name: '🏛️ Classic', desc: 'Khung viền truyền thống, chỉn chu' },
+  { id: 'modern', name: '✨ Modern', desc: 'Dải banner màu nổi bật, bo góc mượt' },
+  { id: 'minimal', name: '🍃 Minimal', desc: 'Thiết kế phẳng tối giản, thanh thoát' },
+  { id: 'elegant', name: '👑 Elegant', desc: 'Sang trọng, đường line mảnh tinh tế' },
+  { id: 'soft', name: '🌸 Soft', desc: 'Thẻ pastel mềm mại, bo tròn ấm áp' },
+  { id: 'card', name: '🗂️ Card', desc: 'Chia các khối thông tin độc lập' },
+  { id: 'academic', name: '🎓 Academic', desc: 'Chuẩn học thuật giáo dục' },
+  { id: 'compact', name: '📄 Compact', desc: 'Thu gọn 2 cột tối ưu 1 trang in' }
+];
 
 const TuitionManager = () => {
   const [bills, setBills] = useState<any[]>([]);
@@ -85,14 +104,21 @@ const TuitionManager = () => {
     bill: null,
     sessions: [],
     teacher_note: '',
-    template: 'classic', // 'classic' | 'modern' | 'compact'
+    template: 'classic', // classic | modern | minimal | elegant | soft | card | academic | compact
     colorTheme: 'blue',
-    paperSize: 'A4' // 'A4' | 'A5'
+    customPrimaryColor: '',
+    paperSize: 'A4' // A4 | A5
   });
   
   const [aiLoading, setAiLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createData, setCreateData] = useState({ student_id: '', start_date: '', end_date: '', bill_note: '' });
+  const [createData, setCreateData] = useState({ 
+    student_id: '', 
+    start_date: '', 
+    end_date: '', 
+    bill_note: '',
+    unit_price: ''
+  });
   const [previewData, setPreviewData] = useState<any>(null);
   const [students, setStudents] = useState<any[]>([]);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -103,26 +129,49 @@ const TuitionManager = () => {
       axiosClient.get('/api/students').then(res => setStudents(res.data || [])).catch(() => {});
     }
   }, [showCreateModal, students.length]);
-  
-  const handlePreview = async () => {
-    if (!createData.student_id || !createData.start_date || !createData.end_date) {
-      alert("Vui lòng chọn học sinh và khoảng thời gian");
-      return;
-    }
+
+  // When student changes in create modal, try pre-filling preview & default fee
+  const handleStudentChange = async (studentId: string) => {
+    setCreateData(prev => ({ ...prev, student_id: studentId, unit_price: '' }));
+    setPreviewData(null);
+    if (!studentId || !createData.start_date || !createData.end_date) return;
+    fetchPreview(studentId, createData.start_date, createData.end_date, '');
+  };
+
+  const fetchPreview = async (studentId: string, startDate: string, endDate: string, unitPrice: string) => {
+    if (!studentId || !startDate || !endDate) return;
     setLoadingPreview(true);
     try {
-      const res = await axiosClient.get(`/api/payments/preview?student_id=${createData.student_id}&start_date=${createData.start_date}&end_date=${createData.end_date}`);
+      let url = `/api/payments/preview?student_id=${studentId}&start_date=${startDate}&end_date=${endDate}`;
+      if (unitPrice !== '') url += `&unit_price=${unitPrice}`;
+      const res = await axiosClient.get(url);
       setPreviewData(res.data);
+      if (unitPrice === '' && res.data.tuition_fee > 0) {
+        setCreateData(prev => ({ ...prev, unit_price: String(res.data.tuition_fee) }));
+      }
     } catch(e: any) { 
-      alert(e.response?.data?.error || "Lỗi xem trước học phí"); 
+      console.error("Lỗi xem trước học phí:", e);
     } finally {
       setLoadingPreview(false);
     }
   };
+
+  const handlePreviewBtnClick = () => {
+    if (!createData.student_id || !createData.start_date || !createData.end_date) {
+      alert("Vui lòng chọn học sinh và khoảng thời gian (Từ ngày - Đến ngày)");
+      return;
+    }
+    fetchPreview(createData.student_id, createData.start_date, createData.end_date, createData.unit_price);
+  };
   
   const handleCreateBill = async () => {
     if (!createData.student_id || !createData.start_date || !createData.end_date) {
-      alert("Vui lòng nhập đầy đủ thông tin");
+      alert("Vui lòng nhập đầy đủ thông tin học sinh và kỳ thu");
+      return;
+    }
+    const unitPriceNum = parseInt(createData.unit_price, 10);
+    if (isNaN(unitPriceNum) || unitPriceNum < 0) {
+      alert("Vui lòng nhập đơn giá hợp lệ (≥ 0 VNĐ)");
       return;
     }
     setCreatingBill(true);
@@ -130,9 +179,9 @@ const TuitionManager = () => {
       await axiosClient.post('/api/payments/create', createData);
       setShowCreateModal(false);
       setPreviewData(null);
-      setCreateData({ student_id: '', start_date: '', end_date: '', bill_note: '' });
+      setCreateData({ student_id: '', start_date: '', end_date: '', bill_note: '', unit_price: '' });
       fetchBills();
-      alert("Đã tạo phiếu thu thành công!");
+      alert("✅ Đã tạo phiếu thu thành công!");
     } catch(e: any) { 
       alert(e.response?.data?.error || "Lỗi tạo phiếu thu"); 
     } finally {
@@ -185,6 +234,7 @@ const TuitionManager = () => {
         teacher_note: res.data.bill.bill_note || '',
         template: 'classic',
         colorTheme: 'blue',
+        customPrimaryColor: '',
         paperSize: 'A4'
       });
     } catch(e: any) { 
@@ -215,7 +265,15 @@ const TuitionManager = () => {
     window.print();
   };
 
-  const currentTheme = COLOR_THEMES[invoiceModal.colorTheme] || COLOR_THEMES.blue;
+  // Active theme calculation
+  const baseTheme = COLOR_THEMES[invoiceModal.colorTheme] || COLOR_THEMES.blue;
+  const currentTheme = invoiceModal.customPrimaryColor ? {
+    primary: invoiceModal.customPrimaryColor,
+    secondary: invoiceModal.customPrimaryColor,
+    lightBg: `${invoiceModal.customPrimaryColor}12`,
+    text: '#111827',
+    name: 'Tùy chỉnh'
+  } : baseTheme;
 
   return (
     <div style={{ padding: 'var(--spacing-10)', maxWidth: '100%', boxSizing: 'border-box' }}>
@@ -224,7 +282,7 @@ const TuitionManager = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 'var(--spacing-8)', paddingBottom: 'var(--spacing-4)', flexWrap: 'wrap', gap: 'var(--spacing-4)' }}>
         <div>
           <h1 style={{ margin: '0 0 8px 0', color: 'var(--color-text)', fontSize: '30px' }}>💰 Quản Lý Tài Chính & Phiếu Học Phí</h1>
-          <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '15px' }}>Lập phiếu học phí, gửi phụ huynh, in phiếu và xác nhận thanh toán.</p>
+          <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: '15px' }}>Lập phiếu học phí, xem trước số tiền, in phiếu online hiện đại và quản lý trạng thái thanh toán.</p>
         </div>
         
         <div style={{ display: 'flex', gap: 'var(--spacing-3)', alignItems: 'center' }}>
@@ -333,67 +391,113 @@ const TuitionManager = () => {
         </div>
       </Card>
 
-      {/* Modal Tạo Phiếu Thu Mới */}
+      {/* Modal Tạo Phiếu Thu Mới (Có nhập & hiển thị Đơn giá) */}
       {showCreateModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 'var(--spacing-4)', backdropFilter: 'blur(4px)' }}>
-          <Card style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ margin: '0 0 20px 0', color: 'var(--color-text)' }}>💰 Tạo Phiếu Thu Học Phí</h2>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 'var(--spacing-4)', backdropFilter: 'blur(4px)' }}>
+          <Card style={{ width: '100%', maxWidth: '620px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ margin: '0 0 20px 0', color: 'var(--color-text)', fontSize: '22px' }}>💰 Lập Phiếu Học Phí Học Sinh</h2>
+            
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-6)' }}>
+              
+              {/* Chọn học sinh */}
               <div>
-                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>Học sinh:</label>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>
+                  Học sinh: <span style={{ color: '#ef4444' }}>*</span>
+                </label>
                 <select 
                   value={createData.student_id} 
-                  onChange={e => setCreateData({ ...createData, student_id: e.target.value })}
-                  style={{ width: '100%', padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}
+                  onChange={e => handleStudentChange(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '14px' }}
                 >
-                  <option value="">-- Chọn học sinh --</option>
+                  <option value="">-- Chọn học sinh nhận phiếu --</option>
                   {students.map(st => (
-                    <option key={st.id} value={st.id}>{st.full_name} ({st.phone_number || 'Chưa có SĐT'})</option>
+                    <option key={st.id} value={st.id}>{st.full_name} ({st.phone_number || st.school_name || 'Chưa có SĐT'})</option>
                   ))}
                 </select>
               </div>
 
+              {/* Kỳ thu */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
                 <Input 
                   type="date" 
                   label="Từ ngày" 
                   value={createData.start_date} 
-                  onChange={e => setCreateData({ ...createData, start_date: e.target.value })} 
+                  onChange={e => setCreateData(prev => ({ ...prev, start_date: e.target.value }))} 
                 />
                 <Input 
                   type="date" 
                   label="Đến ngày" 
                   value={createData.end_date} 
-                  onChange={e => setCreateData({ ...createData, end_date: e.target.value })} 
+                  onChange={e => setCreateData(prev => ({ ...prev, end_date: e.target.value }))} 
                 />
               </div>
 
+              {/* Nhập đơn giá */}
+              <div>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-1)', fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>
+                  Đơn giá học phí / buổi (VNĐ): <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <Input 
+                  type="number"
+                  placeholder="Ví dụ: 200000"
+                  min="0"
+                  step="10000"
+                  value={createData.unit_price}
+                  onChange={e => setCreateData(prev => ({ ...prev, unit_price: e.target.value }))}
+                />
+                {createData.student_id && createData.unit_price === '0' && (
+                  <div style={{ color: '#d97706', fontSize: '13px', marginTop: '4px' }}>
+                    ⚠️ Lớp chưa có đơn giá mặc định. Vui lòng nhập mức học phí / buổi cho phiếu này.
+                  </div>
+                )}
+              </div>
+
+              {/* Ghi chú */}
               <Input 
-                label="Ghi chú hóa đơn" 
+                label="Ghi chú phiếu thu (Tùy chọn)" 
                 placeholder="VD: Học phí tháng 9, đã trừ 1 buổi nghỉ có phép..." 
                 value={createData.bill_note} 
-                onChange={e => setCreateData({ ...createData, bill_note: e.target.value })} 
+                onChange={e => setCreateData(prev => ({ ...prev, bill_note: e.target.value }))} 
               />
 
-              <Button onClick={handlePreview} variant="outline" disabled={loadingPreview}>
-                {loadingPreview ? 'Đang tính toán...' : '🔍 Xem trước buổi học & Số tiền'}
+              <Button onClick={handlePreviewBtnClick} variant="outline" disabled={loadingPreview}>
+                {loadingPreview ? '⏳ Đang tính toán...' : '🔍 Xem trước số buổi có mặt & Số tiền'}
               </Button>
 
+              {/* Khu vực Xem Trước */}
               {previewData && (
                 <div style={{ backgroundColor: 'var(--color-background)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: 'var(--spacing-2)', color: 'var(--color-primary)' }}>
-                    Tổng tiền dự kiến: {previewData.total_amount?.toLocaleString('vi-VN')} đ ({previewData.present_count || previewData.sessions?.length || 0} buổi có mặt)
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+                      Lớp: <strong>{previewData.class_name}</strong>
+                    </span>
+                    <span style={{ fontSize: '14px', color: '#059669', fontWeight: 'bold' }}>
+                      Số buổi có mặt: {previewData.present_count || 0} buổi
+                    </span>
                   </div>
-                  {previewData.tuition_fee === 0 && (
-                    <div style={{ color: '#b91c1c', fontSize: '13px', marginBottom: '8px' }}>
-                      ⚠️ Lưu ý: Đơn giá buổi học của lớp đang là 0đ.
+
+                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--color-primary)', marginBottom: '8px' }}>
+                    Dự kiến học phí: {(Number(previewData.total_amount) || 0).toLocaleString('vi-VN')} đ
+                  </div>
+                  
+                  <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontStyle: 'italic', marginBottom: '10px' }}>
+                    Bằng chữ: {numberToVietnameseWords(Number(previewData.total_amount) || 0)}
+                  </div>
+
+                  {previewData.present_count === 0 && (
+                    <div style={{ color: '#dc2626', fontSize: '13px', marginBottom: '6px' }}>
+                      ⚠️ Không tìm thấy buổi học nào có mặt (PRESENT) của học sinh trong khoảng thời gian này.
                     </div>
                   )}
-                  <div style={{ maxHeight: '150px', overflowY: 'auto', fontSize: 'var(--font-size-sm)' }}>
+
+                  {/* Danh sách buổi tóm tắt */}
+                  <div style={{ maxHeight: '140px', overflowY: 'auto', fontSize: '13px', borderTop: '1px solid var(--color-border)', paddingTop: '6px' }}>
                     {previewData.sessions?.map((s: any, idx: number) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--color-border)' }}>
-                        <span>📅 {new Date(s.attendance_date).toLocaleDateString('vi-VN')} - {s.class_name} {s.status === 'PRESENT' ? '✅ Có mặt' : '❌ Vắng'}</span>
-                        <span style={{ fontWeight: 'bold' }}>{s.tuition_fee?.toLocaleString('vi-VN')} đ</span>
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px dashed var(--color-border)' }}>
+                        <span>📅 {new Date(s.attendance_date).toLocaleDateString('vi-VN')} - {s.content || 'Buổi học'}</span>
+                        <span style={{ fontWeight: 'bold', color: s.status === 'PRESENT' ? '#059669' : '#dc2626' }}>
+                          {s.status === 'PRESENT' ? '✅ Có mặt' : (s.absent_reason ? `Vắng (${s.absent_reason})` : '❌ Vắng')}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -403,7 +507,11 @@ const TuitionManager = () => {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
               <Button onClick={() => { setShowCreateModal(false); setPreviewData(null); }} variant="ghost">Hủy</Button>
-              <Button onClick={handleCreateBill} variant="primary" disabled={creatingBill}>
+              <Button 
+                onClick={handleCreateBill} 
+                variant="primary" 
+                disabled={creatingBill || !createData.student_id || !createData.start_date || !createData.end_date || (previewData && previewData.total_amount <= 0)}
+              >
                 {creatingBill ? 'Đang tạo...' : 'Tạo Phiếu Thu'}
               </Button>
             </div>
@@ -411,105 +519,147 @@ const TuitionManager = () => {
         </div>
       )}
 
-      {/* Modal Preview & In Phiếu Học Phí Đầy Đủ (Templates + Colors + A4/A5 + AI Remark) */}
+      {/* Modal Preview & In Phiếu Học Phí Đầy Đủ (8 Templates + 12 Themes + Color Picker + A4/A5 - KHÔNG CHỮ KÝ) */}
       {invoiceModal.show && invoiceModal.bill && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 'var(--spacing-4)', backdropFilter: 'blur(5px)' }}>
-          <Card style={{ width: '100%', maxWidth: '900px', maxHeight: '92vh', overflowY: 'auto', padding: 'var(--spacing-6)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 'var(--spacing-4)', backdropFilter: 'blur(6px)' }}>
+          <Card style={{ width: '100%', maxWidth: '960px', maxHeight: '94vh', overflowY: 'auto', padding: 'var(--spacing-6)', display: 'flex', flexDirection: 'column' }}>
             
             {/* THANH ĐIỀU KHIỂN INVOICE (NO-PRINT) */}
-            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-5)', paddingBottom: 'var(--spacing-4)', borderBottom: '1px solid var(--color-border)', flexWrap: 'wrap', gap: '10px' }}>
+            <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: 'var(--spacing-5)', paddingBottom: 'var(--spacing-4)', borderBottom: '1px solid var(--color-border)' }}>
               
-              {/* Chọn Mẫu (Template) */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text-secondary)' }}>Mẫu:</span>
-                <select 
-                  value={invoiceModal.template} 
-                  onChange={e => setInvoiceModal((prev: any) => ({ ...prev, template: e.target.value }))}
-                  style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--color-border)', fontSize: '13px', fontWeight: 'bold' }}
-                >
-                  <option value="classic">🏛️ Cổ điển (Classic)</option>
-                  <option value="modern">✨ Hiện đại (Modern)</option>
-                  <option value="compact">📄 Thu gọn (Compact)</option>
-                </select>
-              </div>
-
-              {/* Chọn Màu (Color Theme) */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text-secondary)' }}>Màu:</span>
-                {Object.keys(COLOR_THEMES).map(key => (
-                  <button 
-                    key={key} 
-                    onClick={() => setInvoiceModal((prev: any) => ({ ...prev, colorTheme: key }))}
-                    title={COLOR_THEMES[key].name}
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      borderRadius: '50%',
-                      backgroundColor: COLOR_THEMES[key].primary,
-                      border: invoiceModal.colorTheme === key ? '2px solid #000' : '2px solid transparent',
-                      cursor: 'pointer',
-                      transform: invoiceModal.colorTheme === key ? 'scale(1.2)' : 'none',
-                      transition: '0.15s'
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* Chọn Khổ Giấy (Paper Size) */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text-secondary)' }}>Khổ giấy:</span>
-                <div style={{ display: 'flex', border: '1px solid var(--color-border)', borderRadius: '6px', overflow: 'hidden' }}>
-                  <button 
-                    onClick={() => setInvoiceModal((prev: any) => ({ ...prev, paperSize: 'A4' }))}
-                    style={{ padding: '5px 10px', fontSize: '12px', fontWeight: 'bold', border: 'none', backgroundColor: invoiceModal.paperSize === 'A4' ? currentTheme.primary : '#fff', color: invoiceModal.paperSize === 'A4' ? '#fff' : '#333', cursor: 'pointer' }}
-                  >
-                    A4
-                  </button>
-                  <button 
-                    onClick={() => setInvoiceModal((prev: any) => ({ ...prev, paperSize: 'A5' }))}
-                    style={{ padding: '5px 10px', fontSize: '12px', fontWeight: 'bold', border: 'none', backgroundColor: invoiceModal.paperSize === 'A5' ? currentTheme.primary : '#fff', color: invoiceModal.paperSize === 'A5' ? '#fff' : '#333', cursor: 'pointer' }}
-                  >
-                    A5
-                  </button>
+              {/* Hàng 1: GALLERY 8 MẪU THIẾT KẾ */}
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  🎨 Chọn Mẫu Phiếu (8 Templates):
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))', gap: '8px' }}>
+                  {TEMPLATES.map(tmpl => {
+                    const isSelected = invoiceModal.template === tmpl.id;
+                    return (
+                      <button
+                        key={tmpl.id}
+                        onClick={() => setInvoiceModal((prev: any) => ({ ...prev, template: tmpl.id }))}
+                        style={{
+                          padding: '8px 6px',
+                          borderRadius: '8px',
+                          border: isSelected ? `2px solid ${currentTheme.primary}` : '1px solid var(--color-border)',
+                          backgroundColor: isSelected ? currentTheme.lightBg : 'var(--color-surface)',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: isSelected ? currentTheme.primary : 'var(--color-text)' }}>
+                          {tmpl.name}
+                        </div>
+                        <div style={{ fontSize: '10px', color: 'var(--color-text-secondary)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {tmpl.desc}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <Button onClick={handleGenerateInvoiceRemark} variant="outline" size="sm" disabled={aiLoading}>
-                  {aiLoading ? '⏳ Đang viết...' : '✨ Tạo nhận xét AI'}
-                </Button>
-                <Button onClick={handlePrint} variant="primary" size="sm">
-                  🖨️ In Phiếu
-                </Button>
-                <Button onClick={() => setInvoiceModal({ show: false, bill: null, sessions: [], teacher_note: '', template: 'classic', colorTheme: 'blue', paperSize: 'A4' })} variant="ghost" size="sm">
-                  Đóng
-                </Button>
+              {/* Hàng 2: BỘ 12 MÀU + CUSTOM COLOR PICKER + KHỔ GIẤY A4/A5 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                
+                {/* 12 Color Themes */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--color-text-secondary)' }}>Màu:</span>
+                  {Object.keys(COLOR_THEMES).map(key => (
+                    <button 
+                      key={key} 
+                      onClick={() => setInvoiceModal((prev: any) => ({ ...prev, colorTheme: key, customPrimaryColor: '' }))}
+                      title={COLOR_THEMES[key].name}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        backgroundColor: COLOR_THEMES[key].primary,
+                        border: (invoiceModal.colorTheme === key && !invoiceModal.customPrimaryColor) ? '2px solid #000' : '2px solid transparent',
+                        cursor: 'pointer',
+                        transform: (invoiceModal.colorTheme === key && !invoiceModal.customPrimaryColor) ? 'scale(1.2)' : 'none',
+                        transition: '0.15s'
+                      }}
+                    />
+                  ))}
+
+                  {/* Custom color picker */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px' }}>
+                    <input 
+                      type="color" 
+                      value={invoiceModal.customPrimaryColor || currentTheme.primary}
+                      onChange={e => setInvoiceModal((prev: any) => ({ ...prev, customPrimaryColor: e.target.value }))}
+                      title="Chọn màu chủ đạo tùy chỉnh"
+                      style={{ width: '24px', height: '24px', padding: 0, border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Khổ giấy A4 / A5 & Thao tác */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', border: '1px solid var(--color-border)', borderRadius: '6px', overflow: 'hidden' }}>
+                    <button 
+                      onClick={() => setInvoiceModal((prev: any) => ({ ...prev, paperSize: 'A4' }))}
+                      style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 'bold', border: 'none', backgroundColor: invoiceModal.paperSize === 'A4' ? currentTheme.primary : '#fff', color: invoiceModal.paperSize === 'A4' ? '#fff' : '#333', cursor: 'pointer' }}
+                    >
+                      A4
+                    </button>
+                    <button 
+                      onClick={() => setInvoiceModal((prev: any) => ({ ...prev, paperSize: 'A5' }))}
+                      style={{ padding: '5px 12px', fontSize: '12px', fontWeight: 'bold', border: 'none', backgroundColor: invoiceModal.paperSize === 'A5' ? currentTheme.primary : '#fff', color: invoiceModal.paperSize === 'A5' ? '#fff' : '#333', cursor: 'pointer' }}
+                    >
+                      A5
+                    </button>
+                  </div>
+
+                  <Button onClick={handleGenerateInvoiceRemark} variant="outline" size="sm" disabled={aiLoading}>
+                    {aiLoading ? '⏳ Đang viết...' : '✨ Tạo nhận xét AI'}
+                  </Button>
+                  <Button onClick={handlePrint} variant="primary" size="sm">
+                    🖨️ In Phiếu
+                  </Button>
+                  <Button onClick={() => setInvoiceModal({ show: false, bill: null, sessions: [], teacher_note: '', template: 'classic', colorTheme: 'blue', customPrimaryColor: '', paperSize: 'A4' })} variant="ghost" size="sm">
+                    Đóng
+                  </Button>
+                </div>
               </div>
+
             </div>
 
-            {/* KHU VỰC IN PHIẾU THỰC SỰ (PRINTABLE AREA) */}
+            {/* KHU VỰC IN PHIẾU THỰC SỰ (PRINTABLE AREA - KHÔNG Ô KÝ TÊN) */}
             <div 
               id="invoice-print-area" 
               className={`template-${invoiceModal.template} size-${invoiceModal.paperSize}`}
               style={{
-                fontFamily: invoiceModal.template === 'classic' ? '"Times New Roman", Times, serif' : 'system-ui, -apple-system, sans-serif',
+                fontFamily: (invoiceModal.template === 'classic' || invoiceModal.template === 'academic') 
+                  ? '"Times New Roman", Times, serif' 
+                  : (invoiceModal.template === 'elegant')
+                  ? 'Georgia, serif'
+                  : 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 color: '#111827',
                 backgroundColor: '#ffffff',
-                padding: invoiceModal.paperSize === 'A5' ? '12px' : '24px',
-                border: invoiceModal.template === 'classic' ? `2px solid ${currentTheme.primary}` : 'none',
-                borderRadius: invoiceModal.template === 'modern' ? '12px' : '0',
-                boxShadow: invoiceModal.template === 'modern' ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
+                padding: invoiceModal.paperSize === 'A5' ? '16px' : '28px',
+                border: invoiceModal.template === 'classic' 
+                  ? `2px solid ${currentTheme.primary}` 
+                  : invoiceModal.template === 'elegant'
+                  ? `1px solid ${currentTheme.primary}`
+                  : 'none',
+                borderRadius: invoiceModal.template === 'modern' ? '12px' : invoiceModal.template === 'soft' ? '18px' : '0',
+                boxShadow: (invoiceModal.template === 'modern' || invoiceModal.template === 'soft') ? '0 4px 16px rgba(0,0,0,0.06)' : 'none'
               }}
             >
               
-              {/* HEADER PHIẾU HỌC PHÍ */}
-              {invoiceModal.template === 'modern' ? (
-                <div style={{ backgroundColor: currentTheme.primary, color: '#ffffff', padding: '16px 20px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* ========================================================================= */}
+              {/* 1. HEADER SECTION THEO TỪNG TEMPLATE */}
+              {/* ========================================================================= */}
+              {invoiceModal.template === 'modern' && (
+                <div style={{ backgroundColor: currentTheme.primary, color: '#ffffff', padding: '16px 20px', borderRadius: '10px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <h1 style={{ margin: '0 0 4px 0', fontSize: '24px', letterSpacing: '1px' }}>PHIẾU HỌC PHÍ</h1>
-                    <div style={{ fontSize: '13px', opacity: 0.9 }}>
-                      Lớp: <strong>{invoiceModal.bill.class_name || 'Lớp học'}</strong> • Kỳ thu: {new Date(invoiceModal.bill.start_date).toLocaleDateString('vi-VN')} — {new Date(invoiceModal.bill.end_date).toLocaleDateString('vi-VN')}
+                    <h1 style={{ margin: '0 0 4px 0', fontSize: '22px', letterSpacing: '1px' }}>PHIẾU HỌC PHÍ ONLINE</h1>
+                    <div style={{ fontSize: '13px', opacity: 0.95 }}>
+                      Lớp: <strong>{invoiceModal.bill.class_name || 'Lớp học'}</strong> • Kỳ: {new Date(invoiceModal.bill.start_date).toLocaleDateString('vi-VN')} — {new Date(invoiceModal.bill.end_date).toLocaleDateString('vi-VN')}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '13px' }}>
@@ -517,22 +667,86 @@ const TuitionManager = () => {
                     <div style={{ marginTop: '2px', fontWeight: 'bold' }}>{invoiceModal.bill.is_paid ? '🟢 ĐÃ THANH TOÁN' : '🟠 CHƯA THANH TOÁN'}</div>
                   </div>
                 </div>
-              ) : (
-                <div style={{ textAlign: 'center', borderBottom: `2px solid ${currentTheme.primary}`, paddingBottom: '12px', marginBottom: '20px', position: 'relative' }}>
-                  <h1 style={{ margin: '0 0 4px 0', color: currentTheme.primary, fontSize: invoiceModal.paperSize === 'A5' ? '20px' : '26px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              )}
+
+              {invoiceModal.template === 'minimal' && (
+                <div style={{ borderBottom: `1px solid #e5e7eb`, paddingBottom: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <div>
+                    <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '300', letterSpacing: '2px', color: currentTheme.primary }}>PHIẾU HỌC PHÍ</h1>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                      Kỳ thu: {new Date(invoiceModal.bill.start_date).toLocaleDateString('vi-VN')} — {new Date(invoiceModal.bill.end_date).toLocaleDateString('vi-VN')}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', fontSize: '12px', color: '#6b7280' }}>
+                    Mã phiếu: #{invoiceModal.bill.id}
+                  </div>
+                </div>
+              )}
+
+              {invoiceModal.template === 'elegant' && (
+                <div style={{ textAlign: 'center', borderBottom: `1px solid ${currentTheme.primary}40`, paddingBottom: '16px', marginBottom: '22px' }}>
+                  <div style={{ fontSize: '11px', letterSpacing: '3px', textTransform: 'uppercase', color: currentTheme.primary, fontWeight: 'bold', marginBottom: '4px' }}>HỆ THỐNG GIÁO DỤC</div>
+                  <h1 style={{ margin: '0 0 6px 0', color: currentTheme.primary, fontSize: '24px', fontWeight: 'normal', letterSpacing: '1px' }}>PHIẾU HỌC PHÍ</h1>
+                  <div style={{ fontSize: '13px', color: '#4b5563', fontStyle: 'italic' }}>
+                    Kỳ thu: {new Date(invoiceModal.bill.start_date).toLocaleDateString('vi-VN')} đến {new Date(invoiceModal.bill.end_date).toLocaleDateString('vi-VN')}
+                  </div>
+                </div>
+              )}
+
+              {invoiceModal.template === 'soft' && (
+                <div style={{ backgroundColor: currentTheme.lightBg, padding: '16px 20px', borderRadius: '14px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ backgroundColor: '#ffffff', color: currentTheme.primary, padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>THÔNG BÁO HỌC PHÍ</span>
+                    <h1 style={{ margin: '6px 0 2px 0', color: currentTheme.text, fontSize: '22px' }}>{invoiceModal.bill.full_name}</h1>
+                    <div style={{ fontSize: '13px', color: '#6b7280' }}>Lớp: {invoiceModal.bill.class_name} • Kỳ: {new Date(invoiceModal.bill.start_date).toLocaleDateString('vi-VN')} — {new Date(invoiceModal.bill.end_date).toLocaleDateString('vi-VN')}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: invoiceModal.bill.is_paid ? '#059669' : '#d97706' }}>
+                      {invoiceModal.bill.is_paid ? '🟢 ĐÃ THANH TOÁN' : '🟠 CHƯA THANH TOÁN'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {invoiceModal.template === 'academic' && (
+                <div style={{ textAlign: 'center', borderBottom: `2px double ${currentTheme.primary}`, paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', color: '#4b5563', fontWeight: 'bold' }}>PHIẾU BÁO KẾT QUẢ & HỌC PHÍ ĐỊNH KỲ</div>
+                  <h1 style={{ margin: '4px 0', color: currentTheme.primary, fontSize: '24px' }}>PHIẾU HỌC PHÍ</h1>
+                  <div style={{ fontSize: '13px', color: '#4b5563' }}>Kỳ thu: {new Date(invoiceModal.bill.start_date).toLocaleDateString('vi-VN')} — {new Date(invoiceModal.bill.end_date).toLocaleDateString('vi-VN')} • Mã phiếu: #{invoiceModal.bill.id}</div>
+                </div>
+              )}
+
+              {(invoiceModal.template === 'classic' || invoiceModal.template === 'card' || invoiceModal.template === 'compact') && (
+                <div style={{ textAlign: 'center', borderBottom: `2px solid ${currentTheme.primary}`, paddingBottom: '12px', marginBottom: '20px' }}>
+                  <h1 style={{ margin: '0 0 4px 0', color: currentTheme.primary, fontSize: invoiceModal.paperSize === 'A5' ? '20px' : '24px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                     PHIẾU HỌC PHÍ
                   </h1>
-                  <p style={{ margin: 0, color: '#4b5563', fontSize: '14px' }}>
-                    Kỳ thu: <strong>{new Date(invoiceModal.bill.start_date).toLocaleDateString('vi-VN')}</strong> đến <strong>{new Date(invoiceModal.bill.end_date).toLocaleDateString('vi-VN')}</strong>
+                  <p style={{ margin: 0, color: '#4b5563', fontSize: '13px' }}>
+                    Kỳ thu: <strong>{new Date(invoiceModal.bill.start_date).toLocaleDateString('vi-VN')}</strong> đến <strong>{new Date(invoiceModal.bill.end_date).toLocaleDateString('vi-VN')}</strong> • Mã phiếu: #{invoiceModal.bill.id}
                   </p>
                 </div>
               )}
 
-              {/* THÔNG TIN HỌC SINH + THÔNG TIN NGÂN HÀNG & QR (BÊN PHẢI) */}
-              <div style={{ display: 'grid', gridTemplateColumns: invoiceModal.paperSize === 'A5' ? '1fr 140px' : '1fr 180px', gap: '16px', marginBottom: '20px', backgroundColor: currentTheme.lightBg, padding: '14px 18px', borderRadius: '8px', border: `1px solid ${currentTheme.secondary}30` }}>
+              {/* ========================================================================= */}
+              {/* 2. THÔNG TIN HỌC SINH + KHU VỰC THANH TOÁN & QR VIETCOMBANK */}
+              {/* ========================================================================= */}
+              <div 
+                style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: invoiceModal.template === 'compact' 
+                    ? '1fr 140px' 
+                    : invoiceModal.paperSize === 'A5' ? '1fr 135px' : '1fr 175px', 
+                  gap: '16px', 
+                  marginBottom: '20px', 
+                  backgroundColor: currentTheme.lightBg, 
+                  padding: '14px 18px', 
+                  borderRadius: invoiceModal.template === 'soft' ? '14px' : '8px', 
+                  border: `1px solid ${currentTheme.secondary}25` 
+                }}
+              >
                 
                 {/* Cột trái: Thông tin học sinh */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', justifyContent: 'center' }}>
                   <div style={{ fontSize: '15px' }}>
                     Học sinh: <strong style={{ color: currentTheme.text, fontSize: '17px' }}>{invoiceModal.bill.full_name}</strong>
                   </div>
@@ -547,38 +761,40 @@ const TuitionManager = () => {
                       Giáo viên phụ trách: <strong>{invoiceModal.bill.teacher_name}</strong>
                     </div>
                   )}
-                  <div style={{ marginTop: '4px', fontSize: '13px' }}>
-                    Trạng thái: <strong>{invoiceModal.bill.is_paid ? '🟢 ĐÃ THANH TOÁN' : '🟠 CHƯA THANH TOÁN'}</strong>
+                  <div style={{ marginTop: '2px', fontSize: '13px' }}>
+                    Trạng thái: <strong style={{ color: invoiceModal.bill.is_paid ? '#059669' : '#d97706' }}>{invoiceModal.bill.is_paid ? '🟢 ĐÃ THANH TOÁN' : '🟠 CHƯA THANH TOÁN'}</strong>
                   </div>
                 </div>
 
                 {/* Cột phải: QR VIETCOMBANK CHUẨN */}
-                <div style={{ textAlign: 'center', backgroundColor: '#ffffff', padding: '8px', borderRadius: '8px', border: `1px solid ${currentTheme.secondary}40`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ textAlign: 'center', backgroundColor: '#ffffff', padding: '8px', borderRadius: '8px', border: `1px solid ${currentTheme.secondary}35`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                   <img 
                     src={`https://img.vietqr.io/image/VCB-1034244823-compact2.png?amount=${Number(invoiceModal.bill.total_amount) || 0}&addInfo=HP%20${encodeURIComponent(invoiceModal.bill.full_name || '')}%20T${moment(invoiceModal.bill.start_date).format('MM')}`}
                     alt="Mã QR Chuyển khoản VCB"
-                    style={{ width: invoiceModal.paperSize === 'A5' ? '90px' : '120px', height: invoiceModal.paperSize === 'A5' ? '90px' : '120px', objectFit: 'contain' }}
+                    style={{ width: invoiceModal.paperSize === 'A5' ? '85px' : '110px', height: invoiceModal.paperSize === 'A5' ? '85px' : '110px', objectFit: 'contain' }}
                   />
-                  <div style={{ fontSize: '11px', fontWeight: 'bold', color: currentTheme.primary, marginTop: '4px' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 'bold', color: currentTheme.primary, marginTop: '3px' }}>
                     VIETCOMBANK (VCB)
                   </div>
-                  <div style={{ fontSize: '11px', color: '#374151', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                  <div style={{ fontSize: '10px', color: '#374151', fontFamily: 'monospace', fontWeight: 'bold' }}>
                     1034244823
                   </div>
                 </div>
               </div>
 
-              {/* BẢNG CHI TIẾT CÁC BUỔI HỌC TRONG KỲ */}
+              {/* ========================================================================= */}
+              {/* 3. BẢNG CHI TIẾT CÁC BUỔI HỌC TRONG KỲ */}
+              {/* ========================================================================= */}
               <div style={{ marginBottom: '20px' }}>
-                <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '8px', color: currentTheme.primary, textTransform: 'uppercase' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '8px', color: currentTheme.primary, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   📋 Danh sách các buổi học trong kỳ ({invoiceModal.sessions?.length || 0} buổi):
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: invoiceModal.paperSize === 'A5' ? '12px' : '13px' }}>
                   <thead>
                     <tr style={{ backgroundColor: currentTheme.lightBg, borderBottom: `2px solid ${currentTheme.primary}` }}>
-                      <th style={{ padding: '8px 10px', width: '90px' }}>Ngày</th>
-                      <th style={{ padding: '8px 10px', width: '120px' }}>Trạng thái</th>
-                      <th style={{ padding: '8px 10px' }}>Nội dung buổi học / Lý do nghỉ</th>
+                      <th style={{ padding: '8px 10px', width: '85px' }}>Ngày</th>
+                      <th style={{ padding: '8px 10px', width: '115px' }}>Trạng thái</th>
+                      <th style={{ padding: '8px 10px' }}>Nội dung bài học / Lý do nghỉ</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -607,31 +823,48 @@ const TuitionManager = () => {
                 </table>
               </div>
 
-              {/* TỔNG TIỀN HỌC PHÍ & BẰNG CHỮ */}
-              <div style={{ backgroundColor: currentTheme.lightBg, padding: '14px 18px', borderRadius: '8px', border: `1px solid ${currentTheme.secondary}40`, marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              {/* ========================================================================= */}
+              {/* 4. TỔNG TIỀN HỌC PHÍ & BẰNG CHỮ (NỔI BẬT) */}
+              {/* ========================================================================= */}
+              <div 
+                style={{ 
+                  backgroundColor: currentTheme.lightBg, 
+                  padding: '14px 18px', 
+                  borderRadius: invoiceModal.template === 'soft' ? '14px' : '8px', 
+                  border: `1px solid ${currentTheme.secondary}35`, 
+                  marginBottom: '20px', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  flexWrap: 'wrap', 
+                  gap: '10px' 
+                }}
+              >
                 <div>
-                  <div style={{ fontSize: '13px', color: '#4b5563' }}>Số tiền học phí cần thanh toán:</div>
-                  <div style={{ fontSize: '14px', color: currentTheme.text, fontStyle: 'italic', marginTop: '2px' }}>
+                  <div style={{ fontSize: '12px', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Số tiền học phí:</div>
+                  <div style={{ fontSize: '13px', color: currentTheme.text, fontStyle: 'italic', marginTop: '2px' }}>
                     Bằng chữ: <strong>{numberToVietnameseWords(Number(invoiceModal.bill.total_amount) || 0)}</strong>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: invoiceModal.paperSize === 'A5' ? '18px' : '22px', fontWeight: 'bold', color: currentTheme.primary }}>
-                    HỌC PHÍ: {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} đ
+                    HỌC PHÍ: {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} ₫
                   </div>
                 </div>
               </div>
 
-              {/* NHẬN XÉT CỦA GIÁO VIÊN */}
-              <div style={{ marginBottom: '25px' }}>
-                <div style={{ fontWeight: 'bold', fontSize: '14px', color: currentTheme.primary, marginBottom: '6px', textTransform: 'uppercase' }}>
+              {/* ========================================================================= */}
+              {/* 5. NHẬN XÉT CỦA GIÁO VIÊN */}
+              {/* ========================================================================= */}
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '13px', color: currentTheme.primary, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   💬 Nhận xét của giáo viên:
                 </div>
                 <textarea 
                   value={invoiceModal.teacher_note}
                   onChange={e => setInvoiceModal((prev: any) => ({ ...prev, teacher_note: e.target.value }))}
-                  placeholder="Nhập nhận xét gửi phụ huynh học sinh..."
-                  rows={invoiceModal.paperSize === 'A5' ? 2 : 4}
+                  placeholder="Nhập lời nhắn gửi phụ huynh..."
+                  rows={invoiceModal.paperSize === 'A5' ? 2 : 3}
                   style={{
                     width: '100%',
                     padding: '10px 12px',
@@ -647,16 +880,14 @@ const TuitionManager = () => {
                 />
               </div>
 
-              {/* CHỮ KÝ */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '15px', borderTop: '1px dashed #d1d5db' }}>
-                <div style={{ textAlign: 'center', width: '180px' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '45px' }}>Phụ huynh học sinh</div>
-                  <div style={{ color: '#6b7280', fontSize: '11px' }}>(Ký và ghi rõ họ tên)</div>
+              {/* ========================================================================= */}
+              {/* 6. THÔNG ĐIỆP CẢM ƠN ONLINE (HOÀN TOÀN BỎ CHỮ KÝ HÀNH CHÍNH) */}
+              {/* ========================================================================= */}
+              <div style={{ textAlign: 'center', paddingTop: '14px', borderTop: '1px dashed #d1d5db', color: '#6b7280', fontSize: '12px' }}>
+                <div style={{ fontWeight: '500', color: currentTheme.primary, marginBottom: '2px' }}>
+                  🌟 Cảm ơn Quý phụ huynh đã luôn đồng hành cùng các em trong suốt kỳ học!
                 </div>
-                <div style={{ textAlign: 'center', width: '180px' }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '45px' }}>Giáo viên phụ trách</div>
-                  <div style={{ color: '#6b7280', fontSize: '11px' }}>{invoiceModal.bill.teacher_name || '(Ký và ghi rõ họ tên)'}</div>
-                </div>
+                <div>Phiếu học phí được tạo trực tuyến từ hệ thống quản lý học tập.</div>
               </div>
 
             </div>
