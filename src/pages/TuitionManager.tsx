@@ -10,12 +10,43 @@ import { Input } from '../components/ui/Input';
 const TuitionManager = () => {
   const [bills, setBills] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(moment().format('YYYY-MM'));
+  const [invoiceTemplate, setInvoiceTemplate] = useState('Classic');
   const [stats, setStats] = useState({ totalExpected: 0, totalReceived: 0, totalPending: 0 });
 
-  const [aiRemarkModal, setAiRemarkModal] = useState<{ show: boolean, studentId: number | null, studentName: string, text: string, dataSummary: any, loading: boolean }>({
+  const [invoiceModal, setInvoiceModal] = useState<any>({ show: false, bill: null, sessions: [], teacher_note: '' });
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createData, setCreateData] = useState({ student_id: '', start_date: '', end_date: '', bill_note: '' });
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [students, setStudents] = useState<any[]>([]);
+  const [aiRemarkModal, setAiRemarkModal] = useState<{ show: boolean, studentId: number | null, studentName: string, text: string, dataSummary: any, loading: boolean, billId?: number }>({
     show: false, studentId: null, studentName: '', text: '', dataSummary: null, loading: false
   });
 
+  
+  useEffect(() => {
+    if (showCreateModal && students.length === 0) {
+      axiosClient.get('/api/students').then(res => setStudents(res.data)).catch(()=>{});
+    }
+  }, [showCreateModal]);
+  
+  const handlePreview = async () => {
+    if (!createData.student_id || !createData.start_date || !createData.end_date) return alert("Nhập đủ thông tin");
+    try {
+      const res = await axiosClient.get(`/api/payments/preview?student_id=${createData.student_id}&start_date=${createData.start_date}&end_date=${createData.end_date}`);
+      setPreviewData(res.data);
+    } catch(e) { alert("Lỗi preview"); }
+  };
+  
+  const handleCreateBill = async () => {
+    try {
+      await axiosClient.post('/api/payments/create', createData);
+      setShowCreateModal(false);
+      setPreviewData(null);
+      fetchBills();
+    } catch(e) { alert("Lỗi tạo phiếu"); }
+  };
+  
   const fetchBills = useCallback(async () => {
     try {
       const res = await axiosClient.get(`/api/payments`);
@@ -46,28 +77,50 @@ const TuitionManager = () => {
     } catch (error) { alert('❌ Lỗi hệ thống.'); }
   };
 
-  const loadExistingRemark = async (studentId: number, studentName: string) => {
-    setAiRemarkModal({ show: true, studentId, studentName, text: '', dataSummary: null, loading: true });
+  const loadExistingRemark = async (studentId: number, studentName: string, billId: number) => {
+    setAiRemarkModal({ show: true, studentId, studentName, billId, text: '', dataSummary: null, loading: true });
     try {
       const res = await axiosClient.get(`/api/ai/remark/${studentId}/${selectedMonth}`);
       if (res.data.remark) {
         setAiRemarkModal(prev => ({ ...prev, text: res.data.remark, loading: false }));
       } else {
-        generateRemark(studentId, studentName);
+        generateRemark(studentId, studentName, billId);
       }
     } catch (err) {
-      generateRemark(studentId, studentName);
+      generateRemark(studentId, studentName, billId);
     }
   };
 
-  const generateRemark = async (studentId: number, studentName: string) => {
+  const generateRemark = async (studentId: number, studentName: string, billId?: number) => {
     setAiRemarkModal(prev => ({ ...prev, loading: true, text: '' }));
     try {
-      const res = await axiosClient.post('/api/ai/generate-remark', { student_id: studentId, month: selectedMonth });
+      const res = await axiosClient.post('/api/ai/generate-remark', { student_id: studentId, month: selectedMonth,
+        bill_id: billId || aiRemarkModal.billId });
       setAiRemarkModal(prev => ({ ...prev, text: res.data.remark, dataSummary: res.data.data_summary, loading: false }));
     } catch (err) {
       setAiRemarkModal(prev => ({ ...prev, text: 'Lỗi: Không thể sinh nhận xét lúc này.', loading: false }));
     }
+  };
+
+  const handleGenerateInvoiceRemark = async () => {
+    if (!invoiceModal.bill) return;
+    setAiLoading(true);
+    try {
+      const res = await axiosClient.post('/api/ai/generate-remark', {
+        student_id: invoiceModal.bill.student_id,
+        month: moment(invoiceModal.bill.start_date).format('YYYY-MM'),
+        bill_id: invoiceModal.bill.id
+      });
+      setInvoiceModal({ ...invoiceModal, teacher_note: res.data.remark });
+    } catch(e) {
+      alert("Lỗi tạo nhận xét");
+    }
+    setAiLoading(false);
+  };
+  
+  const handleSaveInvoiceNote = async () => {
+    // Actually just update the bill_note in DB (if needed) or just print it.
+    // We will just keep it in state for printing.
   };
 
   const handleSaveRemark = async () => {
@@ -85,6 +138,13 @@ const TuitionManager = () => {
     }
   };
 
+  const handlePrintInvoice = async (billId: number) => {
+    try {
+      const res = await axiosClient.get(`/api/payments/bill/${billId}/invoice`);
+      setInvoiceModal({ show: true, bill: res.data.bill, sessions: res.data.sessions, teacher_note: res.data.bill.bill_note || '' });
+    } catch(e) { alert("Lỗi tải phiếu thu"); }
+  };
+  
   const handlePrint = () => {
     const printContent = document.getElementById('print-area');
     if (!printContent) return;
@@ -207,7 +267,7 @@ const TuitionManager = () => {
                     <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
                         <Button 
-                          onClick={() => loadExistingRemark(b.student_id, b.full_name)}
+                          onClick={() => loadExistingRemark(b.student_id, b.full_name, b.id)}
                           variant="secondary" size="sm" style={{ borderColor: 'var(--color-primary-light)', color: 'var(--color-primary-dark)' }}>
                           ✨ Nhận xét Tháng
                         </Button>
@@ -258,7 +318,7 @@ const TuitionManager = () => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--spacing-5)' }} className="no-print">
                   <div>
-                    <Button onClick={() => generateRemark(aiRemarkModal.studentId!, aiRemarkModal.studentName)} variant="outline">Tạo lại với AI</Button>
+                    <Button onClick={() => generateRemark(aiRemarkModal.studentId!, aiRemarkModal.studentName, aiRemarkModal.billId)} variant="outline">Tạo lại với AI</Button>
                   </div>
                   <div style={{ display: 'flex', gap: 'var(--spacing-3)' }}>
                     <Button onClick={() => setAiRemarkModal({ show: false, studentId: null, studentName: '', text: '', dataSummary: null, loading: false })} variant="ghost">Đóng</Button>
@@ -278,16 +338,19 @@ const TuitionManager = () => {
                 body * {
                     visibility: hidden;
                 }
-                #print-area, #print-area * {
+                #print-area, #print-area *, #invoice-print-area, #invoice-print-area * {
                     visibility: visible;
                 }
-                #print-area {
+                #print-area, #invoice-print-area {
                     position: absolute;
                     left: 0;
                     top: 0;
                     width: 100%;
                 }
-                .no-print {
+                .only-print { display: none !important; }
+            @media print {
+              .no-print { display: none !important; }
+              .only-print { display: block !important; }
                     display: none !important;
                 }
                 textarea {

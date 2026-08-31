@@ -29,7 +29,7 @@ const TeacherCalendar = () => {
 
   // Lọc buổi học theo ngày đã chọn
   const filteredSessions = (Array.isArray(sessions) ? sessions : []).filter(s => {
-    const sessionDate = new Date(s.start_time);
+    const sessionDate = new Date(s.session_date);
     return sessionDate.toDateString() === selectedDate.toDateString();
   });
 
@@ -54,7 +54,7 @@ const TeacherCalendar = () => {
 
   const getEventCount = (date: Date) => {
     return (Array.isArray(sessions) ? sessions : []).filter(s => {
-        const sd = new Date(s.start_time);
+        const sd = new Date(s.session_date);
         return sd.toDateString() === date.toDateString();
     }).length;
   };
@@ -145,9 +145,9 @@ const TeacherCalendar = () => {
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
                         {filteredSessions.map(session => (
-                            <div key={session.id} style={{ padding: 'var(--spacing-4)', backgroundColor: 'var(--color-surface-elevated)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid var(--color-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                            <div onClick={() => window.location.href = `/classes/${session.class_id}?tab=SESSIONS`} key={session.id} style={{ padding: 'var(--spacing-4)', backgroundColor: session.is_paid ? '#dcfce7' : 'var(--color-surface-elevated)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid var(--color-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', cursor: 'pointer' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <strong style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-text)' }}>{session.title || 'Buổi học'}</strong>
+                                    <strong style={{ fontSize: 'var(--font-size-lg)', color: 'var(--color-text)' }}>{session.title || 'Buổi học'} {session.is_paid && <Badge variant="success">Đã thanh toán</Badge>}</strong>
                                     <Badge variant={session.status === 'COMPLETED' ? 'success' : 'primary'}>{session.status}</Badge>
                                 </div>
                                 <div style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', display: 'flex', flexDirection: 'column', gap: '4px' }}>

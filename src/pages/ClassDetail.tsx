@@ -16,7 +16,12 @@ const ClassDetail = () => {
   const [members, setMembers] = useState<ClassMember[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [editingSession, setEditingSession] = useState<any>(null);
   const [attendanceList, setAttendanceList] = useState<Attendance[]>([]);
+  const [showAbsentModal, setShowAbsentModal] = useState<any>(null);
+  const [showEvalModal, setShowEvalModal] = useState(false);
+  const [evalData, setEvalData] = useState<any>({ student_id: 0, student_name: '', teacher_notes: '', focus_level: 'Bình thường' });
   
   // States for assignments
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -30,8 +35,43 @@ const ClassDetail = () => {
   // States for adding a new member
   const [showAddMember, setShowAddMember] = useState(false);
   const [newStudentId, setNewStudentId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axiosClient.get(`/api/students/search?q=${encodeURIComponent(searchQuery)}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSearchResults(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+  const [allStudents, setAllStudents] = useState<any[]>([]);
 
   const token = localStorage.getItem('token');
+
+  
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      const delay = setTimeout(() => {
+        axiosClient.get(`/api/students/search?q=${encodeURIComponent(searchQuery)}`)
+          .then(res => setAllStudents(res.data));
+      }, 500);
+      return () => clearTimeout(delay);
+    } else {
+      setAllStudents([]);
+    }
+  }, [searchQuery]);
 
   const fetchData = async () => {
     try {
@@ -70,16 +110,43 @@ const ClassDetail = () => {
     }
   };
 
-  const handleCreateSession = async () => {
-    const session_date = prompt('Nhập ngày cho buổi học (YYYY-MM-DD)', new Date().toISOString().split('T')[0]);
-    if (!session_date) return;
+  const handleCreateSession = () => {
+    setEditingSession({ class_id: id, session_date: new Date().toISOString().split('T')[0], start_time: '18:00', content: '', homework: '' });
+    setShowSessionModal(true);
+  };
+
+  const handleEditSession = (sess: any) => {
+    setEditingSession({ ...sess, start_time: sess.start_time ? sess.start_time.substring(0,5) : '18:00' });
+    setShowSessionModal(true);
+  };
+
+  const handleSaveSession = async () => {
     try {
-      await axiosClient.post(`/api/classes/${id}/sessions`, { session_date, start_time: '18:00', end_time: '19:30' });
-      fetchData();
+      if (editingSession.id) {
+         await axiosClient.post('/api/sessions/upsert', editingSession);
+      } else {
+         await axiosClient.post('/api/sessions/upsert', editingSession);
+      }
+      setShowSessionModal(false);
+      const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
+      setSessions(sessionsRes.data);
     } catch (err) {
-      alert('Lỗi tạo buổi học');
+      alert('Lỗi lưu buổi học');
     }
   };
+  
+  const handleDeleteSession = async (sessId: number) => {
+    if (!window.confirm("Xóa buổi học này?")) return;
+    try {
+       await axiosClient.delete(`/api/sessions/${sessId}`);
+       if (activeSession?.id === sessId) setActiveSession(null);
+       const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
+       setSessions(sessionsRes.data);
+    } catch(err) {
+       alert('Lỗi xóa');
+    }
+  };
+
 
   const [selectedDocIds, setSelectedDocIds] = useState<number[]>([]);
     const [isAssigning, setIsAssigning] = useState(false);
@@ -130,6 +197,18 @@ const ClassDetail = () => {
   };
 
   
+  const handlePublishSession = async () => {
+        if (!window.confirm("Công bố các buổi học (Nháp) của lớp này cho phụ huynh/học sinh?")) return;
+        try {
+            await axiosClient.post('/api/sessions/publish', { class_id: id });
+            alert("Đã công bố!");
+            const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
+            setSessions(sessionsRes.data);
+        } catch(err) {
+            alert("Lỗi");
+        }
+    };
+    
   const handleSyncCalendar = async () => {
     if (!activeSession) return;
     try {
@@ -145,6 +224,32 @@ const ClassDetail = () => {
     fetchAttendance(sess.id);
   };
 
+  const handleOpenEval = async (studentId: number, studentName: string) => {
+    setEvalData({ student_id: studentId, student_name: studentName, teacher_notes: '', focus_level: 'Bình thường' });
+    try {
+      const res = await axiosClient.get(`/api/sessions/evaluations?session_id=${activeSession?.id}&student_id=${studentId}`);
+      if (res.data && res.data.length > 0) {
+        setEvalData({ student_id: studentId, student_name: studentName, teacher_notes: res.data[0].teacher_notes || '', focus_level: res.data[0].focus_level || 'Bình thường' });
+      }
+    } catch(e) {}
+    setShowEvalModal(true);
+  };
+  
+  const handleSaveEval = async () => {
+    if (!activeSession) return;
+    try {
+      await axiosClient.post('/api/sessions/evaluate', {
+        session_id: activeSession.id,
+        student_id: evalData.student_id,
+        is_present: true,
+        focus_level: evalData.focus_level,
+        teacher_notes: evalData.teacher_notes
+      });
+      setShowEvalModal(false);
+      alert("Đã lưu nhận xét");
+    } catch(e) { alert("Lỗi lưu nhận xét"); }
+  };
+  
   const handleUpdateAttendance = async (studentId: number, status: string) => {
     if (!activeSession) return;
     setAttendanceList(prev => prev.map(a => a.student_id === studentId ? { ...a, status: status as any } : a));
@@ -171,7 +276,7 @@ const ClassDetail = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)', margin: '0 0 15px 0' }}>
-              <h1 style={{ margin: 0, fontSize: 'var(--font-size-3xl)', color: 'var(--color-text)' }}>{classInfo.name || classInfo.class_name}</h1>
+              <h1 style={{ margin: 0, fontSize: 'var(--font-size-3xl)', color: 'var(--color-text)' }}>{classInfo.class_name || classInfo.class_name}</h1>
               {classInfo.class_type === 'ONLINE' ? (
                 <Badge variant="info">📡 LỚP ONLINE</Badge>
               ) : (
@@ -179,9 +284,9 @@ const ClassDetail = () => {
               )}
             </div>
             <div style={{ display: 'flex', gap: 'var(--spacing-8)', color: 'var(--color-text-secondary)', fontSize: '15px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>Mã lớp: <strong style={{ color: '#334155', backgroundColor: 'var(--color-background)', padding: '4px 10px', borderRadius: '6px' }}>{classInfo.class_code || '---'}</strong></span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>Môn học: <strong style={{ color: '#334155' }}>{classInfo.subject || '---'}</strong></span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>Sĩ số: <strong style={{ color: 'var(--color-primary)' }}>{members.length}/{classInfo.max_students || 20}</strong></span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>Mã lớp: <strong style={{ color: '#334155', backgroundColor: 'var(--color-background)', padding: '4px 10px', borderRadius: '6px' }}>{classInfo.id || '---'}</strong></span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>Môn học: <strong style={{ color: '#334155' }}>{classInfo.class_type || '---'}</strong></span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>Sĩ số: <strong style={{ color: 'var(--color-primary)' }}>{members.length}/{classInfo.current_students || 20}</strong></span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 'var(--spacing-4)' }}>
@@ -287,7 +392,11 @@ const ClassDetail = () => {
                     Ngày {new Date(sess.session_date).toLocaleDateString('vi-VN')}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: '6px', fontWeight: 'var(--font-weight-medium)' }}>
-                    🕒 {sess.start_time ? sess.start_time.substring(0,5) : '18:00'} - {sess.end_time ? sess.end_time.substring(0,5) : '19:30'}
+                    🕒 {sess.start_time ? sess.start_time.substring(0,5) : '18:00'}
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+                    <Button onClick={(e) => { e.stopPropagation(); handleEditSession(sess); }} variant="outline" size="sm" style={{ padding: '2px 8px', fontSize: '12px' }}>Sửa</Button>
+                    <Button onClick={(e) => { e.stopPropagation(); handleDeleteSession(sess.id); }} variant="danger" size="sm" style={{ padding: '2px 8px', fontSize: '12px' }}>Xóa</Button>
                   </div>
                 </div>
               ))}
@@ -304,6 +413,7 @@ const ClassDetail = () => {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-4)' }}>
                       <h2 style={{ margin: '0 0 8px 0', color: 'var(--color-text)', fontSize: 'var(--font-size-2xl)' }}>Bảng Điểm Danh - {new Date(activeSession.session_date).toLocaleDateString('vi-VN')}</h2>
+                      <Button onClick={handlePublishSession} variant="primary" size="sm">🚀 Công bố</Button>
                       <Button onClick={handleSyncCalendar} variant="secondary" size="sm">🔄 Đồng bộ</Button>
                     </div>
                     <div style={{ color: 'var(--color-text-secondary)', fontSize: '15px' }}>Dữ liệu điểm danh được <strong style={{color: 'var(--color-success)'}}>lưu tự động ngay lập tức</strong>.</div>
@@ -319,6 +429,7 @@ const ClassDetail = () => {
                       <tr>
                         <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-background)', width: '35%' }}>Học sinh</th>
                         <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-background)' }}>Trạng thái Điểm danh nhanh</th>
+     <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-background)', textAlign: 'center' }}>Nhận xét</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -346,12 +457,18 @@ const ClassDetail = () => {
                                 onClick={() => handleUpdateAttendance(a.student_id, 'ABSENT_EXCUSED')}
                                 variant={a.status === 'ABSENT_EXCUSED' ? 'danger' : 'outline'}
                               >📝 Vắng phép</Button>
+                              {a.status === 'ABSENT_EXCUSED' && a.notes && (
+                                <div style={{ fontSize: '12px', color: 'var(--color-danger)', marginTop: '4px' }}>Lý do: {a.notes}</div>
+                              )}
                               
                               <Button 
                                 onClick={() => handleUpdateAttendance(a.student_id, 'ABSENT_UNEXCUSED')}
                                 variant={a.status === 'ABSENT_UNEXCUSED' ? 'danger' : 'outline'}
                               >❌ Vắng K/P</Button>
                             </div>
+                          </td>
+                          <td style={{ padding: 'var(--spacing-5)', textAlign: 'center' }}>
+                            <Button onClick={() => handleOpenEval(a.student_id, a.full_name)} variant="outline" size="sm">💬 Nhận xét</Button>
                           </td>
                         </tr>
                       ))}
@@ -454,19 +571,55 @@ const ClassDetail = () => {
       {/* Modal Thêm Học Sinh */}
       {showAddMember && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <Card style={{ width: '450px' }}>
-            <h2 style={{ margin: '0 0 25px 0', color: 'var(--color-text)' }}>Thêm Học Sinh Vào Lớp</h2>
-            <form onSubmit={handleAddMember}>
-              <div style={{ marginBottom: '25px' }}>
-                <label style={{ display: 'block', marginBottom: 'var(--spacing-2)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>ID Học sinh</label>
-                <Input required value={newStudentId} onChange={(e: any) => setNewStudentId(e.target.value)} type="number" placeholder="Nhập ID học sinh (Ví dụ: 1, 2, 3...)" />
-                <p style={{ margin: '8px 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>*Bạn có thể xem ID học sinh ở menu Học viên.</p>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)' }}>
-                <Button type="button" onClick={() => setShowAddMember(false)} variant="ghost">Hủy</Button>
-                <Button type="submit" variant="primary">Thêm Học Sinh</Button>
-              </div>
-            </form>
+          <Card style={{ width: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <h2 style={{ margin: '0 0 20px 0', color: 'var(--color-text)' }}>Thêm Học Sinh Vào Lớp</h2>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <Input 
+                placeholder="🔍 Nhập tên hoặc SĐT để tìm..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', paddingRight: '5px' }}>
+              {searchResults.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--color-text-secondary)' }}>
+                  Không tìm thấy học sinh nào.
+                </div>
+              ) : (
+                searchResults.map(st => (
+                  <div 
+                    key={st.id} 
+                    onClick={() => setNewStudentId(st.id.toString())}
+                    style={{ 
+                      padding: '12px', 
+                      borderRadius: '8px', 
+                      border: newStudentId === st.id.toString() ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                      backgroundColor: newStudentId === st.id.toString() ? '#eff6ff' : 'var(--color-surface)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '4px' }}>{st.full_name}</div>
+                      <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', gap: '10px' }}>
+                        <span>📱 {st.phone_number ? st.phone_number.substring(0, 7) + '***' : '---'}</span>
+                        <span>🏫 {st.school_name || '---'}</span>
+                      </div>
+                    </div>
+                    {newStudentId === st.id.toString() && <span style={{ color: 'var(--color-primary)' }}>✓ Đã chọn</span>}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--spacing-3)', marginTop: 'auto' }}>
+              <Button type="button" onClick={() => { setShowAddMember(false); setNewStudentId(''); setSearchQuery(''); }} variant="ghost">Hủy</Button>
+              <Button type="button" onClick={handleAddMember} disabled={!newStudentId} variant="primary">Thêm Vào Lớp</Button>
+            </div>
           </Card>
         </div>
       )}
