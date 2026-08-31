@@ -468,7 +468,7 @@ const ClassDetail = () => {
                             </div>
                           </td>
                           <td style={{ padding: 'var(--spacing-5)', textAlign: 'center' }}>
-                            <Button onClick={() => handleOpenEval(a.student_id, a.full_name)} variant="outline" size="sm">💬 Nhận xét</Button>
+                            <Button onClick={() => handleOpenEval(a.student_id, a.full_name || 'Học viên')} variant="outline" size="sm">💬 Nhận xét</Button>
                           </td>
                         </tr>
                       ))}

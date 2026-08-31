@@ -2,6 +2,8 @@ export interface Student {
   id: number;
   student_code?: string;
   full_name: string;
+  phone_number?: string;
+  school_name?: string;
   phone?: string;
   parent_phone?: string;
   school?: string;
@@ -15,17 +17,16 @@ export interface Student {
 
 export interface ClassInfo {
   id: number;
-  class_code?: string;
-  name: string;
-  class_name?: string; // Tương thích cũ
-  subject?: string;
-  grade?: string;
+  class_name: string;
+  description?: string;
   teacher_id?: number;
-  max_students?: number;
   class_type?: string;
   meet_link?: string;
-  status: string;
+  schedule?: string;
+  tuition_fee?: number;
+  is_active?: boolean;
   created_at: string;
+  current_students?: number;
 }
 
 export interface ClassMember {
@@ -57,7 +58,8 @@ export interface Attendance {
   session_id: number;
   student_id: number;
   status: 'PRESENT' | 'LATE' | 'ABSENT_EXCUSED' | 'ABSENT_UNEXCUSED';
-  note?: string;
+  notes?: string;
+  absent_reason?: string;
   created_at: string;
   // JOIN
   full_name?: string;
