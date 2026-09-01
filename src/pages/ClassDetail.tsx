@@ -155,7 +155,8 @@ const ClassDetail = () => {
       session_date: new Date().toISOString().split('T')[0], 
       start_time: '18:00', 
       end_time: '19:30',
-      content: ''
+      content: '',
+      homework: ''
     });
     setShowSessionModal(true);
   };
@@ -163,27 +164,58 @@ const ClassDetail = () => {
   const handleEditSession = (sess: any) => {
     setEditingSession({ 
       ...sess, 
+      class_id: sess.class_id || id,
       start_time: sess.start_time ? sess.start_time.substring(0,5) : '18:00',
       end_time: sess.end_time ? sess.end_time.substring(0,5) : '19:30',
-      session_date: sess.session_date ? new Date(sess.session_date).toISOString().split('T')[0] : ''
+      session_date: sess.session_date ? new Date(sess.session_date).toISOString().split('T')[0] : '',
+      homework: sess.homework || ''
     });
     setShowSessionModal(true);
   };
 
   const handleSaveSession = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingSession.session_date) {
+      alert('Vui lòng chọn ngày học');
+      return;
+    }
     setSavingSession(true);
     try {
+      let savedSession: any = null;
       if (editingSession.id) {
-        await axiosClient.put(`/api/sessions/${editingSession.id}`, editingSession);
+        const res = await axiosClient.put(`/api/sessions/${editingSession.id}`, editingSession);
+        savedSession = res.data?.session;
         alert('Cập nhật buổi học thành công!');
       } else {
-        await axiosClient.post('/api/sessions', editingSession);
+        const res = await axiosClient.post(`/api/classes/${id}/sessions`, editingSession);
+        savedSession = res.data?.session;
         alert('Tạo buổi học thành công!');
       }
       setShowSessionModal(false);
       const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
-      setSessions(sessionsRes.data || []);
+      const updatedSessions: Session[] = sessionsRes.data || [];
+      setSessions(updatedSessions);
+      if (updatedSessions.length > 0) {
+        if (editingSession.id) {
+          const matched = updatedSessions.find(s => s.id === editingSession.id);
+          if (matched) {
+            setActiveSession(matched);
+            fetchAttendance(matched.id);
+          }
+        } else if (savedSession?.id) {
+          const matched = updatedSessions.find(s => s.id === savedSession.id);
+          if (matched) {
+            setActiveSession(matched);
+            fetchAttendance(matched.id);
+          } else {
+            setActiveSession(updatedSessions[0]);
+            fetchAttendance(updatedSessions[0].id);
+          }
+        } else {
+          setActiveSession(updatedSessions[0]);
+          fetchAttendance(updatedSessions[0].id);
+        }
+      }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Lỗi lưu buổi học');
     } finally {
@@ -869,6 +901,12 @@ const ClassDetail = () => {
                 placeholder="VD: Chuyên đề Phương trình bậc hai..."
                 value={editingSession?.content || ''}
                 onChange={e => setEditingSession({ ...editingSession, content: e.target.value })}
+              />
+              <Input 
+                label="Bài tập về nhà (BTVN)"
+                placeholder="VD: Làm bài 1-5 trang 42..."
+                value={editingSession?.homework || ''}
+                onChange={e => setEditingSession({ ...editingSession, homework: e.target.value })}
               />
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
                 <Button type="button" variant="ghost" onClick={() => setShowSessionModal(false)} style={{ minHeight: '44px' }}>Hủy</Button>
