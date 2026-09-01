@@ -57,14 +57,14 @@ const ClassList = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Chắc chắn xóa? Các dữ liệu liên quan sẽ bị ảnh hưởng.')) return;
-    const token = localStorage.getItem('token');
+  const handleDelete = async (id: number, name?: string) => {
+    if (!window.confirm(`⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA LỚP HỌC "${name || `#${id}`}"?\n\nLớp học sẽ bị gỡ khỏi danh sách quản lý. Dữ liệu lịch sử điểm danh và học phí sẽ được bảo lưu an toàn.`)) return;
     try {
       await axiosClient.delete(`/api/classes/${id}`);
+      setMessage('✅ Đã xóa lớp học thành công!');
       fetchClasses();
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      alert(`❌ Lỗi: ${error.response?.data?.message || 'Không thể xóa lớp học này'}`);
     }
   };
 
@@ -125,7 +125,7 @@ const ClassList = () => {
                   <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
                     <Link to={`/classes/${cls.id}`} style={{ display: 'inline-block', marginRight: 'var(--spacing-2)', padding: 'var(--spacing-2) var(--spacing-4)', backgroundColor: '#e0f2fe', color: '#0369a1', textDecoration: 'none', borderRadius: 'var(--radius-md)', fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)' }}>Chi tiết</Link>
                     <Button onClick={() => handleEditClick(cls)} variant="secondary" size="sm" style={{ marginRight: 'var(--spacing-2)' }}>Sửa</Button>
-                    <Button onClick={() => handleDelete(cls.id)} variant="danger" size="sm">Xóa</Button>
+                    <Button onClick={() => handleDelete(cls.id, cls.class_name)} variant="danger" size="sm">Xóa</Button>
                   </td>
                 </tr>
               ))}

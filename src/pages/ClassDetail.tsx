@@ -42,6 +42,7 @@ const ClassDetail = () => {
     title: ''
   });
   const [isAssigning, setIsAssigning] = useState(false);
+  const [docSearch, setDocSearch] = useState('');
 
   // States for analytics
   const [weakTopics, setWeakTopics] = useState<any[]>([]);
@@ -250,8 +251,8 @@ const ClassDetail = () => {
         title: ''
       });
       setShowAssignModal(true);
-    } catch (err) {
-      alert('Lỗi tải danh sách tài liệu');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi tải danh sách tài liệu');
     }
   };
 
@@ -271,14 +272,41 @@ const ClassDetail = () => {
         due_at: assignForm.due_at || null,
         title: assignForm.title || null
       });
-      alert('Gán tài liệu / bài tập vào lớp thành công.');
+      alert('✓ Gán tài liệu / bài tập vào lớp thành công!');
       setShowAssignModal(false);
       const assignRes = await axiosClient.get(`/api/classes/${id}/assignments`);
       setAssignments(assignRes.data || []);
-    } catch (err) {
-      alert('Lỗi khi giao tài liệu/bài tập vào lớp');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi khi giao tài liệu/bài tập vào lớp');
     } finally {
       setIsAssigning(false);
+    }
+  };
+
+  const handleRemoveMember = async (studentId: number, studentName?: string) => {
+    const displayName = studentName || 'Học sinh';
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa học sinh "${displayName}" khỏi lớp học này? (Tài khoản học sinh và các lớp khác vẫn được giữ nguyên)`)) {
+      return;
+    }
+    try {
+      await axiosClient.delete(`/api/classes/${id}/members/${studentId}`);
+      alert(`✓ Đã xóa học sinh "${displayName}" khỏi lớp.`);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa học sinh khỏi lớp');
+    }
+  };
+
+  const handleDeleteClass = async () => {
+    if (!window.confirm(`⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA LỚP HỌC "${classInfo?.class_name || ''}"?\n\nLớp học sẽ bị gỡ khỏi danh sách quản lý. Dữ liệu lịch sử điểm danh và học phí sẽ được bảo lưu an toàn.`)) {
+      return;
+    }
+    try {
+      await axiosClient.delete(`/api/classes/${id}`);
+      alert('✓ Đã xóa lớp học thành công!');
+      navigate('/classes');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa lớp học');
     }
   };
 
@@ -426,9 +454,12 @@ const ClassDetail = () => {
             Học phí: <strong>{classInfo?.tuition_fee ? classInfo.tuition_fee.toLocaleString('vi-VN') + ' đ/buổi' : 'Chưa thiết lập'}</strong> — Lịch: {classInfo?.schedule || 'Chưa thiết lập'}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <Button onClick={() => navigate('/classes')} variant="outline" size="sm" style={{ minHeight: '44px' }}>
             Quay lại danh sách
+          </Button>
+          <Button onClick={handleDeleteClass} variant="danger" size="sm" style={{ minHeight: '44px' }}>
+            🗑️ Xóa lớp
           </Button>
         </div>
       </div>
@@ -495,7 +526,10 @@ const ClassDetail = () => {
                       <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)' }}>{m.phone || 'Chưa cập nhật'}</td>
                       <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)' }}>{m.school_name || '---'}</td>
                       <td style={{ padding: 'var(--spacing-3)', textAlign: 'right' }}>
-                        <Button onClick={() => navigate(`/students/${m.id}`)} variant="outline" size="sm" style={{ minHeight: '36px' }}>Hồ sơ 360°</Button>
+                        <div style={{ display: 'inline-flex', gap: '6px' }}>
+                          <Button onClick={() => navigate(`/students/${m.id}`)} variant="outline" size="sm" style={{ minHeight: '36px' }}>Hồ sơ 360°</Button>
+                          <Button onClick={() => handleRemoveMember(m.id, m.full_name)} variant="danger" size="sm" style={{ minHeight: '36px' }}>Xóa khỏi lớp</Button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -1099,6 +1133,142 @@ const ClassDetail = () => {
                 </Button>
               )}
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* MODAL GIAO TÀI LIỆU & BÀI TẬP (P0 FIX) */}
+      {showAssignModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <Card style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '24px' }}>
+            <h2 style={{ margin: '0 0 6px 0', fontSize: '20px', color: 'var(--color-text)' }}>
+              📚 Giao Tài Liệu & Bài Tập Cho Lớp
+            </h2>
+            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+              Chọn tài liệu / đề thi từ kho lưu trữ để học sinh và phụ huynh xem hoặc làm bài.
+            </p>
+
+            <form onSubmit={handleCreateAssignment} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <Input 
+                label="Tiêu đề giao bài (Tùy chọn)"
+                placeholder="VD: BTVN Tuần 3 - Phương trình lượng giác..."
+                value={assignForm.title}
+                onChange={e => setAssignForm({ ...assignForm, title: e.target.value })}
+              />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'block', marginBottom: '4px' }}>
+                    Gắn với buổi học:
+                  </label>
+                  <select 
+                    value={assignForm.session_id} 
+                    onChange={e => setAssignForm({ ...assignForm, session_id: e.target.value })}
+                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)', minHeight: '44px' }}
+                  >
+                    <option value="">-- Tài liệu chung cả lớp --</option>
+                    {sessions.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.session_date ? new Date(s.session_date).toLocaleDateString('vi-VN') : ''} - {s.content || 'Buổi học'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <Input 
+                  type="date"
+                  label="Hạn chót nộp bài (Nếu có)"
+                  value={assignForm.due_at}
+                  onChange={e => setAssignForm({ ...assignForm, due_at: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text)' }}>
+                    Chọn tài liệu / đề thi ({selectedDocIds.length} đã chọn):
+                  </label>
+                  {allDocs.length > 0 && (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        if (selectedDocIds.length === allDocs.length) setSelectedDocIds([]);
+                        else setSelectedDocIds(allDocs.map(d => d.id));
+                      }}
+                      style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      {selectedDocIds.length === allDocs.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                    </button>
+                  )}
+                </div>
+
+                <Input 
+                  placeholder="🔍 Tìm kiếm tài liệu theo tên..."
+                  value={docSearch}
+                  onChange={e => setDocSearch(e.target.value)}
+                />
+
+                <div style={{ marginTop: '8px', maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '6px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px', backgroundColor: 'var(--color-background)' }}>
+                  {allDocs.length === 0 ? (
+                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '13px' }}>
+                      Chưa có tài liệu nào trong kho. Hãy tải tài liệu lên Kho lưu trữ trước.
+                    </div>
+                  ) : allDocs
+                      .filter(d => !docSearch.trim() || d.title.toLowerCase().includes(docSearch.toLowerCase()))
+                      .map(doc => {
+                        const isChecked = selectedDocIds.includes(doc.id);
+                        return (
+                          <label 
+                            key={doc.id}
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '10px', 
+                              padding: '8px 10px', 
+                              borderRadius: '6px', 
+                              backgroundColor: isChecked ? 'rgba(59, 130, 246, 0.08)' : 'var(--color-surface)',
+                              border: isChecked ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                              cursor: 'pointer' 
+                            }}
+                          >
+                            <input 
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedDocIds([...selectedDocIds, doc.id]);
+                                } else {
+                                  setSelectedDocIds(selectedDocIds.filter(did => did !== doc.id));
+                                }
+                              }}
+                              style={{ width: '18px', height: '18px' }}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {doc.title}
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
+                                {doc.folder_name ? `📁 ${doc.folder_name} • ` : ''} {doc.category === 'EXAM' ? '📝 Đề thi' : '📄 Tài liệu'}
+                              </div>
+                            </div>
+                            <Badge variant={doc.category === 'EXAM' ? 'primary' : 'info'}>
+                              {doc.category === 'EXAM' ? 'Đề thi' : 'Tài liệu'}
+                            </Badge>
+                          </label>
+                        );
+                      })}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                <Button type="button" variant="ghost" onClick={() => setShowAssignModal(false)} style={{ minHeight: '44px' }}>
+                  Hủy
+                </Button>
+                <Button type="submit" variant="primary" disabled={isAssigning || selectedDocIds.length === 0} style={{ minHeight: '44px' }}>
+                  {isAssigning ? 'Đang giao bài...' : `✓ Giao ${selectedDocIds.length} bài tập`}
+                </Button>
+              </div>
+            </form>
           </Card>
         </div>
       )}
