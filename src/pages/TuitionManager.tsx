@@ -396,6 +396,18 @@ const TuitionManager = () => {
     }
   };
 
+  const handleDeleteBill = async (billId: number, studentName?: string) => {
+    const confirm = window.confirm(`Bạn có chắc chắn muốn xóa/hủy phiếu thu #${billId} của học sinh "${studentName || ''}"?\n(Các buổi học trong kỳ sẽ được mở lại để có thể tính học phí lại nếu cần)`);
+    if (!confirm) return;
+    try {
+      await axiosClient.delete(`/api/payments/bills/${billId}`);
+      alert('✓ Đã xóa phiếu thu học phí thành công!');
+      fetchBills();
+    } catch (err: any) {
+      alert(err.response?.data?.error || err.response?.data?.message || 'Lỗi khi xóa phiếu thu');
+    }
+  };
+
   const handleOpenInvoice = async (billId: number) => {
     try {
       const res = await axiosClient.get(`/api/payments/bill/${billId}/invoice`);
@@ -1411,6 +1423,11 @@ const TuitionManager = () => {
                             ✓ Đã thu
                           </Button>
                         )}
+                        <Button 
+                          onClick={() => handleDeleteBill(b.id, b.full_name)}
+                          variant="danger" size="sm">
+                          🗑️ Xóa
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -1450,25 +1467,33 @@ const TuitionManager = () => {
                 <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--color-primary)' }}>
                   {Number(b.total_amount).toLocaleString('vi-VN')} đ
                 </div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
                   <Button 
                     onClick={() => handleOpenInvoice(b.id)} 
                     variant="outline" 
                     size="sm" 
                     style={{ flex: 1, minHeight: '44px' }}
                   >
-                    📄 Xem / In Phiếu
+                    📄 In Phiếu
                   </Button>
                   {!b.is_paid && (
                     <Button 
                       onClick={() => handleConfirmPayment(b.id)} 
                       variant="primary" 
                       size="sm" 
-                      style={{ minHeight: '44px' }}
+                      style={{ flex: 1, minHeight: '44px' }}
                     >
                       ✓ Đã thu
                     </Button>
                   )}
+                  <Button 
+                    onClick={() => handleDeleteBill(b.id, b.full_name)} 
+                    variant="danger" 
+                    size="sm" 
+                    style={{ minHeight: '44px' }}
+                  >
+                    🗑️ Xóa
+                  </Button>
                 </div>
               </div>
             ))

@@ -210,6 +210,17 @@ const ExamManagement = () => {
     } catch (error) { alert("❌ Lỗi khi lưu đáp án!"); }
   };
 
+  const handleDeleteExam = async (doc: Document) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa đề thi "${doc.title}"?\n(Lịch sử làm bài trước đây của học sinh sẽ được lưu trữ an toàn)`)) return;
+    try {
+      await axiosClient.delete(`/api/documents/${doc.id}`);
+      alert("✅ Đã xóa đề thi thành công!");
+      fetchExams();
+    } catch (err: any) {
+      alert("Lỗi khi xóa đề: " + (err.response?.data?.error || err.response?.data?.message || err.message));
+    }
+  };
+
   return (
     <div style={{ padding: 'var(--spacing-6)' }}>
       
@@ -272,8 +283,11 @@ const ExamManagement = () => {
                 {documents.length === 0 ? <div style={{width:'100%', textAlign:'center', color:'var(--color-text-secondary)', padding: 'var(--spacing-10)'}}>Chưa có đề thi nào.</div> : (Array.isArray(documents) ? documents : []).map(doc => {
                   const isAllow = doc.allow_view_answers || false;
                   return (
-                    <div key={doc.id} style={{ width: '220px', padding: 'var(--spacing-5)', backgroundColor: 'var(--color-background)', borderRadius: '16px', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}><span style={{ fontSize: '35px' }}>📝</span><span style={{ fontSize: '15px', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>{doc.title}</span></div>
+                    <div key={doc.id} style={{ width: '250px', padding: 'var(--spacing-5)', backgroundColor: 'var(--color-background)', borderRadius: '16px', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+                        <span style={{ fontSize: '30px' }}>📝</span>
+                        <span style={{ fontSize: '15px', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{doc.title}</span>
+                      </div>
                       <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 'var(--spacing-2)' }}>
                         <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
                           <span>Xem đáp án:</span>
@@ -284,9 +298,11 @@ const ExamManagement = () => {
                         <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)' }}>Thời gian: {doc.duration_minutes || 50} phút</div>
                       </div>
                       
-                      <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginTop: 'auto' }}>
-                        <Button onClick={() => handleOpenSettings(doc)} style={{ flex: 1, padding: '8px 0', backgroundColor: 'var(--color-primary)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 'var(--font-weight-bold)', cursor: 'pointer' }}>⚙ Cài Đặt</Button>
-                        <Button onClick={() => handleViewSubmissions(doc)} style={{ flex: 1, padding: '8px 0', backgroundColor: 'var(--color-warning)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 'var(--font-weight-bold)', cursor: 'pointer' }}>📊 Kết Quả</Button>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: 'auto' }}>
+                        <Button onClick={() => handleOpenSettings(doc)} variant="outline" size="sm">⚙ Cài Đặt</Button>
+                        <Button onClick={() => handleViewSubmissions(doc)} variant="primary" size="sm">📊 Điểm</Button>
+                        <Button onClick={() => window.open(`/student/view-answers/${doc.id}`, '_blank')} variant="ghost" size="sm">📖 Đáp Án</Button>
+                        <Button onClick={() => handleDeleteExam(doc)} variant="danger" size="sm">🗑️ Xóa</Button>
                       </div>
                     </div>
                   );

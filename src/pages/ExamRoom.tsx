@@ -135,10 +135,11 @@ const ExamRoom = () => {
   const [gradingResult, setGradingResult] = useState<ExamGradingResult | null>(null);
   const elapsedTimeRef = useRef<number>(0);
   
-  // Anti-cheat
+  // Anti-cheat & Modals
   const [cheatWarnings, setCheatWarnings] = useState(0);
   const [showCheatModal, setShowCheatModal] = useState(false);
   const [cheatReason, setCheatReason] = useState('');
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   // Lưu đáp án
   const [part1Answers, setPart1Answers] = useState<{[key: number]: string}>({});
@@ -150,27 +151,55 @@ const ExamRoom = () => {
   const [fontSize, setFontSize] = useState<number>(16);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [saveStatus, setSaveStatus] = useState<string>('');
-  const [activeContext, setActiveContext] = useState<SharedContext | null>(null);
 
   const fetchExams = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      // const classId = localStorage.getItem('classId') || '1';
       const resDocs = await axiosClient.get(`/api/student/exams`);
       const resScores = await axiosClient.get(`/api/exams/my-submissions`);
       
       const historyMap: {[key: number]: any[]} = {};
-      resScores.data.forEach((s: any) => { 
+      (resScores.data || []).forEach((s: any) => { 
           if (!historyMap[s.document_id]) historyMap[s.document_id] = [];
           historyMap[s.document_id].push(s);
       });
       
       setExams(Array.isArray(resDocs.data) ? resDocs.data : (resDocs.data.documents || []));
       setMyScores(historyMap);
-    } catch (error) { console.error("Lỗi lấy đề thi"); }
+    } catch (error) { console.error("Lỗi lấy đề thi:", error); }
   }, []);
 
   useEffect(() => { if (viewState === 'LIST') fetchExams(); }, [viewState, fetchExams]);
+
+  const handleViewAttempt = async (attempt: any, doc: any) => {
+    try {
+      const res = await axiosClient.get(`/api/exams/submissions/${attempt.id}`);
+      if (res.data) {
+        setSelectedExam(doc);
+        setGradingResult({
+          score: {
+            totalScore: res.data.total_score,
+            p1Score: res.data.part1_score,
+            p2Score: res.data.part2_score,
+            p3Score: res.data.part3_score,
+            allow_view_answers: res.data.allow_view_answers
+          },
+          summary: {
+            total_questions: res.data.details?.length || 0,
+            total_correct: res.data.details?.filter((d: any) => d.is_correct).length || 0,
+            part1: { score: res.data.part1_score, correct: res.data.details?.filter((d: any) => d.part === 'part1' && d.is_correct).length || 0, total: res.data.details?.filter((d: any) => d.part === 'part1').length || 0 },
+            part2: { score: res.data.part2_score, correct: res.data.details?.filter((d: any) => d.part === 'part2' && d.is_correct).length || 0, total: res.data.details?.filter((d: any) => d.part === 'part2').length || 0 },
+            part3: { score: res.data.part3_score, correct: res.data.details?.filter((d: any) => d.part === 'part3' && d.is_correct).length || 0, total: res.data.details?.filter((d: any) => d.part === 'part3').length || 0 },
+          },
+          details: res.data.details,
+          cheat_count: res.data.cheat_count
+        } as any);
+        setExamData(res.data.exam_content);
+        setViewState('RESULT');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể tải chi tiết lần thi này.');
+    }
+  };
 
   const startExam = async () => {
     setPart1Answers({});
@@ -232,7 +261,6 @@ const ExamRoom = () => {
 
       const fetchExamContent = async () => {
         try {
-          const token = localStorage.getItem('token');
           const res = await axiosClient.get(`/api/exams/key/${selectedExam.id}?contentOnly=true`);
 
           if (res.data && res.data.exam_content) {
@@ -253,7 +281,9 @@ const ExamRoom = () => {
 
   const triggerWarning = useCallback((reason: string) => {
     if (showCheatModal || viewState !== 'EXAM') return; 
-    setCheatWarnings(prev => prev + 1); setCheatReason(reason); setShowCheatModal(true);
+    setCheatWarnings(prev => prev + 1);
+    setCheatReason(reason);
+    setShowCheatModal(true);
   }, [showCheatModal, viewState]);
 
   // ANTI-CHEAT & TIMER HOOK
@@ -290,14 +320,14 @@ const ExamRoom = () => {
   }, [viewState, triggerWarning]);
 
   const forceSubmit = async () => {
-    setViewState('RESULT');
+    if (isSubmitting) return;
+    setShowSubmitModal(false);
     setIsSubmitting(true);
     if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
 
     const timeTaken = elapsedTimeRef.current;
 
     try {
-      const token = localStorage.getItem('token');
       const res = await axiosClient.post(`/api/exams/${selectedExam.id}/submit`, {
         document_id: selectedExam.id, 
         student_answers: { part1: part1Answers, part2: part2Answers, part3: part3Answers }, 
@@ -305,9 +335,9 @@ const ExamRoom = () => {
         time_taken_seconds: timeTaken
       });
 
-      // Lưu cả object đầy đủ để truyền cho ExamResult
       setExamScore(res.data.score);
       setGradingResult(res.data as ExamGradingResult);
+      setViewState('RESULT');
     } catch (error: any) { 
       alert("Lỗi nộp bài: " + (error?.response?.data?.message || error.message)); 
     } finally {
@@ -316,16 +346,38 @@ const ExamRoom = () => {
   };
 
   // ==========================================
-  // HÀM TÌM & HIỂN THỊ CÂU HỎI NHÓM
+  // HÀM TÌM & HIỂN THỊ CÂU HỎI NHÓM (INLINE CONTEXT)
   // ==========================================
-  const findContext = (qId: number): SharedContext | null => {
+  const findGroupIfFirst = (part: string, qId: number): SharedContext | null => {
     const groups: SharedContext[] = examData?.sharedContexts || examData?.shared_context || [];
-    return groups.find((g) => g.questionIds.includes(qId)) || null;
+    const group = groups.find((g) => (g.part === part || (!g.part && part === 'part1')) && g.questionIds?.includes(qId));
+    if (!group) return null;
+    const minId = Math.min(...group.questionIds);
+    return qId === minId ? group : null;
   };
-  
-  const wrapperStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: 'var(--color-background)', overflowY: 'auto' };
 
-    // ================= VIEW 1: DANH SÁCH ĐỀ =================
+  const renderGroupBlock = (group: SharedContext) => (
+    <div style={{
+      backgroundColor: '#fffbeb',
+      border: '1px solid #fde68a',
+      borderRadius: 'var(--radius-lg)',
+      padding: 'var(--spacing-4) var(--spacing-5)',
+      marginBottom: 'var(--spacing-4)',
+      boxShadow: '0 2px 6px rgba(245, 158, 11, 0.08)',
+      color: '#92400e',
+      fontSize: `${fontSize - 1}px`,
+      lineHeight: 1.6
+    }}>
+      {group.image_url && <ImageBlock url={group.image_url} />}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold', color: '#b45309', marginBottom: '6px' }}>
+        <span>📖 Dữ liệu ngữ cảnh chung cho các Câu {group.questionIds.join(', ')}:</span>
+      </div>
+      <div style={{ color: 'var(--color-text)' }}>{renderContent(group.content)}</div>
+      <div style={{ clear: 'both' }} />
+    </div>
+  );
+
+  // ================= VIEW 1: DANH SÁCH ĐỀ =================
   if (viewState === 'LIST') {
     return (
       <ExamList 
@@ -335,7 +387,8 @@ const ExamRoom = () => {
         onSelectExam={(doc) => {
           setSelectedExam(doc);
           setViewState('CONFIRM');
-        }} 
+        }}
+        onViewAttempt={handleViewAttempt}
       />
     );
   }
@@ -349,9 +402,7 @@ const ExamRoom = () => {
           setSelectedExam(null);
           setViewState('LIST');
         }} 
-        onConfirm={() => {
-          setViewState('EXAM');
-        }} 
+        onConfirm={startExam} 
       />
     );
   }
@@ -360,14 +411,15 @@ const ExamRoom = () => {
   if (viewState === 'RESULT') {
     return (
       <ExamResult 
-         
         examId={selectedExam?.id} 
+        examTitle={selectedExam?.title}
+        examData={examData}
+        timeTakenSeconds={elapsedTimeRef.current}
         onBackToList={() => {
           setViewState('LIST');
           setSelectedExam(null);
           setExamScore(null);
           setGradingResult(null);
-          // reset answers
           setPart1Answers({});
           setPart2Answers({});
           setPart3Answers({});
@@ -380,8 +432,6 @@ const ExamRoom = () => {
 
   // ================= VIEW 3: EXAM ROOM (DISTRACTION FREE) =================
   if (viewState === 'EXAM') {
-    
-    // We keep the old render style logic here for questions, but wrap it in the new layout
     const examStyles = {
       sectionTitle: { fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-primary)', borderBottom: '2px solid var(--color-primary)', paddingBottom: 'var(--spacing-2)', marginBottom: 'var(--spacing-4)', marginTop: 'var(--spacing-8)' },
       questionBox: { backgroundColor: 'var(--color-surface)', padding: 'var(--spacing-6)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--spacing-6)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-sm)' },
@@ -401,7 +451,6 @@ const ExamRoom = () => {
       + Object.keys(part2Answers).reduce((acc, qId) => acc + Object.keys(part2Answers[Number(qId)]).length, 0) 
       + Object.keys(part3Answers).length;
       
-    // Count total required sub-questions
     let totalQ = 0;
     if (examData?.part1) totalQ += examData.part1.length;
     if (examData?.part2) {
@@ -455,17 +504,11 @@ const ExamRoom = () => {
                     <div style={{ marginBottom: 'var(--spacing-10)' }}>
                       <div style={examStyles.sectionTitle}>PHẦN I. CÂU TRẮC NGHIỆM NHIỀU PHƯƠNG ÁN</div>
                       {examData.part1.map((q: any) => {
-                        const ctx = findContext(q.id);
+                        const group = findGroupIfFirst('part1', q.id);
                         return (
                           <React.Fragment key={q.id}>
-                            {ctx && (
-                              <div style={{ marginBottom: 'var(--spacing-2)' }}>
-                                <Button variant="secondary" size="sm" onClick={() => setActiveContext(ctx)}>
-                                  Xem dữ liệu chung (Context)
-                                </Button>
-                              </div>
-                            )}
-                            <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))}>
+                            {group && renderGroupBlock(group)}
+                            <div id={`q-${q.id}`} style={examStyles.questionBox}>
                               {q.image_url && <ImageBlock url={q.image_url} />}
                               <div style={examStyles.questionText}>
                                 <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
@@ -490,17 +533,11 @@ const ExamRoom = () => {
                     <div style={{ marginBottom: 'var(--spacing-10)' }}>
                       <div style={examStyles.sectionTitle}>PHẦN II. CÂU TRẮC NGHIỆM ĐÚNG/SAI</div>
                       {examData.part2.map((q: any) => {
-                        const ctx = findContext(q.id);
+                        const group = findGroupIfFirst('part2', q.id);
                         return (
                           <React.Fragment key={q.id}>
-                            {ctx && (
-                              <div style={{ marginBottom: 'var(--spacing-2)' }}>
-                                <Button variant="secondary" size="sm" onClick={() => setActiveContext(ctx)}>
-                                  Xem dữ liệu chung (Context)
-                                </Button>
-                              </div>
-                            )}
-                            <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))}>
+                            {group && renderGroupBlock(group)}
+                            <div id={`q-${q.id}`} style={examStyles.questionBox}>
                               {q.image_url && <ImageBlock url={q.image_url} />}
                               <div style={examStyles.questionText}>
                                 <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
@@ -546,17 +583,11 @@ const ExamRoom = () => {
                     <div style={{ marginBottom: 'var(--spacing-10)' }}>
                       <div style={examStyles.sectionTitle}>PHẦN III. CÂU TRẮC NGHIỆM TRẢ LỜI NGẮN</div>
                       {examData.part3.map((q: any) => {
-                        const ctx = findContext(q.id);
+                        const group = findGroupIfFirst('part3', q.id);
                         return (
                           <React.Fragment key={q.id}>
-                            {ctx && (
-                              <div style={{ marginBottom: 'var(--spacing-2)' }}>
-                                <Button variant="secondary" size="sm" onClick={() => setActiveContext(ctx)}>
-                                  Xem dữ liệu chung (Context)
-                                </Button>
-                              </div>
-                            )}
-                            <div id={`q-${q.id}`} style={examStyles.questionBox} onMouseEnter={() => setActiveContext(findContext(q.id))}>
+                            {group && renderGroupBlock(group)}
+                            <div id={`q-${q.id}`} style={examStyles.questionBox}>
                               {q.image_url && <ImageBlock url={q.image_url} />}
                               <div style={examStyles.questionText}>
                                 <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
@@ -595,43 +626,37 @@ const ExamRoom = () => {
                 }
               }
             }}
-            onSubmitClick={() => setShowCheatModal(true)} 
+            onSubmitClick={() => setShowSubmitModal(true)} 
           />
         </div>
 
-        {/* MODALS */}
+        {/* SUBMISSION CONFIRMATION MODAL */}
         <SubmitConfirmModal 
-          isOpen={showCheatModal && !cheatReason} 
-          onClose={() => setShowCheatModal(false)}
+          isOpen={showSubmitModal} 
+          onClose={() => setShowSubmitModal(false)}
           onSubmit={forceSubmit}
           totalQuestions={totalQ}
           answeredCount={answeredCount}
           isSubmitting={isSubmitting}
         />
 
-        {/* CHEAT MODAL OVERRIDE (If actually cheating) */}
-        {showCheatModal && cheatReason && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ backgroundColor: 'var(--color-surface)', padding: 'var(--spacing-8)', borderRadius: 'var(--radius-lg)', textAlign: 'center', maxWidth: '400px' }}>
+        {/* CHEAT WARNING MODAL */}
+        {showCheatModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ backgroundColor: 'var(--color-surface)', padding: 'var(--spacing-8)', borderRadius: 'var(--radius-lg)', textAlign: 'center', maxWidth: '420px', boxShadow: 'var(--shadow-xl)' }}>
               <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-4)' }}>🚨</div>
-              <h2 style={{ color: 'var(--color-danger)', marginBottom: 'var(--spacing-4)' }}>CẢNH BÁO GIAN LẬN!</h2>
-              <p style={{ marginBottom: 'var(--spacing-6)' }}>{cheatReason}</p>
-              <Button variant="danger" onClick={() => setShowCheatModal(false)}>Đã hiểu, Tiếp tục làm bài</Button>
+              <h2 style={{ color: 'var(--color-danger)', marginBottom: 'var(--spacing-4)' }}>CẢNH BÁO VI PHẠM!</h2>
+              <p style={{ marginBottom: 'var(--spacing-6)', color: 'var(--color-text)', lineHeight: 1.6 }}>{cheatReason || 'Phát hiện hành vi rời khỏi phòng thi hoặc sao chép.'}</p>
+              <Button 
+                variant="danger" 
+                onClick={() => {
+                  setShowCheatModal(false);
+                  setCheatReason('');
+                }}
+                style={{ width: '100%' }}>
+                Đã hiểu & Tiếp tục làm bài
+              </Button>
             </div>
-          </div>
-        )}
-
-        {/* ACTIVE CONTEXT DRAWER */}
-        {activeContext && (
-          <div style={{ position: 'fixed', bottom: 'var(--spacing-6)', left: 'var(--spacing-6)', width: '400px', backgroundColor: 'var(--color-surface)', border: '2px solid var(--color-primary)', borderRadius: 'var(--radius-lg)', padding: 'var(--spacing-6)', boxShadow: 'var(--shadow-lg)', zIndex: 9000 }}>
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
-               <h4 style={{ margin: 0, color: 'var(--color-primary)' }}>Dữ liệu chung</h4>
-               <Button variant="ghost" size="sm" onClick={() => setActiveContext(null)}>Đóng</Button>
-             </div>
-             <div style={{ maxHeight: '300px', overflowY: 'auto', fontSize: `${fontSize - 1}px` }}>
-               {activeContext.image_url && <img src={activeContext.image_url} alt="Context" style={{ width: '100%', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-3)' }} />}
-               <div>{renderContent(activeContext.content)}</div>
-             </div>
           </div>
         )}
 

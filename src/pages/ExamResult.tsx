@@ -108,16 +108,16 @@ const getDetail = (details: QuestionGradingDetail[], qId: number): QuestionGradi
 // COMPONENT CHÍNH
 // ==========================================
 
-const AITutorBlock = ({ examId, questionId }: { examId: string | number, questionId: string }) => {
+const AITutorBlock = ({ examId, questionId, studentAnswer }: { examId: string | number, questionId: string | number, studentAnswer?: any }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [question, setQuestion] = React.useState('');
   const [chatHistory, setChatHistory] = React.useState<{role: 'user'|'ai', content: string}[]>([]);
   const [loading, setLoading] = React.useState(false);
 
-  const handleSend = async () => {
-    if (!question.trim()) return;
-    const currentQ = question;
-    setChatHistory(prev => [...prev, { role: 'user', content: currentQ }]);
+  const handleSend = async (customPrompt?: string) => {
+    const promptToSend = customPrompt || question;
+    if (!promptToSend.trim()) return;
+    setChatHistory(prev => [...prev, { role: 'user', content: promptToSend }]);
     setQuestion('');
     setLoading(true);
 
@@ -125,11 +125,12 @@ const AITutorBlock = ({ examId, questionId }: { examId: string | number, questio
       const res = await axiosClient.post('/api/exams/ask-tutor', {
         exam_id: examId,
         question_id: questionId,
-        student_question: currentQ
+        student_question: promptToSend,
+        student_answer: studentAnswer
       });
       setChatHistory(prev => [...prev, { role: 'ai', content: res.data.answer }]);
     } catch (err) {
-      setChatHistory(prev => [...prev, { role: 'ai', content: 'Lỗi: Không thể kết nối tới Gia sư AI.' }]);
+      setChatHistory(prev => [...prev, { role: 'ai', content: '⚠️ Không thể kết nối tới Gia sư AI lúc này. Vui lòng thử lại.' }]);
     } finally {
       setLoading(false);
     }
@@ -138,50 +139,114 @@ const AITutorBlock = ({ examId, questionId }: { examId: string | number, questio
   if (!examId) return null;
 
   return (
-    <div style={{ marginTop: 'var(--spacing-4)' }}>
-      <Button 
+    <div style={{ marginTop: 'var(--spacing-3)' }}>
+      <button 
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        style={{ padding: '8px 16px', backgroundColor: '#8b5cf6', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
-        💬 Hỏi Gia sư AI giải thích câu này
-      </Button>
+        title="Hỏi Gia sư AI hướng dẫn câu này"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '6px 14px',
+          background: isOpen ? '#6d28d9' : 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
+          color: isOpen ? '#ffffff' : '#6d28d9',
+          border: '1px solid #c4b5fd',
+          borderRadius: 'var(--radius-md)',
+          fontSize: '13px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+        }}>
+        <span>✨</span>
+        <span>{isOpen ? 'Đóng Gia sư AI' : 'Hỏi Gia sư AI'}</span>
+      </button>
       
       {isOpen && (
-        <div style={{ marginTop: 'var(--spacing-4)', backgroundColor: 'var(--color-background)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-          {chatHistory.map((msg, idx) => (
-            <div key={idx} style={{ marginBottom: 'var(--spacing-2)', display: 'flex', flexDirection: 'column', alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-               <div style={{
-                 backgroundColor: msg.role === 'user' ? 'var(--color-primary)' : 'var(--color-surface)',
-                 color: msg.role === 'user' ? 'var(--color-surface)' : 'var(--color-text)',
-                 padding: '10px 15px',
-                 borderRadius: 'var(--radius-lg)',
-                 border: msg.role === 'ai' ? '1px solid var(--color-border)' : 'none',
-                 maxWidth: '100%',
-                 overflowX: 'auto'
-               }}>
-                 {msg.role === 'user' ? msg.content : (
-                    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                      {msg.content}
-                    </ReactMarkdown>
-                 )}
-               </div>
+        <div style={{
+          marginTop: 'var(--spacing-3)',
+          backgroundColor: '#faf5ff',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid #d8b4fe',
+          padding: 'var(--spacing-4)',
+          boxShadow: '0 4px 12px rgba(109, 40, 217, 0.08)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-3)', borderBottom: '1px solid #e9d5ff', paddingBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold', color: '#6d28d9', fontSize: '13px' }}>
+              <span>🤖 Gia sư AI — Hướng dẫn phương pháp Câu {questionId}</span>
             </div>
-          ))}
-          {loading && <div style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', fontStyle: 'italic', marginBottom: 'var(--spacing-2)' }}>AI đang phân tích lời giải...</div>}
-          
-          <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-2)' }}>
+            <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: '#9333ea', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>✕</button>
+          </div>
+
+          {/* Quick Starter Chips */}
+          {chatHistory.length === 0 && (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: 'var(--spacing-3)' }}>
+              <button 
+                type="button" 
+                onClick={() => handleSend("Hãy giải thích phương pháp và các bước tư duy của câu này.")}
+                style={{ fontSize: '12px', padding: '4px 10px', backgroundColor: '#f3e8ff', border: '1px solid #c084fc', borderRadius: '12px', color: '#6b21a8', cursor: 'pointer' }}>
+                💡 Gợi ý phương pháp giải
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleSend("Tại sao đáp án em chọn bị sai? Bắt bệnh tư duy giúp em.")}
+                style={{ fontSize: '12px', padding: '4px 10px', backgroundColor: '#f3e8ff', border: '1px solid #c084fc', borderRadius: '12px', color: '#6b21a8', cursor: 'pointer' }}>
+                🔍 Phân tích chỗ sai của em
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleSend("Nhắc lại công thức và lý thuyết trọng tâm dùng trong câu này.")}
+                style={{ fontSize: '12px', padding: '4px 10px', backgroundColor: '#f3e8ff', border: '1px solid #c084fc', borderRadius: '12px', color: '#6b21a8', cursor: 'pointer' }}>
+                📚 Lý thuyết & công thức
+              </button>
+            </div>
+          )}
+
+          {/* Chat Messages */}
+          <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: 'var(--spacing-3)' }}>
+            {chatHistory.map((msg, idx) => (
+              <div key={idx} style={{
+                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                maxWidth: '90%',
+                backgroundColor: msg.role === 'user' ? '#7c3aed' : '#ffffff',
+                color: msg.role === 'user' ? '#ffffff' : '#1e1b4b',
+                padding: '10px 14px',
+                borderRadius: '12px',
+                border: msg.role === 'ai' ? '1px solid #e9d5ff' : 'none',
+                fontSize: '13px',
+                lineHeight: 1.6,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+              }}>
+                {msg.role === 'user' ? msg.content : (
+                  <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                    {msg.content}
+                  </ReactMarkdown>
+                )}
+              </div>
+            ))}
+            {loading && (
+              <div style={{ alignSelf: 'flex-start', color: '#6d28d9', fontSize: '12px', fontStyle: 'italic', padding: '6px 12px', backgroundColor: '#f5f3ff', borderRadius: '8px' }}>
+                ✨ Gia sư AI đang phân tích bài giải...
+              </div>
+            )}
+          </div>
+
+          {/* Input Box */}
+          <div style={{ display: 'flex', gap: '6px' }}>
             <input 
-               type="text" 
-               value={question} 
-               onChange={e => setQuestion(e.target.value)} 
-               onKeyDown={e => e.key === 'Enter' && handleSend()}
-               placeholder="Nhập thắc mắc (VD: Tại sao bước 2 lại ra công thức đó?)..." 
-               style={{ flex: 1, padding: 'var(--spacing-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}
+              type="text" 
+              value={question} 
+              onChange={e => setQuestion(e.target.value)} 
+              onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
+              placeholder="Hỏi bất kỳ điều gì bạn chưa hiểu về câu này..." 
+              style={{ flex: 1, padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid #d8b4fe', fontSize: '13px', backgroundColor: '#ffffff' }}
             />
             <Button 
-               onClick={handleSend} 
-               disabled={loading}
-               style={{ padding: '10px 20px', backgroundColor: 'var(--color-success)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
-               Gửi
+              type="button"
+              onClick={() => handleSend()} 
+              disabled={loading || !question.trim()}
+              style={{ padding: '8px 16px', backgroundColor: '#7c3aed', color: '#ffffff', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
+              Hỏi
             </Button>
           </div>
         </div>
@@ -203,24 +268,8 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
     isTeacherView = false,
   } = props;
 
-  // State cho AI giải thích
   const { id } = useParams();
   const examId = props.examId || id;
-  const [aiExplanations, setAiExplanations] = useState<Record<string, { loading: boolean, text: string }>>({});
-
-  const handleExplainError = async (questionId: string, studentAnswer: string) => {
-    try {
-      setAiExplanations(prev => ({ ...prev, [questionId]: { loading: true, text: '' } }));
-      const token = localStorage.getItem('token');
-      const res = await axiosClient.post('/api/ai/explain-error', { 
-        question_id: questionId, 
-        student_answer: studentAnswer || 'Không chọn đáp án'
-      });
-      setAiExplanations(prev => ({ ...prev, [questionId]: { loading: false, text: res.data.explanation } }));
-    } catch (err) {
-      setAiExplanations(prev => ({ ...prev, [questionId]: { loading: false, text: 'Lỗi: Không thể gọi AI lúc này.' } }));
-    }
-  };
 
   // ==========================================
   // CHUẨN HÓA DỮ LIỆU — hỗ trợ cả 2 chế độ
@@ -389,26 +438,8 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                       );
                     })}
                   </div>
-                  {!isCorrect && (
-                    <div style={{ marginTop: 'var(--spacing-4)' }}>
-                      <Button 
-                        onClick={() => handleExplainError(q.id.toString(), studentAns)}
-                        disabled={aiExplanations[q.id]?.loading}
-                        style={{ padding: '8px 16px', backgroundColor: 'var(--color-primary)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
-                        {aiExplanations[q.id]?.loading ? '⏳ Đang phân tích...' : '✨ Nhờ AI Giải thích'}
-                      </Button>
-                      
-                      {aiExplanations[q.id]?.text && (
-                        <div style={{ marginTop: 'var(--spacing-4)', backgroundColor: '#eff6ff', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe', color: '#1e3a8a', fontSize: 'var(--font-size-sm)' }}>
-                          <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                            {aiExplanations[q.id].text}
-                          </ReactMarkdown>
-                        </div>
-                      )}
-                    </div>
-                  )}
                   <div style={{ clear: 'both' }} />
-                  {examId && <AITutorBlock examId={examId} questionId={q.id.toString()} />}
+                  {examId && <AITutorBlock examId={examId} questionId={q.id} studentAnswer={studentAns} />}
                 </div>
               </React.Fragment>
             );
@@ -538,28 +569,10 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                     })}
                   </tbody>
                 </table>
-                {correctCount < 4 && (
-                    <div style={{ marginTop: 'var(--spacing-4)' }}>
-                      <Button 
-                        onClick={() => handleExplainError(qId.toString(), stmtResults.map(s => `${s.statement}: ${s.student || 'trống'}`).join(', '))}
-                        disabled={aiExplanations[qId]?.loading}
-                        style={{ padding: '8px 16px', backgroundColor: 'var(--color-primary)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
-                        {aiExplanations[qId]?.loading ? '⏳ Đang phân tích...' : '✨ Nhờ AI Giải thích'}
-                      </Button>
-                      
-                      {aiExplanations[qId]?.text && (
-                        <div style={{ marginTop: 'var(--spacing-4)', backgroundColor: '#eff6ff', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe', color: '#1e3a8a', fontSize: 'var(--font-size-sm)' }}>
-                          <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                            {aiExplanations[qId].text}
-                          </ReactMarkdown>
-                        </div>
-                      )}
-                    </div>
-                )}
                 <div style={{ clear: 'both' }} />
-                  {examId && <AITutorBlock examId={examId} questionId={qId.toString()} />}
-                </div>
-              </React.Fragment>
+                {examId && <AITutorBlock examId={examId} questionId={qId} studentAnswer={stmtResults} />}
+              </div>
+            </React.Fragment>
           );
         })}
       </div>
@@ -637,28 +650,10 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                     </div>
                   )}
                 </div>
-                {!isCorrect && (
-                    <div style={{ marginTop: 'var(--spacing-4)' }}>
-                      <Button 
-                        onClick={() => handleExplainError(qId.toString(), studentAns)}
-                        disabled={aiExplanations[qId]?.loading}
-                        style={{ padding: '8px 16px', backgroundColor: 'var(--color-primary)', color: 'var(--color-surface)', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'var(--font-weight-bold)' }}>
-                        {aiExplanations[qId]?.loading ? '⏳ Đang phân tích...' : '✨ Nhờ AI Giải thích'}
-                      </Button>
-                      
-                      {aiExplanations[qId]?.text && (
-                        <div style={{ marginTop: 'var(--spacing-4)', backgroundColor: '#eff6ff', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid #bfdbfe', color: '#1e3a8a', fontSize: 'var(--font-size-sm)' }}>
-                          <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
-                            {aiExplanations[qId].text}
-                          </ReactMarkdown>
-                        </div>
-                      )}
-                    </div>
-                )}
                 <div style={{ clear: 'both' }} />
-                  {examId && <AITutorBlock examId={examId} questionId={qId.toString()} />}
-                </div>
-              </React.Fragment>
+                {examId && <AITutorBlock examId={examId} questionId={qId} studentAnswer={studentAns} />}
+              </div>
+            </React.Fragment>
           );
         })}
       </div>

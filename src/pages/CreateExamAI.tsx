@@ -568,21 +568,19 @@ const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
                   ) : (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-success-soft)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-success)' }}>
-                         <div style={{ color: 'var(--color-success)', fontWeight: 'var(--font-weight-bold)' }}>✅ Phân tích thành công!</div>
+                         <div style={{ color: 'var(--color-success)', fontWeight: 'var(--font-weight-bold)' }}>
+                           ✅ AI bóc tách thành công! (P1: {editContent.part1?.length || 0} câu, P2: {editContent.part2?.length || 0} câu, P3: {editContent.part3?.length || 0} câu)
+                         </div>
                          <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-                            <Button variant="outline" size="sm" onClick={() => { setJsonString(JSON.stringify(editContent, null, 2)); }}>Sửa JSON Nội dung</Button>
+                            <Button variant="outline" size="sm" onClick={() => { setJsonString(jsonString ? '' : JSON.stringify(editContent, null, 2)); }}>
+                              {jsonString ? 'Ẩn sửa JSON' : '⚙️ Sửa JSON thô'}
+                            </Button>
                          </div>
                       </div>
 
-                      <div style={{ maxHeight: '60vh', overflowY: 'auto', padding: 'var(--spacing-4)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface)' }}>
-                        <pre style={{ whiteSpace: 'pre-wrap', fontSize: 'var(--font-size-sm)', fontFamily: 'monospace', margin: 0 }}>
-                          {JSON.stringify(editContent, null, 2)}
-                        </pre>
-                      </div>
-
-                      {(jsonString !== '') && (
-                        <div style={{ marginTop: 'var(--spacing-6)' }}>
-                          <h3 style={{ marginBottom: 'var(--spacing-2)' }}>Chỉnh sửa JSON</h3>
+                      {jsonString !== '' ? (
+                        <div style={{ marginTop: 'var(--spacing-4)' }}>
+                          <h3 style={{ marginBottom: 'var(--spacing-2)' }}>Chỉnh sửa JSON trực tiếp</h3>
                           <textarea 
                             className="input-base"
                             rows={15}
@@ -592,9 +590,152 @@ const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
                           />
                           {jsonError && <p style={{ color: 'var(--color-danger)', marginTop: 'var(--spacing-2)' }}>{jsonError}</p>}
                           <div style={{ display: 'flex', gap: 'var(--spacing-2)', marginTop: 'var(--spacing-4)' }}>
-                            <Button variant="primary" onClick={() => { try { setEditContent(JSON.parse(jsonString)); setJsonError(''); } catch(e) { setJsonError('Lỗi JSON'); } }}>Lưu thay đổi</Button>
-                            <Button variant="ghost" onClick={() => { setJsonString(''); }}>Hủy</Button>
+                            <Button variant="primary" onClick={() => { try { setEditContent(JSON.parse(jsonString)); setJsonError(''); } catch(e) { setJsonError('Lỗi JSON cú pháp'); } }}>Lưu thay đổi</Button>
+                            <Button variant="ghost" onClick={() => { setJsonString(''); }}>Đóng</Button>
                           </div>
+                        </div>
+                      ) : (
+                        <div style={{ maxHeight: '65vh', overflowY: 'auto', padding: 'var(--spacing-4)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
+                          {/* PART 1 */}
+                          {editContent.part1 && editContent.part1.length > 0 && (
+                            <div>
+                              <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', fontSize: '16px', borderBottom: '2px solid var(--color-primary)', paddingBottom: '4px', marginBottom: '12px' }}>
+                                PHẦN I. TRẮC NGHIỆM NHIỀU PHƯƠNG ÁN ({editContent.part1.length} câu)
+                              </div>
+                              {editContent.part1.map((q: any, idx: number) => {
+                                const group = findGroupIfFirst('part1', q.id);
+                                return (
+                                  <div key={q.id || idx} style={{ marginBottom: '16px', padding: '12px', borderRadius: '8px', backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)' }}>
+                                    {group && (
+                                      <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', color: '#92400e', fontSize: '13px' }}>
+                                        <strong>📖 Ngữ liệu dùng cho câu {group.questionIds.join(', ')}:</strong>
+                                        <div style={{ marginTop: '4px' }}>{renderContent(group.content)}</div>
+                                      </div>
+                                    )}
+                                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>
+                                      <span>Câu {q.id || idx + 1}. </span>{renderContent(q.questionText)}
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                      {['A', 'B', 'C', 'D'].map(opt => {
+                                        const isCorrect = (q.correctAnswer === opt || editKeys.part1_key?.[q.id] === opt);
+                                        return (
+                                          <div 
+                                            key={opt}
+                                            onClick={() => updateKey('part1_key', q.id, opt)}
+                                            style={{
+                                              padding: '8px 12px', borderRadius: '6px',
+                                              border: isCorrect ? '2px solid var(--color-success)' : '1px solid var(--color-border)',
+                                              backgroundColor: isCorrect ? '#ecfdf5' : 'var(--color-surface)',
+                                              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
+                                            }}>
+                                            <span style={{ fontWeight: 'bold', color: isCorrect ? 'var(--color-success)' : 'inherit' }}>{opt}.</span>
+                                            <span style={{ fontSize: '13px' }}>{renderContent(q.options?.[opt] || '')}</span>
+                                            {isCorrect && <span style={{ marginLeft: 'auto', color: 'var(--color-success)', fontWeight: 'bold' }}>✓ Đáp án đúng</span>}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                    {q.explanation && (
+                                      <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--color-text-secondary)', backgroundColor: 'var(--color-surface)', padding: '6px 10px', borderRadius: '4px' }}>
+                                        <strong>Lời giải:</strong> {renderContent(q.explanation)}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* PART 2 */}
+                          {editContent.part2 && editContent.part2.length > 0 && (
+                            <div>
+                              <div style={{ color: 'var(--color-warning)', fontWeight: 'bold', fontSize: '16px', borderBottom: '2px solid #f59e0b', paddingBottom: '4px', marginBottom: '12px' }}>
+                                PHẦN II. TRẮC NGHIỆM ĐÚNG / SAI ({editContent.part2.length} câu)
+                              </div>
+                              {editContent.part2.map((q: any, idx: number) => {
+                                const group = findGroupIfFirst('part2', q.id);
+                                return (
+                                  <div key={q.id || idx} style={{ marginBottom: '16px', padding: '12px', borderRadius: '8px', backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)' }}>
+                                    {group && (
+                                      <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', color: '#92400e', fontSize: '13px' }}>
+                                        <strong>📖 Ngữ liệu dùng cho câu {group.questionIds.join(', ')}:</strong>
+                                        <div style={{ marginTop: '4px' }}>{renderContent(group.content)}</div>
+                                      </div>
+                                    )}
+                                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>
+                                      <span>Câu {q.id || idx + 1}. </span>{renderContent(q.questionText)}
+                                    </div>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                      <tbody>
+                                        {['a', 'b', 'c', 'd'].map(stmt => {
+                                          const ans = q.correctAnswer?.[stmt] || editKeys.part2_key?.[q.id]?.[stmt];
+                                          return (
+                                            <tr key={stmt} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                              <td style={{ padding: '6px 8px' }}>
+                                                <strong>{stmt})</strong> {renderContent(q.statements?.[stmt] || '')}
+                                              </td>
+                                              <td style={{ width: '130px', textAlign: 'right', padding: '6px 8px' }}>
+                                                <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                                  <button 
+                                                    type="button"
+                                                    onClick={() => updatePart2Key(q.id, stmt, 'Đ')}
+                                                    style={{ padding: '3px 10px', borderRadius: '4px', border: ans === 'Đ' ? '2px solid var(--color-success)' : '1px solid var(--color-border)', backgroundColor: ans === 'Đ' ? '#dcfce7' : 'var(--color-surface)', color: ans === 'Đ' ? '#15803d' : 'inherit', fontWeight: 'bold', cursor: 'pointer' }}>
+                                                    Đúng
+                                                  </button>
+                                                  <button 
+                                                    type="button"
+                                                    onClick={() => updatePart2Key(q.id, stmt, 'S')}
+                                                    style={{ padding: '3px 10px', borderRadius: '4px', border: ans === 'S' ? '2px solid var(--color-danger)' : '1px solid var(--color-border)', backgroundColor: ans === 'S' ? '#fee2e2' : 'var(--color-surface)', color: ans === 'S' ? '#b91c1c' : 'inherit', fontWeight: 'bold', cursor: 'pointer' }}>
+                                                    Sai
+                                                  </button>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* PART 3 */}
+                          {editContent.part3 && editContent.part3.length > 0 && (
+                            <div>
+                              <div style={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: '16px', borderBottom: '2px solid #8b5cf6', paddingBottom: '4px', marginBottom: '12px' }}>
+                                PHẦN III. TRẮC NGHIỆM TRẢ LỜI NGẮN ({editContent.part3.length} câu)
+                              </div>
+                              {editContent.part3.map((q: any, idx: number) => {
+                                const group = findGroupIfFirst('part3', q.id);
+                                return (
+                                  <div key={q.id || idx} style={{ marginBottom: '16px', padding: '12px', borderRadius: '8px', backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)' }}>
+                                    {group && (
+                                      <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '8px 12px', marginBottom: '8px', color: '#92400e', fontSize: '13px' }}>
+                                        <strong>📖 Ngữ liệu dùng cho câu {group.questionIds.join(', ')}:</strong>
+                                        <div style={{ marginTop: '4px' }}>{renderContent(group.content)}</div>
+                                      </div>
+                                    )}
+                                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>
+                                      <span>Câu {q.id || idx + 1}. </span>{renderContent(q.questionText)}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text-secondary)' }}>Đáp án chuẩn:</span>
+                                      <input 
+                                        type="text"
+                                        className="input-base"
+                                        value={q.correctAnswer ?? editKeys.part3_key?.[q.id] ?? ''}
+                                        onChange={(e) => updateKey('part3_key', q.id, e.target.value)}
+                                        placeholder="Nhập đáp án chuẩn..."
+                                        style={{ maxWidth: '200px', padding: '4px 10px', fontSize: '13px' }}
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       )}
                     </>

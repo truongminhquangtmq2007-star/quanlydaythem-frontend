@@ -283,6 +283,18 @@ const ClassDetail = () => {
     }
   };
 
+  const handleDeleteAssignment = async (assignmentId: number, title?: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa bài tập / tài liệu "${title || 'này'}" khỏi lớp?`)) return;
+    try {
+      await axiosClient.delete(`/api/classes/${id}/assignments/${assignmentId}`);
+      alert('✓ Đã xóa bài tập được giao thành công!');
+      const assignRes = await axiosClient.get(`/api/classes/${id}/assignments`);
+      setAssignments(assignRes.data || []);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Lỗi khi xóa bài tập');
+    }
+  };
+
   const handleRemoveMember = async (studentId: number, studentName?: string) => {
     const displayName = studentName || 'Học sinh';
     if (!window.confirm(`Bạn có chắc chắn muốn xóa học sinh "${displayName}" khỏi lớp học này? (Tài khoản học sinh và các lớp khác vẫn được giữ nguyên)`)) {
@@ -862,13 +874,21 @@ const ClassDetail = () => {
                       )}
                     </td>
                     <td style={{ padding: 'var(--spacing-3)', textAlign: 'right' }}>
-                      {a.file_url ? (
-                        <a href={a.file_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                          <Button variant="secondary" size="sm" style={{ minHeight: '36px' }}>Mở file</Button>
-                        </a>
-                      ) : (
-                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>Đã gán</span>
-                      )}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                        {a.file_url && (
+                          <a href={a.file_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                            <Button variant="secondary" size="sm" style={{ minHeight: '36px' }}>Mở file</Button>
+                          </a>
+                        )}
+                        <Button 
+                          variant="danger" 
+                          size="sm" 
+                          style={{ minHeight: '36px' }}
+                          onClick={() => handleDeleteAssignment(a.id, a.title || a.doc_title)}
+                        >
+                          Xóa
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
