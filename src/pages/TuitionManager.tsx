@@ -249,16 +249,16 @@ const COLOR_THEMES: Record<string, ColorThemeTokens> = {
   }
 };
 
-// 8 Truly Distinct Layout Architectural Systems (Design 7.0)
+// 8 Truly Distinct Layout Architectural Systems (Structure-First Rebuild)
 const TEMPLATES = [
-  { id: 'editorial', name: '01 Editorial Portrait', desc: 'Tạp chí chân dung, serif thanh lịch & số tiền nổi bật' },
-  { id: 'swiss', name: '02 Swiss Grid', desc: 'Lưới 3 cột chuẩn quốc tế, cột thanh toán dọc' },
-  { id: 'vintage', name: '03 Vintage Letter', desc: 'Thư mời thủ công, viền hoa văn kép & sổ ghi chép' },
-  { id: 'geometric', name: '04 Color Block', desc: 'Khối màu hình học đương đại, số thứ tự monospace' },
-  { id: 'timeline', name: '05 Timeline Journey', desc: 'Hành trình học tập dạng trục thời gian phát sáng' },
-  { id: 'magazine', name: '06 Modern Magazine', desc: 'Tạp chí phong cách sống, banner tháng lớn & thẻ modular' },
-  { id: 'organic', name: '07 Organic Flow', desc: 'Đường cong mềm Scandinavian, thẻ tròn bất đối xứng' },
-  { id: 'statement', name: '08 Typographic Statement', desc: 'Type-first nổi bật, số tiền khổng lồ ở đầu phiếu' }
+  { id: 'swiss', name: '01 Swiss Grid', desc: 'Lưới 3 cột chuẩn quốc tế, cột thanh toán & QR dọc' },
+  { id: 'vintage', name: '02 Vintage Letter', desc: 'Thư mời thủ công, viền hoa văn đôi & sổ cái học tập' },
+  { id: 'timeline', name: '03 Timeline Journey', desc: 'Trục thời gian dọc kết nối các điểm mốc học tập' },
+  { id: 'organic', name: '04 Organic Flow', desc: 'Đường cong mềm Scandinavian, các capsule bất đối xứng' },
+  { id: 'academic_docket', name: '05 Academic Docket', desc: 'Hồ sơ đào tạo học viện, bảng điểm danh & quyết toán' },
+  { id: 'executive_split', name: '06 Executive Split-Pane', desc: 'Bố cục chia đôi 50/50: Hub tài chính & Nhật ký buổi học' },
+  { id: 'voucher_pass', name: '07 Perforated Pass', desc: 'Thẻ học viên có cuống xé rời, mã vé & QR Boarding Pass' },
+  { id: 'minimal_broadsheet', name: '08 Minimal Broadsheet', desc: 'Bản in tối giản Bắc Âu, đường kẻ mảnh & độ thoáng cao' }
 ];
 
 const TuitionManager = () => {
@@ -277,7 +277,7 @@ const TuitionManager = () => {
     showAssessmentPicker: false,
     teacherBank: null, // Dynamic Teacher Bank Account
     teacher_note: '',
-    template: 'editorial', // 8 distinct layout architectures
+    template: 'swiss', // 8 distinct layout architectures
     colorTheme: 'peach', // Separate color theme
     customPrimaryColor: '',
     paperSize: 'A4' // A4 | A5
@@ -491,118 +491,10 @@ const TuitionManager = () => {
     : '';
 
   // =========================================================================
-  // 8 TRULY DISTINCT LAYOUT ARCHITECTURAL SYSTEMS (DESIGN 7.0)
+  // 8 TRULY DISTINCT LAYOUT ARCHITECTURAL SYSTEMS (STRUCTURE-FIRST REBUILD)
   // =========================================================================
 
-  // RENDERER 01: EDITORIAL PORTRAIT (Luxury Editorial Magazine / Playfair Serif / Asymmetric Whitespace)
-  const renderEditorialPortrait = () => (
-    <div style={{ 
-      padding: invoiceModal.paperSize === 'A5' ? '14px' : '26px', 
-      backgroundColor: currentTheme.bg, 
-      borderRadius: '16px',
-      fontFamily: '"Playfair Display", Georgia, "Times New Roman", serif', 
-      color: currentTheme.text,
-      border: `1px solid ${currentTheme.surfaceBorder}`,
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)'
-    }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', borderBottom: `1px solid ${currentTheme.primary}30`, paddingBottom: '16px', marginBottom: '22px' }}>
-        <div style={{ display: 'inline-block', padding: '3px 12px', borderRadius: '20px', backgroundColor: currentTheme.lightBg, fontSize: '10px', letterSpacing: '3px', textTransform: 'uppercase', color: currentTheme.primary, fontWeight: 'bold' }}>
-          ✦ TUITION NOTE ✦
-        </div>
-        <h1 style={{ margin: '8px 0 4px 0', fontSize: invoiceModal.paperSize === 'A5' ? '24px' : '32px', fontWeight: 'normal', letterSpacing: '1px', color: currentTheme.text }}>
-          PHIẾU HỌC PHÍ
-        </h1>
-        <div style={{ fontSize: '12px', color: currentTheme.muted, fontStyle: 'italic', fontFamily: 'system-ui, sans-serif' }}>
-          Kỳ học: <strong>{moment(invoiceModal.bill.start_date).format('DD/MM/YYYY')}</strong> — <strong>{moment(invoiceModal.bill.end_date).format('DD/MM/YYYY')}</strong> • Mã hồ sơ: #{invoiceModal.bill.id}
-        </div>
-      </div>
-
-      {/* Hero Student & Floating Amount Card */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'center', backgroundColor: currentTheme.surface, padding: '16px 20px', borderRadius: '14px', border: `1px solid ${currentTheme.surfaceBorder}`, marginBottom: '22px', fontFamily: 'system-ui, sans-serif' }}>
-        <div>
-          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: currentTheme.primary, letterSpacing: '1.5px', fontWeight: 'bold' }}>HỌC VIÊN</div>
-          <div style={{ fontSize: '22px', fontWeight: 'bold', color: currentTheme.text, marginTop: '2px', fontFamily: 'Georgia, serif' }}>
-            {invoiceModal.bill.full_name}
-          </div>
-          <div style={{ fontSize: '13px', color: currentTheme.muted, marginTop: '3px' }}>
-            Lớp: <strong>{invoiceModal.bill.class_name}</strong> {invoiceModal.bill.teacher_name && `• GV: ${invoiceModal.bill.teacher_name}`}
-          </div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: currentTheme.primary, letterSpacing: '1.5px', fontWeight: 'bold' }}>HỌC PHÍ KỲ NÀY</div>
-          <div style={{ fontSize: invoiceModal.paperSize === 'A5' ? '24px' : '30px', fontWeight: 'bold', color: currentTheme.primary, fontFamily: 'Georgia, serif', letterSpacing: '-0.5px' }}>
-            {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} ₫
-          </div>
-          <div style={{ fontSize: '11px', color: currentTheme.muted, fontStyle: 'italic', marginTop: '2px' }}>
-            {numberToVietnameseWords(Number(invoiceModal.bill.total_amount) || 0)}
-          </div>
-        </div>
-      </div>
-
-      {/* Session Flow List */}
-      <div style={{ marginBottom: '22px' }}>
-        <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '2px', color: currentTheme.primary, fontWeight: 'bold', marginBottom: '10px', fontFamily: 'system-ui, sans-serif' }}>
-          NHẬT KÝ BUỔI HỌC ({totalSessions} BUỔI)
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: 'system-ui, sans-serif' }}>
-          {sessions.map((s: any, idx: number) => {
-            const { statusLabel, statusColor, contentText } = getSessionRowData(s);
-            return (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: currentTheme.surface, borderRadius: '10px', border: `1px solid ${currentTheme.surfaceBorder}`, fontSize: '13px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <span style={{ fontWeight: 'bold', width: '90px', color: currentTheme.text }}>{moment(s.session_date).format('DD/MM/YYYY')}</span>
-                  <span style={{ color: currentTheme.muted }}>{contentText}</span>
-                </div>
-                <span style={{ fontWeight: 'bold', color: statusColor, fontSize: '11px', padding: '2px 8px', borderRadius: '12px', backgroundColor: `${statusColor}15` }}>{statusLabel}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Assessment Section */}
-      {hasAssessments && (
-        <div style={{ marginBottom: '22px', backgroundColor: currentTheme.surface, padding: '14px 18px', border: `1px solid ${currentTheme.surfaceBorder}`, borderRadius: '12px', fontFamily: 'system-ui, sans-serif' }}>
-          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: currentTheme.primary, fontWeight: 'bold', marginBottom: '8px' }}>
-            KẾT QUẢ ĐÁNH GIÁ ĐỊNH KỲ
-          </div>
-          {selectedAssessments.map((a: any, idx: number) => (
-            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '13px' }}>
-              <span>{moment(a.assessment_date).format('DD/MM/YYYY')} — {a.title}</span>
-              <span style={{ fontWeight: 'bold', color: currentTheme.primary }}>{a.score} điểm</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Bank & High-Contrast White QR */}
-      <div style={{ borderTop: `1px solid ${currentTheme.primary}30`, paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', fontFamily: 'system-ui, sans-serif' }}>
-        <div>
-          <div style={{ fontSize: '11px', fontWeight: 'bold', color: currentTheme.primary, textTransform: 'uppercase', letterSpacing: '1px' }}>THÔNG TIN CHUYỂN KHOẢN:</div>
-          {isBankConfigured ? (
-            <div style={{ fontSize: '13px', color: currentTheme.text, marginTop: '4px', lineHeight: '1.5' }}>
-              <div>Ngân hàng: <strong>{teacherBank.bank_name || teacherBank.bank_code}</strong></div>
-              <div>Số tài khoản: <strong style={{ letterSpacing: '0.5px', color: currentTheme.primary }}>{teacherBank.account_number}</strong></div>
-              <div>Chủ tài khoản: <strong>{teacherBank.account_name}</strong></div>
-            </div>
-          ) : (
-            <div style={{ fontSize: '12px', color: '#d97706', fontStyle: 'italic', marginTop: '4px' }}>
-              Chưa cấu hình tài khoản nhận học phí.
-            </div>
-          )}
-        </div>
-        {isBankConfigured && (
-          <div style={{ textAlign: 'center', backgroundColor: '#ffffff', padding: '8px', border: `1px solid ${currentTheme.surfaceBorder}`, borderRadius: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
-            <img src={qrUrl} alt="QR Chuyển khoản" style={{ width: '110px', height: '110px', objectFit: 'contain', display: 'block' }} />
-            <div style={{ fontSize: '10px', color: '#64748b', marginTop: '4px', fontWeight: 'bold' }}>{teacherBank.bank_code} • {teacherBank.account_number}</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // RENDERER 02: SWISS GRID (Strict 3-Column Asymmetric International Style)
+  // RENDERER 01: SWISS INFORMATION GRID (Strict 3-Column Asymmetric International Style) [KEPT]
   const renderSwissGrid = () => (
     <div style={{ padding: invoiceModal.paperSize === 'A5' ? '12px' : '20px', fontFamily: 'system-ui, -apple-system, sans-serif', color: currentTheme.text, backgroundColor: currentTheme.bg }}>
       <div style={{ borderBottom: `3px solid ${currentTheme.primary}`, paddingBottom: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -699,7 +591,7 @@ const TuitionManager = () => {
     </div>
   );
 
-  // RENDERER 03: VINTAGE LETTER (Stationery Letterhead / Engraved Double Border / Classical Ledger)
+  // RENDERER 02: VINTAGE LETTER (Stationery Letterhead / Engraved Double Border / Classical Ledger) [KEPT]
   const renderVintageLetter = () => (
     <div style={{ 
       padding: invoiceModal.paperSize === 'A5' ? '14px' : '22px', 
@@ -802,100 +694,7 @@ const TuitionManager = () => {
     </div>
   );
 
-  // RENDERER 04: COLOR BLOCK (Contemporary Geometric / Asymmetric Modular Color Blocks)
-  const renderColorBlock = () => (
-    <div style={{ 
-      padding: invoiceModal.paperSize === 'A5' ? '14px' : '24px', 
-      backgroundColor: currentTheme.bg, 
-      borderRadius: '16px',
-      fontFamily: 'system-ui, -apple-system, sans-serif', 
-      color: currentTheme.text, 
-      border: `2px solid ${currentTheme.surfaceBorder}`
-    }}>
-      {/* 2-Column Asymmetric Geometric Hero */}
-      <div style={{ display: 'grid', gridTemplateColumns: invoiceModal.paperSize === 'A5' ? '1fr 140px' : '1fr 200px', gap: '14px', marginBottom: '20px' }}>
-        <div style={{ backgroundColor: currentTheme.surface, padding: '18px 20px', borderRadius: '12px', border: `1px solid ${currentTheme.surfaceBorder}` }}>
-          <div style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase', color: currentTheme.primary }}>
-            COLOR BLOCK STATEMENT
-          </div>
-          <h1 style={{ margin: '4px 0', fontSize: invoiceModal.paperSize === 'A5' ? '20px' : '26px', fontWeight: '900', color: currentTheme.text }}>
-            {invoiceModal.bill.full_name}
-          </h1>
-          <div style={{ fontSize: '13px', color: currentTheme.muted }}>
-            Lớp: <strong>{invoiceModal.bill.class_name}</strong> • #{invoiceModal.bill.id}
-          </div>
-          <div style={{ fontSize: '12px', color: currentTheme.primary, fontWeight: 'bold', marginTop: '4px' }}>
-            📅 {moment(invoiceModal.bill.start_date).format('DD/MM/YYYY')} — {moment(invoiceModal.bill.end_date).format('DD/MM/YYYY')}
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: currentTheme.primary, color: '#ffffff', padding: '18px 16px', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.9 }}>HỌC PHÍ</div>
-          <div style={{ fontSize: invoiceModal.paperSize === 'A5' ? '20px' : '26px', fontWeight: '900', letterSpacing: '-0.5px', marginTop: '2px' }}>
-            {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} ₫
-          </div>
-        </div>
-      </div>
-
-      {/* Numbered Session Grid Blocks */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1.5px', color: currentTheme.primary, marginBottom: '10px' }}>
-          LỘ TRÌNH BUỔI HỌC ({totalSessions} BUỔI)
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {sessions.map((s: any, idx: number) => {
-            const { statusLabel, statusColor, contentText } = getSessionRowData(s);
-            const seq = String(idx + 1).padStart(2, '0');
-            return (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '32px 85px 1fr 90px', alignItems: 'center', backgroundColor: currentTheme.surface, padding: '8px 12px', borderRadius: '8px', border: `1px solid ${currentTheme.surfaceBorder}`, fontSize: '12.5px' }}>
-                <span style={{ fontWeight: '900', color: currentTheme.primary, fontFamily: 'monospace', fontSize: '13px' }}>{seq}</span>
-                <span style={{ fontWeight: '700', color: currentTheme.text }}>{moment(s.session_date).format('DD/MM/YYYY')}</span>
-                <span style={{ color: currentTheme.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{contentText}</span>
-                <span style={{ fontWeight: '800', color: statusColor, textAlign: 'right', fontSize: '11px', textTransform: 'uppercase' }}>{statusLabel}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Assessments */}
-      {hasAssessments && (
-        <div style={{ marginBottom: '20px', backgroundColor: currentTheme.surface, padding: '12px 16px', borderRadius: '10px', border: `1px solid ${currentTheme.surfaceBorder}` }}>
-          <div style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', color: currentTheme.primary, marginBottom: '6px' }}>ĐÁNH GIÁ & ĐIỂM SỐ:</div>
-          {selectedAssessments.map((a: any, idx: number) => (
-            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', padding: '3px 0' }}>
-              <span>{moment(a.assessment_date).format('DD/MM')} — {a.title}</span>
-              <span style={{ fontWeight: '900', color: currentTheme.primary }}>{a.score} điểm</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Bottom Payment Station */}
-      <div style={{ display: 'grid', gridTemplateColumns: invoiceModal.paperSize === 'A5' ? '1fr 120px' : '1fr 140px', gap: '14px', alignItems: 'center', backgroundColor: currentTheme.surface, padding: '14px 18px', borderRadius: '12px', border: `1px solid ${currentTheme.surfaceBorder}` }}>
-        <div>
-          <div style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', color: currentTheme.muted }}>THÔNG TIN THANH TOÁN</div>
-          {isBankConfigured ? (
-            <div style={{ fontSize: '13px', marginTop: '4px', lineHeight: '1.4' }}>
-              <div>Ngân hàng: <strong>{teacherBank.bank_name || teacherBank.bank_code}</strong></div>
-              <div>STK: <strong style={{ color: currentTheme.primary, fontSize: '14px' }}>{teacherBank.account_number}</strong></div>
-              <div>Chủ TK: <strong>{teacherBank.account_name}</strong></div>
-            </div>
-          ) : (
-            <div style={{ fontSize: '12px', color: '#d97706', fontStyle: 'italic' }}>Chưa cấu hình tài khoản</div>
-          )}
-        </div>
-        {isBankConfigured && (
-          <div style={{ textAlign: 'center', padding: '4px', backgroundColor: '#ffffff', borderRadius: '8px', border: `1px solid ${currentTheme.surfaceBorder}` }}>
-            <img src={qrUrl} alt="QR" style={{ width: '100%', aspectRatio: '1/1', objectFit: 'contain', display: 'block' }} />
-            <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#64748b', marginTop: '3px' }}>{teacherBank.bank_code}</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // RENDERER 05: TIMELINE JOURNEY (Vertical Timeline Axis / Illuminated Nodes / Separate Payment Rail)
+  // RENDERER 03: TIMELINE JOURNEY (Vertical Timeline Axis / Illuminated Nodes / Separate Payment Rail) [KEPT]
   const renderTimelineJourney = () => (
     <div style={{ 
       padding: invoiceModal.paperSize === 'A5' ? '14px' : '24px', 
@@ -972,91 +771,7 @@ const TuitionManager = () => {
     </div>
   );
 
-  // RENDERER 06: MODERN MAGAZINE (Oversized Month Banner / Modular Session Grid / Lifestyle Vibe)
-  const renderModernMagazine = () => (
-    <div style={{ 
-      padding: invoiceModal.paperSize === 'A5' ? '14px' : '24px', 
-      backgroundColor: currentTheme.bg, 
-      borderRadius: '20px', 
-      fontFamily: 'system-ui, -apple-system, sans-serif', 
-      color: currentTheme.text, 
-      border: `1px solid ${currentTheme.surfaceBorder}`,
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.03)'
-    }}>
-      {/* Top Banner Hero */}
-      <div style={{ backgroundColor: currentTheme.surface, padding: '18px 22px', borderRadius: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid ${currentTheme.surfaceBorder}` }}>
-        <div>
-          <span style={{ fontSize: '11px', fontWeight: 'bold', color: currentTheme.primary, textTransform: 'uppercase', letterSpacing: '1px' }}>🌸 THÔNG BÁO HỌC PHÍ</span>
-          <h1 style={{ margin: '4px 0 2px 0', fontSize: invoiceModal.paperSize === 'A5' ? '22px' : '26px', fontWeight: '800', color: currentTheme.text }}>{invoiceModal.bill.full_name}</h1>
-          <div style={{ fontSize: '13px', color: currentTheme.muted }}>Lớp: <strong>{invoiceModal.bill.class_name}</strong> • Kỳ: {moment(invoiceModal.bill.start_date).format('DD/MM')} — {moment(invoiceModal.bill.end_date).format('DD/MM/YYYY')}</div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '11px', color: currentTheme.muted }}>#{invoiceModal.bill.id}</div>
-          <div style={{ fontSize: invoiceModal.paperSize === 'A5' ? '24px' : '28px', fontWeight: '800', color: currentTheme.primary, marginTop: '2px' }}>
-            {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} ₫
-          </div>
-        </div>
-      </div>
-
-      {/* Modular Session Cards */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontSize: '12px', fontWeight: 'bold', color: currentTheme.primary, textTransform: 'uppercase', marginBottom: '10px' }}>
-          DANH SÁCH BUỔI HỌC TRONG KỲ:
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
-          {sessions.map((s: any, idx: number) => {
-            const { statusLabel, statusColor, contentText } = getSessionRowData(s);
-            return (
-              <div key={idx} style={{ backgroundColor: currentTheme.surface, padding: '12px 14px', borderRadius: '14px', border: `1px solid ${currentTheme.surfaceBorder}`, boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <strong style={{ fontSize: '13px', color: currentTheme.text }}>{moment(s.session_date).format('DD/MM/YYYY')}</strong>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px', backgroundColor: `${statusColor}15`, color: statusColor }}>{statusLabel}</span>
-                </div>
-                <div style={{ fontSize: '12px', color: currentTheme.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{contentText}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {hasAssessments && (
-        <div style={{ marginBottom: '20px', backgroundColor: currentTheme.surface, padding: '14px 18px', borderRadius: '16px', border: `1px solid ${currentTheme.surfaceBorder}` }}>
-          <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 'bold', color: currentTheme.primary, marginBottom: '8px' }}>KẾT QUẢ ĐÁNH GIÁ:</div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {selectedAssessments.map((a: any, idx: number) => (
-              <span key={idx} style={{ padding: '4px 10px', backgroundColor: currentTheme.lightBg, borderRadius: '12px', fontSize: '12px', fontWeight: '600', color: currentTheme.primary }}>
-                {a.title}: <strong>{a.score}đ</strong>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Dual Rounded Pods */}
-      <div style={{ display: 'grid', gridTemplateColumns: invoiceModal.paperSize === 'A5' ? '1fr 130px' : '1fr 160px', gap: '14px', alignItems: 'center' }}>
-        <div style={{ backgroundColor: currentTheme.surface, padding: '16px 20px', borderRadius: '16px', border: `1px solid ${currentTheme.surfaceBorder}` }}>
-          <div style={{ fontSize: '11px', fontWeight: 'bold', color: currentTheme.muted, textTransform: 'uppercase' }}>THÔNG TIN CHUYỂN KHOẢN</div>
-          {isBankConfigured ? (
-            <div style={{ fontSize: '13px', color: currentTheme.text, marginTop: '4px', lineHeight: '1.4' }}>
-              <div>Ngân hàng: <strong>{teacherBank.bank_name || teacherBank.bank_code}</strong></div>
-              <div>STK: <strong style={{ color: currentTheme.primary }}>{teacherBank.account_number}</strong></div>
-              <div>Chủ TK: <strong>{teacherBank.account_name}</strong></div>
-            </div>
-          ) : (
-            <div style={{ fontSize: '12px', color: '#d97706', fontStyle: 'italic' }}>Chưa cấu hình tài khoản</div>
-          )}
-        </div>
-        {isBankConfigured && (
-          <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '16px', border: `1px solid ${currentTheme.surfaceBorder}`, textAlign: 'center' }}>
-            <img src={qrUrl} alt="QR" style={{ width: '100%', aspectRatio: '1/1', objectFit: 'contain', display: 'block' }} />
-            <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '4px' }}>{teacherBank.bank_code} • {teacherBank.account_number}</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // RENDERER 07: ORGANIC FLOW (Scandinavian Curves / Flowing Asymmetric Pods)
+  // RENDERER 04: ORGANIC FLOW (Scandinavian Curves / Flowing Asymmetric Pods) [KEPT]
   const renderOrganicFlow = () => (
     <div style={{ 
       padding: invoiceModal.paperSize === 'A5' ? '14px' : '24px', 
@@ -1140,78 +855,451 @@ const TuitionManager = () => {
     </div>
   );
 
-  // RENDERER 08: TYPOGRAPHIC STATEMENT (Type-First Contemporary / Massive Hero Amount Headline)
-  const renderTypographicStatement = () => (
-    <div style={{ padding: invoiceModal.paperSize === 'A5' ? '14px' : '24px', backgroundColor: currentTheme.bg, fontFamily: 'system-ui, -apple-system, sans-serif', color: currentTheme.text }}>
-      {/* Massive Hero Amount Header */}
-      <div style={{ borderBottom: `4px solid ${currentTheme.primary}`, paddingBottom: '16px', marginBottom: '22px' }}>
-        <div style={{ fontSize: '11px', fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase', color: currentTheme.primary }}>
-          OFFICIAL TUITION STATEMENT
-        </div>
-        <div style={{ fontSize: invoiceModal.paperSize === 'A5' ? '32px' : '42px', fontWeight: '900', letterSpacing: '-1.5px', margin: '4px 0', color: currentTheme.primary }}>
-          {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} ₫
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '8px' }}>
-          <div>
-            <div style={{ fontSize: '20px', fontWeight: '800' }}>{invoiceModal.bill.full_name}</div>
-            <div style={{ fontSize: '13px', color: currentTheme.muted, marginTop: '2px' }}>Lớp: <strong>{invoiceModal.bill.class_name}</strong></div>
+  // RENDERER 05: ACADEMIC REGISTRAR DOCKET (Institutional Statement / 4-Col Grid / Transcript Table) [NEW]
+  const renderAcademicDocket = () => (
+    <div style={{ 
+      padding: invoiceModal.paperSize === 'A5' ? '14px' : '24px', 
+      backgroundColor: currentTheme.bg, 
+      color: currentTheme.text, 
+      fontFamily: '"Times New Roman", Times, Georgia, serif',
+      border: `2px solid ${currentTheme.surfaceBorder}`,
+      boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
+    }}>
+      {/* Formal Registrar Banner Header */}
+      <div style={{ borderBottom: `2px solid ${currentTheme.primary}`, paddingBottom: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase', color: currentTheme.primary }}>
+            🏛️ BÁO CÁO HỌC PHÍ & TIẾN TRÌNH HỌC TẬP
           </div>
-          <div style={{ textAlign: 'right', fontSize: '12px', fontWeight: '700', color: currentTheme.muted }}>
-            THÁNG {moment(invoiceModal.bill.start_date).format('MM / YYYY')} • #{invoiceModal.bill.id}
+          <h1 style={{ margin: '4px 0 0 0', fontSize: invoiceModal.paperSize === 'A5' ? '20px' : '26px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+            SỔ QUYẾT TOÁN ĐÀO TẠO
+          </h1>
+        </div>
+        <div style={{ textAlign: 'right', fontSize: '12px', color: currentTheme.muted, fontFamily: 'system-ui, sans-serif' }}>
+          <div>Mã hồ sơ: <strong>#{invoiceModal.bill.id}</strong></div>
+          <div>Ngày lập: {moment().format('DD/MM/YYYY')}</div>
+        </div>
+      </div>
+
+      {/* 4-Column Structured Metadata Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', backgroundColor: currentTheme.surface, padding: '12px', border: `1px solid ${currentTheme.surfaceBorder}`, borderRadius: '4px', marginBottom: '18px', fontSize: '12px', fontFamily: 'system-ui, sans-serif' }}>
+        <div>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: currentTheme.muted, fontWeight: 'bold' }}>HỌC VIÊN:</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: currentTheme.text, marginTop: '2px' }}>{invoiceModal.bill.full_name}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: currentTheme.muted, fontWeight: 'bold' }}>LỚP HỌC:</div>
+          <div style={{ fontSize: '14px', fontWeight: 'bold', color: currentTheme.primary, marginTop: '2px' }}>{invoiceModal.bill.class_name}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: currentTheme.muted, fontWeight: 'bold' }}>KỲ THU PHÍ:</div>
+          <div style={{ fontSize: '13px', fontWeight: '600', marginTop: '2px' }}>{moment(invoiceModal.bill.start_date).format('DD/MM')} — {moment(invoiceModal.bill.end_date).format('DD/MM/YYYY')}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: currentTheme.muted, fontWeight: 'bold' }}>GIÁO VIÊN:</div>
+          <div style={{ fontSize: '13px', fontWeight: '600', marginTop: '2px' }}>{invoiceModal.bill.teacher_name || 'Phụ trách chuyên môn'}</div>
+        </div>
+      </div>
+
+      {/* Official Academic Transcript Table */}
+      <div style={{ marginBottom: '18px', border: `1px solid ${currentTheme.surfaceBorder}`, backgroundColor: currentTheme.surface }}>
+        <div style={{ backgroundColor: currentTheme.lightBg, padding: '8px 12px', fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase', color: currentTheme.primary, borderBottom: `1px solid ${currentTheme.surfaceBorder}`, fontFamily: 'system-ui, sans-serif' }}>
+          DANH MỤC TIẾT HỌC & TÌNH HÌNH CHUYÊN CẦN ({totalSessions} BUỔI)
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+          <thead>
+            <tr style={{ backgroundColor: `${currentTheme.surfaceBorder}40`, borderBottom: `1px solid ${currentTheme.surfaceBorder}`, fontSize: '11px', textTransform: 'uppercase', color: currentTheme.muted, fontFamily: 'system-ui, sans-serif' }}>
+              <th style={{ padding: '7px 10px', textAlign: 'center', width: '40px' }}>STT</th>
+              <th style={{ padding: '7px 10px', textAlign: 'left', width: '90px' }}>Ngày học</th>
+              <th style={{ padding: '7px 10px', textAlign: 'left', width: '110px' }}>Chuyên cần</th>
+              <th style={{ padding: '7px 10px', textAlign: 'left' }}>Nội dung đào tạo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sessions.map((s: any, idx: number) => {
+              const { statusLabel, statusColor, contentText } = getSessionRowData(s);
+              return (
+                <tr key={idx} style={{ borderBottom: `1px solid ${currentTheme.surfaceBorder}60` }}>
+                  <td style={{ padding: '7px 10px', textAlign: 'center', fontWeight: 'bold', color: currentTheme.muted, fontFamily: 'monospace' }}>{idx + 1}</td>
+                  <td style={{ padding: '7px 10px', fontWeight: 'bold' }}>{moment(s.session_date).format('DD/MM/YYYY')}</td>
+                  <td style={{ padding: '7px 10px', color: statusColor, fontWeight: 'bold', fontSize: '12px' }}>{statusLabel}</td>
+                  <td style={{ padding: '7px 10px', color: currentTheme.text }}>{contentText}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Official Assessment Records */}
+      {hasAssessments && (
+        <div style={{ marginBottom: '18px', border: `1px solid ${currentTheme.surfaceBorder}`, padding: '10px 14px', backgroundColor: currentTheme.surface, borderRadius: '4px', fontFamily: 'system-ui, sans-serif' }}>
+          <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: currentTheme.primary, fontWeight: 'bold', marginBottom: '6px' }}>
+            KẾT QUẢ ĐÁNH GIÁ ĐỊNH KỲ:
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+            {selectedAssessments.map((a: any, idx: number) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', backgroundColor: currentTheme.lightBg, borderRadius: '4px', fontSize: '12px' }}>
+                <span>{moment(a.assessment_date).format('DD/MM')} — {a.title}</span>
+                <strong style={{ color: currentTheme.primary }}>{a.score}đ</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 2-Column Financial Reconciliation Box */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', borderTop: `2px solid ${currentTheme.primary}`, paddingTop: '14px', fontFamily: 'system-ui, sans-serif' }}>
+        <div>
+          <div style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: currentTheme.muted }}>QUYẾT TOÁN HỌC PHÍ KỲ NÀY:</div>
+          <div style={{ fontSize: invoiceModal.paperSize === 'A5' ? '24px' : '28px', fontWeight: 'bold', color: currentTheme.primary, marginTop: '2px' }}>
+            {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} ₫
+          </div>
+          <div style={{ fontSize: '11px', color: currentTheme.muted, fontStyle: 'italic', marginTop: '2px' }}>
+            ({numberToVietnameseWords(Number(invoiceModal.bill.total_amount) || 0)})
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: currentTheme.surface, padding: '10px 14px', border: `1px solid ${currentTheme.surfaceBorder}`, borderRadius: '4px' }}>
+          <div style={{ fontSize: '12px', color: currentTheme.text, lineHeight: '1.4' }}>
+            {isBankConfigured ? (
+              <>
+                <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold', color: currentTheme.muted }}>TÀI KHOẢN TIẾP NHẬN:</div>
+                <div>{teacherBank.bank_name || teacherBank.bank_code}</div>
+                <div>STK: <strong style={{ color: currentTheme.primary }}>{teacherBank.account_number}</strong></div>
+                <div style={{ fontSize: '11px', color: currentTheme.muted }}>{teacherBank.account_name}</div>
+              </>
+            ) : (
+              <div style={{ fontStyle: 'italic', color: currentTheme.muted }}>Chưa cấu hình tài khoản.</div>
+            )}
+          </div>
+          {isBankConfigured && (
+            <div style={{ backgroundColor: '#ffffff', padding: '4px', border: `1px solid ${currentTheme.surfaceBorder}`, textAlign: 'center' }}>
+              <img src={qrUrl} alt="QR" style={{ width: '90px', height: '90px', objectFit: 'contain', display: 'block' }} />
+              <div style={{ fontSize: '8px', color: '#6b7280', marginTop: '2px' }}>{teacherBank.bank_code}</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // RENDERER 06: EXECUTIVE SPLIT-PANE (True 50/50 Dual-Pane Split Layout) [NEW]
+  const renderExecutiveSplit = () => (
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: invoiceModal.paperSize === 'A5' ? '1fr 1fr' : '320px 1fr', 
+      gap: '16px', 
+      backgroundColor: currentTheme.bg, 
+      borderRadius: '16px', 
+      padding: '16px', 
+      fontFamily: 'system-ui, -apple-system, sans-serif', 
+      color: currentTheme.text,
+      border: `1px solid ${currentTheme.surfaceBorder}`,
+      boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
+    }}>
+      {/* Left Pane: Financial & Identity Hub */}
+      <div style={{ 
+        backgroundColor: currentTheme.surface, 
+        padding: '20px', 
+        borderRadius: '12px', 
+        border: `1px solid ${currentTheme.surfaceBorder}`, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'space-between',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+      }}>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase', color: currentTheme.primary }}>
+            EXECUTIVE TUITION STATEMENT
+          </div>
+          <h1 style={{ margin: '8px 0 2px 0', fontSize: invoiceModal.paperSize === 'A5' ? '20px' : '24px', fontWeight: '800', color: currentTheme.text }}>
+            {invoiceModal.bill.full_name}
+          </h1>
+          <div style={{ fontSize: '13px', color: currentTheme.muted }}>
+            Lớp: <strong style={{ color: currentTheme.primary }}>{invoiceModal.bill.class_name}</strong>
+          </div>
+          <div style={{ fontSize: '11px', color: currentTheme.muted, marginTop: '4px' }}>
+            📅 Kỳ học: {moment(invoiceModal.bill.start_date).format('DD/MM')} — {moment(invoiceModal.bill.end_date).format('DD/MM/YYYY')}
+          </div>
+
+          {/* Amount Box */}
+          <div style={{ marginTop: '20px', padding: '14px', backgroundColor: currentTheme.lightBg, borderRadius: '10px', border: `1px solid ${currentTheme.primary}30` }}>
+            <div style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', color: currentTheme.muted }}>TỔNG HỌC PHÍ KỲ NÀY</div>
+            <div style={{ fontSize: invoiceModal.paperSize === 'A5' ? '22px' : '26px', fontWeight: '900', color: currentTheme.primary, letterSpacing: '-0.5px', marginTop: '2px' }}>
+              {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} ₫
+            </div>
+            <div style={{ fontSize: '10px', color: currentTheme.muted, fontStyle: 'italic', marginTop: '2px' }}>
+              {numberToVietnameseWords(Number(invoiceModal.bill.total_amount) || 0)}
+            </div>
+          </div>
+
+          {/* Assessment Mini Highlights */}
+          {hasAssessments && (
+            <div style={{ marginTop: '16px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', color: currentTheme.muted, marginBottom: '6px' }}>ĐÁNH GIÁ ĐỊNH KỲ:</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {selectedAssessments.map((a: any, idx: number) => (
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', padding: '3px 6px', backgroundColor: `${currentTheme.surfaceBorder}40`, borderRadius: '4px' }}>
+                    <span style={{ color: currentTheme.text }}>{a.title}</span>
+                    <strong style={{ color: currentTheme.primary }}>{a.score}đ</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Banking & White QR Station */}
+        <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: `1px solid ${currentTheme.surfaceBorder}` }}>
+          {isBankConfigured ? (
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div style={{ backgroundColor: '#ffffff', padding: '6px', borderRadius: '8px', border: `1px solid ${currentTheme.surfaceBorder}`, flexShrink: 0 }}>
+                <img src={qrUrl} alt="QR" style={{ width: '85px', height: '85px', objectFit: 'contain', display: 'block' }} />
+              </div>
+              <div style={{ fontSize: '11px', color: currentTheme.text, lineHeight: '1.4' }}>
+                <div style={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', color: currentTheme.muted }}>NGÂN HÀNG:</div>
+                <div style={{ fontWeight: 'bold' }}>{teacherBank.bank_name || teacherBank.bank_code}</div>
+                <div style={{ color: currentTheme.primary, fontWeight: 'bold' }}>{teacherBank.account_number}</div>
+                <div style={{ fontSize: '10px', color: currentTheme.muted }}>{teacherBank.account_name}</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: '11px', color: currentTheme.muted, fontStyle: 'italic' }}>Chưa cấu hình tài khoản</div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Pane: Dedicated Learning Journal */}
+      <div style={{ 
+        backgroundColor: currentTheme.surface, 
+        padding: '20px', 
+        borderRadius: '12px', 
+        border: `1px solid ${currentTheme.surfaceBorder}`,
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `2px solid ${currentTheme.primary}`, paddingBottom: '8px', marginBottom: '14px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', color: currentTheme.primary }}>
+            NHẬT KÝ CHI TIẾT CÁC BUỔI HỌC
+          </div>
+          <span style={{ fontSize: '11px', fontWeight: 'bold', color: currentTheme.muted }}>
+            Tổng: {totalSessions} buổi
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+          {sessions.map((s: any, idx: number) => {
+            const { statusLabel, statusColor, contentText } = getSessionRowData(s);
+            return (
+              <div key={idx} style={{ padding: '10px 12px', backgroundColor: currentTheme.bg, borderRadius: '8px', border: `1px solid ${currentTheme.surfaceBorder}`, fontSize: '12.5px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                  <strong style={{ color: currentTheme.text }}>📅 {moment(s.session_date).format('DD/MM/YYYY')}</strong>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '10px', backgroundColor: `${statusColor}18`, color: statusColor }}>{statusLabel}</span>
+                </div>
+                <div style={{ color: currentTheme.muted, fontSize: '12px' }}>{contentText}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  // RENDERER 07: PERFORATED TUITION PASS / VOUCHER STUB (Ticket / Boarding Pass Format) [NEW]
+  const renderVoucherPass = () => (
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: invoiceModal.paperSize === 'A5' ? '1fr 140px' : '1fr 220px', 
+      backgroundColor: currentTheme.surface, 
+      borderRadius: '16px', 
+      fontFamily: 'system-ui, -apple-system, sans-serif', 
+      color: currentTheme.text,
+      border: `2px solid ${currentTheme.surfaceBorder}`,
+      boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+      overflow: 'hidden',
+      position: 'relative'
+    }}>
+      {/* Left Main Ticket Body */}
+      <div style={{ padding: invoiceModal.paperSize === 'A5' ? '16px' : '22px', borderRight: `2px dashed ${currentTheme.primary}60`, position: 'relative' }}>
+        {/* Ticket Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `1px solid ${currentTheme.surfaceBorder}`, paddingBottom: '12px', marginBottom: '16px' }}>
+          <div>
+            <div style={{ fontSize: '9px', fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase', color: currentTheme.primary }}>
+              🎫 ACADEMIC TUITION PASS
+            </div>
+            <h1 style={{ margin: '4px 0', fontSize: invoiceModal.paperSize === 'A5' ? '20px' : '26px', fontWeight: '900', color: currentTheme.text }}>
+              {invoiceModal.bill.full_name}
+            </h1>
+            <div style={{ fontSize: '13px', color: currentTheme.muted }}>
+              Lớp: <strong>{invoiceModal.bill.class_name}</strong> • Mã vé: #{invoiceModal.bill.id}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', backgroundColor: currentTheme.lightBg, color: currentTheme.primary, borderRadius: '20px' }}>
+              {moment(invoiceModal.bill.start_date).format('DD/MM')} — {moment(invoiceModal.bill.end_date).format('DD/MM/YYYY')}
+            </span>
+          </div>
+        </div>
+
+        {/* Compact Session Matrix */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', color: currentTheme.muted, marginBottom: '8px' }}>
+            LỊCH TRÌNH BUỔI HỌC ({totalSessions} BUỔI):
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+            {sessions.map((s: any, idx: number) => {
+              const { statusLabel, statusColor, contentText } = getSessionRowData(s);
+              return (
+                <div key={idx} style={{ padding: '8px 10px', backgroundColor: currentTheme.bg, borderRadius: '8px', border: `1px solid ${currentTheme.surfaceBorder}`, fontSize: '11.5px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <strong style={{ color: currentTheme.text }}>{moment(s.session_date).format('DD/MM')}</strong>
+                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: statusColor }}>{statusLabel}</span>
+                  </div>
+                  <div style={{ color: currentTheme.muted, fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{contentText}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Assessment mini row */}
+        {hasAssessments && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', paddingTop: '10px', borderTop: `1px solid ${currentTheme.surfaceBorder}` }}>
+            <span style={{ fontSize: '10px', fontWeight: 'bold', color: currentTheme.muted, textTransform: 'uppercase' }}>ĐIỂM:</span>
+            {selectedAssessments.map((a: any, idx: number) => (
+              <span key={idx} style={{ fontSize: '11px', padding: '2px 8px', backgroundColor: currentTheme.lightBg, borderRadius: '6px', color: currentTheme.primary, fontWeight: 'bold' }}>
+                {a.title}: {a.score}đ
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Right Perforated Voucher Stub */}
+      <div style={{ 
+        backgroundColor: currentTheme.lightBg, 
+        padding: invoiceModal.paperSize === 'A5' ? '14px 10px' : '20px 16px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        textAlign: 'center'
+      }}>
+        <div>
+          <div style={{ fontSize: '9px', fontWeight: '900', letterSpacing: '1.5px', textTransform: 'uppercase', color: currentTheme.muted }}>VOUCHER STUB</div>
+          <div style={{ fontSize: invoiceModal.paperSize === 'A5' ? '18px' : '22px', fontWeight: '900', color: currentTheme.primary, letterSpacing: '-0.5px', marginTop: '6px' }}>
+            {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} ₫
+          </div>
+          <div style={{ fontSize: '9px', color: currentTheme.muted, fontStyle: 'italic', marginTop: '2px' }}>
+            {numberToVietnameseWords(Number(invoiceModal.bill.total_amount) || 0)}
+          </div>
+        </div>
+
+        {/* Boarding Pass QR Station */}
+        {isBankConfigured ? (
+          <div style={{ backgroundColor: '#ffffff', padding: '8px', borderRadius: '10px', border: `1px solid ${currentTheme.surfaceBorder}`, width: '100%', maxWidth: '130px', boxSizing: 'border-box' }}>
+            <img src={qrUrl} alt="QR" style={{ width: '100%', aspectRatio: '1/1', objectFit: 'contain', display: 'block' }} />
+            <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#111827', marginTop: '4px' }}>{teacherBank.bank_code}</div>
+            <div style={{ fontSize: '8px', color: '#6b7280' }}>{teacherBank.account_number}</div>
+          </div>
+        ) : (
+          <div style={{ fontSize: '10px', color: currentTheme.muted }}>Chưa cấu hình TK</div>
+        )}
+
+        <div style={{ fontSize: '9px', color: currentTheme.muted, letterSpacing: '2px', fontFamily: 'monospace' }}>
+          *PASS-{invoiceModal.bill.id}*
+        </div>
+      </div>
+    </div>
+  );
+
+  // RENDERER 08: MINIMAL BROADSHEET INDEX (Zero Cards / High-Contrast Hairline Rules / High Whitespace) [NEW]
+  const renderMinimalBroadsheet = () => (
+    <div style={{ 
+      padding: invoiceModal.paperSize === 'A5' ? '16px' : '26px', 
+      backgroundColor: currentTheme.bg, 
+      fontFamily: 'system-ui, -apple-system, sans-serif', 
+      color: currentTheme.text 
+    }}>
+      {/* Asymmetric Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `2px solid ${currentTheme.text}`, paddingBottom: '16px', marginBottom: '24px' }}>
+        <div>
+          <div style={{ fontSize: '9px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase', color: currentTheme.muted }}>
+            ACADEMIC STATEMENT
+          </div>
+          <h1 style={{ margin: '6px 0 2px 0', fontSize: invoiceModal.paperSize === 'A5' ? '24px' : '32px', fontWeight: '900', letterSpacing: '-0.5px' }}>
+            {invoiceModal.bill.full_name}
+          </h1>
+          <div style={{ fontSize: '13px', color: currentTheme.muted }}>
+            Lớp: <strong style={{ color: currentTheme.text }}>{invoiceModal.bill.class_name}</strong> • Kỳ: {moment(invoiceModal.bill.start_date).format('DD.MM.YY')} — {moment(invoiceModal.bill.end_date).format('DD.MM.YY')}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', color: currentTheme.muted, letterSpacing: '1px' }}>HỌC PHÍ</div>
+          <div style={{ fontSize: invoiceModal.paperSize === 'A5' ? '26px' : '34px', fontWeight: '900', letterSpacing: '-1px', color: currentTheme.primary }}>
+            {Number(invoiceModal.bill.total_amount).toLocaleString('vi-VN')} ₫
           </div>
         </div>
       </div>
 
-      {/* Heavy Statement Numbered Blocks */}
-      <div style={{ marginBottom: '22px' }}>
+      {/* Floating Typographic Session Index */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', color: currentTheme.muted, borderBottom: `1px solid ${currentTheme.surfaceBorder}`, paddingBottom: '6px', marginBottom: '12px' }}>
+          DANH MỤC TIẾT HỌC ({totalSessions})
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {sessions.map((s: any, idx: number) => {
             const { statusLabel, statusColor, contentText } = getSessionRowData(s);
-            const seq = String(idx + 1).padStart(2, '0');
             return (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '40px 90px 1fr 100px', alignItems: 'center', borderBottom: `2px solid ${currentTheme.surfaceBorder}`, paddingBottom: '8px', fontSize: '13px' }}>
-                <span style={{ fontSize: '16px', fontWeight: '900', color: currentTheme.primary }}>{seq}</span>
-                <span style={{ fontWeight: '700' }}>{moment(s.session_date).format('DD/MM/YYYY')}</span>
-                <span style={{ fontWeight: '500', color: currentTheme.text }}>{contentText}</span>
-                <span style={{ fontWeight: '900', color: statusColor, textAlign: 'right', textTransform: 'uppercase', fontSize: '11px' }}>{statusLabel}</span>
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: `1px solid ${currentTheme.surfaceBorder}80`, paddingBottom: '8px', fontSize: '13px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
+                  <span style={{ fontWeight: '800', width: '90px', color: currentTheme.text }}>{moment(s.session_date).format('DD.MM.YYYY')}</span>
+                  <span style={{ color: currentTheme.muted }}>{contentText}</span>
+                </div>
+                <span style={{ fontWeight: 'bold', color: statusColor, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{statusLabel}</span>
               </div>
             );
           })}
         </div>
       </div>
 
+      {/* Assessments minimal strip */}
       {hasAssessments && (
-        <div style={{ marginBottom: '22px', border: `2px solid ${currentTheme.primary}`, padding: '12px 16px', backgroundColor: currentTheme.surface }}>
-          <div style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '6px', color: currentTheme.primary }}>KẾT QUẢ ĐÁNH GIÁ:</div>
-          {selectedAssessments.map((a: any, idx: number) => (
-            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: '700', padding: '3px 0' }}>
-              <span>{moment(a.assessment_date).format('DD/MM')} — {a.title}</span>
-              <span style={{ color: currentTheme.primary }}>{a.score} / 10</span>
-            </div>
-          ))}
+        <div style={{ marginBottom: '24px', borderTop: `1px solid ${currentTheme.surfaceBorder}`, paddingTop: '12px' }}>
+          <div style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', color: currentTheme.muted, marginBottom: '6px' }}>ĐÁNH GIÁ ĐỊNH KỲ:</div>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '12.5px' }}>
+            {selectedAssessments.map((a: any, idx: number) => (
+              <span key={idx}>
+                {a.title}: <strong style={{ color: currentTheme.primary }}>{a.score}đ</strong>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Bottom High-Impact QR Block */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `2px solid ${currentTheme.primary}`, paddingTop: '16px' }}>
-        <div>
-          <div style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', color: currentTheme.muted }}>THÔNG TIN CHUYỂN KHOẢN:</div>
-          {isBankConfigured ? (
-            <div style={{ fontSize: '13px', fontWeight: '700', marginTop: '4px', lineHeight: '1.4' }}>
+      {/* Minimal Footer: QR on bottom-left, bank details on bottom-right */}
+      <div style={{ borderTop: `2px solid ${currentTheme.text}`, paddingTop: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {isBankConfigured ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ backgroundColor: '#ffffff', padding: '6px', border: `1px solid ${currentTheme.surfaceBorder}`, borderRadius: '4px' }}>
+              <img src={qrUrl} alt="QR" style={{ width: '85px', height: '85px', objectFit: 'contain', display: 'block' }} />
+            </div>
+            <div style={{ fontSize: '12px', lineHeight: '1.4' }}>
+              <div style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', color: currentTheme.muted }}>CHUYỂN KHOẢN TỚI:</div>
               <div>{teacherBank.bank_name || teacherBank.bank_code}</div>
-              <div style={{ fontSize: '15px', color: currentTheme.primary }}>{teacherBank.account_number}</div>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: currentTheme.primary }}>{teacherBank.account_number}</div>
               <div style={{ color: currentTheme.muted }}>{teacherBank.account_name}</div>
             </div>
-          ) : (
-            <div style={{ fontSize: '12px', color: '#d97706', fontStyle: 'italic' }}>Chưa cấu hình tài khoản</div>
-          )}
-        </div>
-        {isBankConfigured && (
-          <div style={{ border: `2px solid ${currentTheme.primary}`, padding: '6px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '6px' }}>
-            <img src={qrUrl} alt="QR" style={{ width: '110px', height: '110px', objectFit: 'contain', display: 'block' }} />
-            <div style={{ fontSize: '9px', fontWeight: '900', marginTop: '2px', color: '#111827' }}>{teacherBank.bank_code} • {teacherBank.account_number}</div>
           </div>
+        ) : (
+          <div style={{ fontSize: '12px', color: currentTheme.muted, fontStyle: 'italic' }}>Chưa cấu hình tài khoản</div>
         )}
+
+        <div style={{ textAlign: 'right', fontSize: '11px', color: currentTheme.muted }}>
+          <div>#{invoiceModal.bill.id}</div>
+          <div>Bằng chữ: {numberToVietnameseWords(Number(invoiceModal.bill.total_amount) || 0)}</div>
+        </div>
       </div>
     </div>
   );
@@ -1625,7 +1713,7 @@ const TuitionManager = () => {
                   <Button onClick={handlePrint} variant="primary" size="sm">
                     🖨️ In Phiếu
                   </Button>
-                  <Button onClick={() => setInvoiceModal({ show: false, bill: null, sessions: [], availableAssessments: [], selectedAssessmentIds: [], showAssessmentPicker: false, teacherBank: null, teacher_note: '', template: 'editorial', colorTheme: 'peach', customPrimaryColor: '', paperSize: 'A4' })} variant="ghost" size="sm">
+                  <Button onClick={() => setInvoiceModal({ show: false, bill: null, sessions: [], availableAssessments: [], selectedAssessmentIds: [], showAssessmentPicker: false, teacherBank: null, teacher_note: '', template: 'swiss', colorTheme: 'peach', customPrimaryColor: '', paperSize: 'A4' })} variant="ghost" size="sm">
                     Đóng
                   </Button>
                 </div>
@@ -1699,14 +1787,14 @@ const TuitionManager = () => {
                 backgroundColor: currentTheme.bg
               }}
             >
-              {invoiceModal.template === 'editorial' && renderEditorialPortrait()}
               {invoiceModal.template === 'swiss' && renderSwissGrid()}
               {invoiceModal.template === 'vintage' && renderVintageLetter()}
-              {invoiceModal.template === 'geometric' && renderColorBlock()}
               {invoiceModal.template === 'timeline' && renderTimelineJourney()}
-              {invoiceModal.template === 'magazine' && renderModernMagazine()}
               {invoiceModal.template === 'organic' && renderOrganicFlow()}
-              {invoiceModal.template === 'statement' && renderTypographicStatement()}
+              {invoiceModal.template === 'academic_docket' && renderAcademicDocket()}
+              {invoiceModal.template === 'executive_split' && renderExecutiveSplit()}
+              {invoiceModal.template === 'voucher_pass' && renderVoucherPass()}
+              {invoiceModal.template === 'minimal_broadsheet' && renderMinimalBroadsheet()}
 
               {/* ========================================================================= */}
               {/* NHẬN XÉT CỦA GIÁO VIÊN */}
