@@ -7,7 +7,6 @@ import ClassManagement from './pages/ClassManagement';
 import ClassDetail from './pages/ClassDetail';
 import StudentLogin from './pages/StudentLogin';
 import StudentDashboard from './pages/StudentDashboard';
-import StudentSchedule from './pages/StudentSchedule';
 import TeacherCalendar from './pages/TeacherCalendar';
 import AdminLayout from './components/AdminLayout'; 
 import StudentLayout from './components/StudentLayout';
@@ -51,7 +50,6 @@ function App() {
         {/* NHÓM: Dành cho Học sinh (Có Menu Học sinh) */}
         <Route element={<StudentLayout />}>
           <Route path="/student/dashboard" element={<StudentDashboard />} />
-          <Route path="/student/schedule" element={<StudentSchedule />} />
           <Route path="/student/documents" element={<StudentDocuments />} /> 
         </Route>
 
