@@ -1,4 +1,4 @@
-```tsx
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import axiosClient from '../api/axiosClient';
@@ -702,4 +702,3 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
-```
