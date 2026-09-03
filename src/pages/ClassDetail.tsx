@@ -470,6 +470,16 @@ const ClassDetail = () => {
           <Button onClick={() => navigate('/classes')} variant="outline" size="sm" style={{ minHeight: '44px' }}>
             Quay lại danh sách
           </Button>
+          {classInfo?.class_type === 'ONLINE' && classInfo?.meet_link && (
+            <a
+              href={classInfo.meet_link}
+              target="_blank"
+              rel="noreferrer"
+              style={{ textDecoration: 'none' }}
+            >
+              <Button variant="primary">🎥 Mở Link Meet</Button>
+            </a>
+          )}
           <Button onClick={handleDeleteClass} variant="danger" size="sm" style={{ minHeight: '44px' }}>
             🗑️ Xóa lớp
           </Button>
