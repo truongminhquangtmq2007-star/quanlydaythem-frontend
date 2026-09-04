@@ -440,9 +440,17 @@ const finalPart3Key = editContent.part3.reduce((acc: any, q: any) => {
 
   const findGroupIfFirst = (part: 'part1' | 'part2' | 'part3', qId: number): SharedContext | null => {
     const groups: SharedContext[] = editContent?.sharedContexts || editContent?.shared_context || [];
-    const group = groups.find((g) => (g.part === part || (!g.part && part === 'part1')) && g.questionIds.includes(qId));
+    const group = groups.find((g) => {
+      const qIds = (g.questionIds || (g as any).question_ids || []).map(Number);
+      const inPart = g.part === part || (!g.part && (
+        (editContent?.[part] || []).some((q: any) => qIds.includes(Number(q.id)))
+      ));
+      return inPart && qIds.includes(Number(qId));
+    });
     if (!group) return null;
-    return qId === Math.min(...group.questionIds) ? group : null;
+    const qIds = (group.questionIds || (group as any).question_ids || []).map(Number);
+    const minId = Math.min(...qIds);
+    return Number(qId) === minId ? group : null;
   };
 
 

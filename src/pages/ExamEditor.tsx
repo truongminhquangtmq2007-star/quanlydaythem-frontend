@@ -244,13 +244,27 @@ const ExamEditor = () => {
 })}  //  SỬA: Đóng vòng lặp map của Phần 2 tại đây
 
 <h3 style={{ color: 'var(--color-primary)' }}>Phần 3: Trả lời ngắn</h3>
-{examData.part3?.map((q: any, i: number) => (
-  <div key={`p3-${i}`} style={{ marginBottom: '25px', padding: 'var(--spacing-4)', backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius-md)' }}>
-    <div style={{ fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-2)', fontSize: 'var(--font-size-base)' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
-    {q.image_url && <div style={{ marginBottom: 'var(--spacing-2)' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }} /></div>}
-    <div style={{ color: '#16a34a', fontWeight: 'var(--font-weight-bold)' }}>Đáp án: {q.correctAnswer}</div>
-  </div>
-))}
+{examData.part3?.map((q: any, i: number) => {
+  const ctx = q.context_id && (i === 0 || examData.part3[i - 1].context_id !== q.context_id)
+    ? (examData.sharedContexts || examData.shared_context)?.find((c: any) => String(c.id) === String(q.context_id))
+    : null;
+
+  return (
+    <React.Fragment key={`p3-frag-${i}`}>
+      {ctx && (
+        <div style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-4)', backgroundColor: '#fef3c7', borderRadius: 'var(--radius-md)', border: '1px dashed var(--color-warning)' }}>
+          <strong>📖 Ngữ cảnh chung:</strong> {renderMathText(ctx.content)}
+          {ctx.image_url && <div style={{ marginTop: 'var(--spacing-2)' }}><img src={ctx.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: 'var(--radius-md)' }} /></div>}
+        </div>
+      )}
+      <div key={`p3-${i}`} style={{ marginBottom: '25px', padding: 'var(--spacing-4)', backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius-md)' }}>
+        <div style={{ fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-2)', fontSize: 'var(--font-size-base)' }}>Câu {q.id || i+1}: {renderMathText(q.questionText)}</div>
+        {q.image_url && <div style={{ marginBottom: 'var(--spacing-2)' }}><img src={q.image_url} style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }} /></div>}
+        <div style={{ color: '#16a34a', fontWeight: 'var(--font-weight-bold)' }}>Đáp án: {q.correctAnswer}</div>
+      </div>
+    </React.Fragment>
+  );
+})}
 {/* XÓA thẻ </React.Fragment> thừa bị rớt xuống đây */}
       </div>
 

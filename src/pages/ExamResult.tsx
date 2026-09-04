@@ -80,10 +80,17 @@ const formatDuration = (seconds: number): string => {
 const findGroupIfFirst = (examData: any, part: string, qId: number): SharedContext | null => {
   if (!examData) return null;
   const groups: SharedContext[] = examData?.sharedContexts || examData?.shared_context || [];
-  const group = groups.find((g) => (g.part === part || (!g.part && part === 'part1')) && g.questionIds?.includes(qId));
+  const group = groups.find((g) => {
+    const qIds = (g.questionIds || (g as any).question_ids || []).map(Number);
+    const inPart = g.part === part || (!g.part && (
+      (examData?.[part] || []).some((q: any) => qIds.includes(Number(q.id)))
+    ));
+    return inPart && qIds.includes(Number(qId));
+  });
   if (!group) return null;
-  const minId = Math.min(...group.questionIds);
-  return qId === minId ? group : null;
+  const qIds = (group.questionIds || (group as any).question_ids || []).map(Number);
+  const minId = Math.min(...qIds);
+  return Number(qId) === minId ? group : null;
 };
 
 const renderGroupBlock = (group: SharedContext) => (
