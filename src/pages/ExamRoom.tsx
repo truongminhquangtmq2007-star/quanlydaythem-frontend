@@ -216,9 +216,24 @@ const ExamRoom = () => {
         const draft = res.data.draft;
         const answers = typeof draft.student_answers === 'string' ? JSON.parse(draft.student_answers) : draft.student_answers;
         if (answers) {
-          if (answers.part1) setPart1Answers(answers.part1);
-          if (answers.part2) setPart2Answers(answers.part2);
-          if (answers.part3) setPart3Answers(answers.part3);
+          if (Array.isArray(answers)) {
+            const p1: any = {};
+            const p2: any = {};
+            const p3: any = {};
+            answers.forEach((item: any) => {
+              const qId = item.question_id || item.id;
+              if (item.part === 'part2' || item.part_number === 2) p2[qId] = item.student_answer;
+              else if (item.part === 'part3' || item.part_number === 3) p3[qId] = item.student_answer;
+              else if (item.part === 'part1' || item.part_number === 1) p1[qId] = item.student_answer;
+            });
+            setPart1Answers(p1);
+            setPart2Answers(p2);
+            setPart3Answers(p3);
+          } else if (typeof answers === 'object') {
+            if (answers.part1) setPart1Answers(answers.part1);
+            if (answers.part2) setPart2Answers(answers.part2);
+            if (answers.part3) setPart3Answers(answers.part3);
+          }
         }
         if (draft.time_taken_seconds) {
           elapsedTimeRef.current = draft.time_taken_seconds;
@@ -461,9 +476,9 @@ const ExamRoom = () => {
     if (examData?.part3) totalQ += examData.part3.length;
 
     const allQuestions = [
-      ...(examData?.part1 || []),
-      ...(examData?.part2 || []),
-      ...(examData?.part3 || [])
+      ...(examData?.part1 || []).map((q: any) => ({ ...q, part: 'part1', part_number: 1 })),
+      ...(examData?.part2 || []).map((q: any) => ({ ...q, part: 'part2', part_number: 2 })),
+      ...(examData?.part3 || []).map((q: any) => ({ ...q, part: 'part3', part_number: 3 }))
     ];
 
     return (
@@ -508,7 +523,7 @@ const ExamRoom = () => {
                         return (
                           <React.Fragment key={q.id}>
                             {group && renderGroupBlock(group)}
-                            <div id={`q-${q.id}`} style={examStyles.questionBox}>
+                            <div id={`q-part1-${q.id}`} style={examStyles.questionBox}>
                               {q.image_url && <ImageBlock url={q.image_url} />}
                               <div style={examStyles.questionText}>
                                 <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
@@ -537,7 +552,7 @@ const ExamRoom = () => {
                         return (
                           <React.Fragment key={q.id}>
                             {group && renderGroupBlock(group)}
-                            <div id={`q-${q.id}`} style={examStyles.questionBox}>
+                            <div id={`q-part2-${q.id}`} style={examStyles.questionBox}>
                               {q.image_url && <ImageBlock url={q.image_url} />}
                               <div style={examStyles.questionText}>
                                 <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
@@ -587,7 +602,7 @@ const ExamRoom = () => {
                         return (
                           <React.Fragment key={q.id}>
                             {group && renderGroupBlock(group)}
-                            <div id={`q-${q.id}`} style={examStyles.questionBox}>
+                            <div id={`q-part3-${q.id}`} style={examStyles.questionBox}>
                               {q.image_url && <ImageBlock url={q.image_url} />}
                               <div style={examStyles.questionText}>
                                 <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
@@ -617,8 +632,9 @@ const ExamRoom = () => {
             part1Answers={part1Answers}
             part2Answers={part2Answers}
             part3Answers={part3Answers}
-            onScrollToQuestion={(qId) => {
-              const el = document.getElementById(`q-${qId}`);
+            onScrollToQuestion={(q) => {
+              const qPart = q.part || (q.part_number === 2 ? 'part2' : q.part_number === 3 ? 'part3' : 'part1');
+              const el = document.getElementById(`q-${qPart}-${q.id}`) || document.getElementById(`q-${q.id}`);
               if (el) {
                 const container = document.getElementById('exam-scroll-area');
                 if (container) {

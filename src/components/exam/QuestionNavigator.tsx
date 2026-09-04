@@ -5,7 +5,7 @@ interface QuestionNavigatorProps {
   part1Answers: {[key: number]: string};
   part2Answers: {[key: number]: {[sub: string]: string}};
   part3Answers: {[key: number]: string};
-  onScrollToQuestion: (qId: number) => void;
+  onScrollToQuestion: (q: any) => void;
   onSubmitClick: () => void;
 }
 
@@ -18,13 +18,17 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
   onSubmitClick
 }) => {
   const getStatus = (q: any) => {
-    if (q.part === '1' && part1Answers[q.id]) return 'answered';
-    if (q.part === '3' && part3Answers[q.id] && part3Answers[q.id].trim() !== '') return 'answered';
-    if (q.part === '2') {
+    const isP1 = q.part === '1' || q.part === 'part1' || q.part_number === 1;
+    const isP2 = q.part === '2' || q.part === 'part2' || q.part_number === 2;
+    const isP3 = q.part === '3' || q.part === 'part3' || q.part_number === 3;
+
+    if (isP1 && part1Answers[q.id]) return 'answered';
+    if (isP3 && part3Answers[q.id] && String(part3Answers[q.id]).trim() !== '') return 'answered';
+    if (isP2) {
       const p2 = part2Answers[q.id] || {};
-      const subs = q.sub_questions || [];
-      if (subs.length > 0 && subs.every((sub: any) => p2[sub.id])) return 'answered';
-      if (subs.length > 0 && subs.some((sub: any) => p2[sub.id])) return 'partial';
+      const stmts = q.statements ? Object.keys(q.statements) : (q.sub_questions?.map((s: any) => s.id || s) || ['a', 'b', 'c', 'd']);
+      if (stmts.length > 0 && stmts.every((s: string) => p2[s])) return 'answered';
+      if (stmts.length > 0 && stmts.some((s: string) => p2[s])) return 'partial';
     }
     return 'unanswered';
   };
@@ -63,8 +67,8 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
 
             return (
               <button
-                key={q.id}
-                onClick={() => onScrollToQuestion(q.id)}
+                key={`${q.part || 'p'}-${q.id}-${idx}`}
+                onClick={() => onScrollToQuestion(q)}
                 style={{
                   width: '100%',
                   aspectRatio: '1',

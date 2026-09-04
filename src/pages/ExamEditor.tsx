@@ -95,6 +95,8 @@ const ExamEditor = () => {
           context_temp_id: q.context_id ? contextMap[q.context_id] : null,
           content: q.questionText,
           question_type: 'MCQ',
+          part_number: 1,
+          part: 'part1',
           difficulty: 'MEDIUM',
           raw_latex: q.questionText,
           options: [
@@ -112,6 +114,8 @@ const ExamEditor = () => {
           context_temp_id: q.context_id ? contextMap[q.context_id] : null,
           content: q.questionText,
           question_type: 'TRUE_FALSE',
+          part_number: 2,
+          part: 'part2',
           difficulty: 'MEDIUM',
           raw_latex: q.questionText,
           options: [
@@ -129,6 +133,8 @@ const ExamEditor = () => {
           context_temp_id: q.context_id ? contextMap[q.context_id] : null,
           content: q.questionText,
           question_type: 'SHORT_ANSWER',
+          part_number: 3,
+          part: 'part3',
           difficulty: 'HARD',
           raw_latex: q.questionText,
           options: [
