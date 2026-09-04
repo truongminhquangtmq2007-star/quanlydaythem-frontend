@@ -122,6 +122,89 @@ const StudentDashboard = () => {
         </Card>
       </div>
 
+      {/* UPCOMING SESSIONS */}
+      <Card style={{ padding: 'var(--spacing-6)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
+          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', fontSize: 'var(--font-size-xl)' }}>
+            <span>📅</span> Lịch học sắp tới
+          </h2>
+          {data.upcomingSessions && data.upcomingSessions.length > 0 && (
+            <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', fontWeight: 'bold' }}>
+              {data.upcomingSessions.length} buổi học
+            </span>
+          )}
+        </div>
+
+        {(!data.upcomingSessions || data.upcomingSessions.length === 0) ? (
+          <p className="text-muted" style={{ margin: 0, padding: 'var(--spacing-4) 0' }}>Không có buổi học nào sắp diễn ra.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
+            {data.upcomingSessions.map((sess: any, idx: number) => {
+              const isOnline = String(sess.class_type || '').toUpperCase() === 'ONLINE';
+              const hasMeet = Boolean(isOnline && sess.meet_link);
+              const dateStr = sess.session_date 
+                ? new Date(sess.session_date).toLocaleDateString('vi-VN', { weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit' }) 
+                : 'Chưa có ngày';
+              const timeStr = sess.start_time ? String(sess.start_time).substring(0, 5) : '18:00';
+
+              return (
+                <div 
+                  key={sess.id || idx}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: 'var(--spacing-4)',
+                    backgroundColor: 'var(--color-surface)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border)',
+                    flexWrap: 'wrap',
+                    gap: 'var(--spacing-3)'
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ fontWeight: 'var(--font-weight-bold)', fontSize: '15px', color: 'var(--color-text)' }}>
+                      📖 {sess.class_name || 'Lớp học'}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+                      <span style={{ backgroundColor: 'var(--color-background)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--color-border)', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                        🗓️ {dateStr}
+                      </span>
+                      <span style={{ backgroundColor: 'var(--color-background)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--color-border)' }}>
+                        ⏰ {timeStr}
+                      </span>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        backgroundColor: isOnline ? '#eff6ff' : '#f0fdf4',
+                        color: isOnline ? '#2563eb' : '#15803d'
+                      }}>
+                        {isOnline ? '🌐 Trực tuyến' : '🏫 Trực tiếp'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {hasMeet && (
+                    <a 
+                      href={sess.meet_link} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <Button variant="primary" size="sm">
+                        🎥 Vào lớp Meet
+                      </Button>
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
       {/* ASSIGNED HOMEWORK / DOCUMENTS SECTION */}
       <Card style={{ padding: 'var(--spacing-6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
