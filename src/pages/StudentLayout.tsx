@@ -39,11 +39,11 @@ const StudentLayout = () => {
           <div onClick={() => navigate('/student/dashboard')} style={navItemStyle('/student/dashboard')}>
             🏠 Trang Chủ
           </div>
-          <div onClick={() => navigate('/student/schedule')} style={navItemStyle('/student/schedule')}>
-            📅 Lịch Học
-          </div>
           <div onClick={() => navigate('/student/documents')} style={navItemStyle('/student/documents')}>
             📚 Bài Tập & Tài Liệu
+          </div>
+          <div onClick={() => navigate('/student/exams')} style={navItemStyle('/student/exams')}>
+            📝 Phòng Thi Trực Tuyến
           </div>
         </div>
 

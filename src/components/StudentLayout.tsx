@@ -27,15 +27,13 @@ const StudentLayout = () => {
 
   const menuItems = [
     { path: '/student/dashboard', icon: '🏠', label: 'Trang chủ' },
-    { path: '/student/schedule', icon: '📅', label: 'Lịch học' },
     { path: '/student/documents', icon: '📁', label: 'Tài liệu của tôi' }, 
     { path: '/student/exams', icon: '📝', label: 'Phòng thi trực tuyến' }, 
   ];
 
-  // 4 Core items for student mobile bottom navigation
+  // Core items for student mobile bottom navigation
   const bottomNavItems = [
     { path: '/student/dashboard', icon: '🏠', label: 'Trang chủ' },
-    { path: '/student/schedule', icon: '📅', label: 'Lịch học' },
     { path: '/student/documents', icon: '📁', label: 'Tài liệu' }, 
     { path: '/student/exams', icon: '📝', label: 'Phòng thi' }, 
   ];
