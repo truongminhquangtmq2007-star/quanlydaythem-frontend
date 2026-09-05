@@ -18,6 +18,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     <div 
       className={`skeleton ${className}`} 
       style={{ width, height, borderRadius, ...style }} 
+      aria-hidden="true"
       {...props} 
     />
   );

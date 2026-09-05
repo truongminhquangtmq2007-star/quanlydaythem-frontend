@@ -66,6 +66,8 @@
      ============================ */
   --color-primary: #8b5cf6;
   --color-primary-hover: #7c3aed;
+  --color-primary-dark: #6d28d9;
+  --color-primary-light: #a78bfa;
   --color-primary-soft: #ede9fe;
   --color-primary-muted: #ddd6fe;
 
@@ -92,6 +94,23 @@
   --color-danger-soft: #fee2e2;
   --color-info: #3b82f6;
   --color-info-soft: #dbeafe;
+
+  /* ============================
+     5. ACCESSIBILITY & LAYOUT TOKENS
+     ============================ */
+  --focus-ring: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-primary);
+  --touch-target-min: 44px;
+
+  /* ============================
+     6. Z-INDEX SCALE
+     ============================ */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
 }
 
 /* ============================
@@ -112,6 +131,8 @@
 
   --color-primary-soft: #4c1d95;
   --color-primary-muted: #5b21b6;
+  --color-primary-dark: #3b0764;
+  --color-primary-light: #a78bfa;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);

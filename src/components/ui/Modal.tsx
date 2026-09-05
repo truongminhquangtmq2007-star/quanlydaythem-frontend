@@ -61,7 +61,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
         {title && (
           <div style={{ padding: 'var(--spacing-4) var(--spacing-6)', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 id="modal-title" style={{ margin: 0, fontSize: 'var(--font-size-lg)' }}>{title}</h3>
-            <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'var(--color-text-muted)' }}>&times;</button>
+            <button onClick={onClose} aria-label="Đóng" style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'var(--color-text-muted)', padding: '4px 8px' }}>&times;</button>
           </div>
         )}
         <div style={{ padding: 'var(--spacing-6)', overflowY: 'auto' }}>
