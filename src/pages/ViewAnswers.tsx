@@ -99,7 +99,7 @@ const ViewAnswers = () => {
   };
 
   const renderGroupBlock = (group: SharedContext) => (
-    <div style={{ backgroundColor: 'var(--color-surface)beb', border: '1px dashed var(--color-warning)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-5)', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
+    <div style={{ backgroundColor: 'var(--color-warning-soft, #fffbeb)', border: '1px dashed var(--color-warning)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-5)', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
       {group.image_url && <ImageBlock url={group.image_url} />}
       <div style={{ fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-2)' }}>
         📌 Sử dụng thông tin sau để trả lời các câu {group.questionIds.join(', ')}:
