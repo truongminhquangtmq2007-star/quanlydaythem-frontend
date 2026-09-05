@@ -9,12 +9,17 @@ import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
+import { TableContainer, Table, Thead, Tbody, Tr, Th, Td } from '../components/ui/Table';
+import { Select } from '../components/ui/Select';
+import { toast } from 'react-toastify';
 
 const ClassManagement = () => {
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newClass, setNewClass] = useState({ class_name: '', description: '', class_type: 'OFFLINE', meet_link: '', schedule: '', tuition_fee: 0 });
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('ALL');
   const navigate = useNavigate();
 
   const fetchClasses = async () => {
@@ -33,15 +38,23 @@ const ClassManagement = () => {
     fetchClasses();
   }, []);
 
+  const filteredClasses = classes.filter(cls => {
+    const matchSearch = (cls.class_name || '').toLowerCase().includes(search.toLowerCase()) ||
+                        (cls.schedule || '').toLowerCase().includes(search.toLowerCase());
+    const matchType = typeFilter === 'ALL' || cls.class_type === typeFilter;
+    return matchSearch && matchType;
+  });
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await axiosClient.post('/api/classes', newClass);
       setShowModal(false);
       setNewClass({ class_name: '', description: '', class_type: 'OFFLINE', meet_link: '', schedule: '', tuition_fee: 0 });
+      toast.success('Tạo lớp học mới thành công!');
       fetchClasses();
-    } catch (err) {
-      alert('Lỗi tạo lớp học');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Lỗi tạo lớp học');
     }
   };
 
@@ -57,6 +70,29 @@ const ClassManagement = () => {
         </Button>
       </div>
 
+      <Card style={{ marginBottom: 'var(--spacing-4)', padding: 'var(--spacing-4)' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '220px' }}>
+            <Input 
+              placeholder="🔍 Tìm kiếm theo tên lớp, lịch học..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div style={{ width: '180px' }}>
+            <Select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              options={[
+                { value: 'ALL', label: 'Tất cả hình thức' },
+                { value: 'ONLINE', label: 'Trực tuyến (Online)' },
+                { value: 'OFFLINE', label: 'Tại lớp (Offline)' }
+              ]}
+            />
+          </div>
+        </div>
+      </Card>
+
       <Card style={{ padding: 'var(--spacing-4)' }}>
         {loading ? (
            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -64,52 +100,57 @@ const ClassManagement = () => {
              <Skeleton height="50px" />
              <Skeleton height="50px" />
            </div>
-        ) : classes.length === 0 ? (
-           <EmptyState title="Chưa có lớp học nào" description="Bạn chưa tạo lớp học nào, hãy bấm '+ Tạo Lớp Mới' để bắt đầu." />
+        ) : filteredClasses.length === 0 ? (
+           <EmptyState 
+             title={classes.length === 0 ? "Chưa có lớp học nào" : "Không tìm thấy lớp học"} 
+             description={classes.length === 0 ? "Bạn chưa tạo lớp học nào, hãy bấm '+ Tạo Lớp Mới' để bắt đầu." : "Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc."} 
+           />
         ) : (
           <div>
             {/* DESKTOP TABLE VIEW */}
-            <div className="desktop-class-table" style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid var(--color-border)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                    <th style={{ padding: 'var(--spacing-3)' }}>Tên Lớp</th>
-                    <th style={{ padding: 'var(--spacing-3)' }}>Lịch Học</th>
-                    <th style={{ padding: 'var(--spacing-3)' }}>Sĩ số</th>
-                    <th style={{ padding: 'var(--spacing-3)' }}>Hình thức</th>
-                    <th style={{ padding: 'var(--spacing-3)', textAlign: 'right' }}>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {classes.map(cls => (
-                    <tr key={cls.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      <td style={{ padding: 'var(--spacing-3)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text)' }}>{cls.class_name}</td>
-                      <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)' }}>{cls.schedule || 'Chưa xếp'}</td>
-                      <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text)' }}>{cls.current_students || 0} học sinh</td>
-                      <td style={{ padding: 'var(--spacing-3)' }}>
-                        <Badge variant={cls.class_type === 'ONLINE' ? 'info' : 'primary'}>{cls.class_type}</Badge>
-                      </td>
-                      <td style={{ padding: 'var(--spacing-3)', textAlign: 'right' }}>
-                        <Button variant="outline" size="sm" onClick={() => navigate(`/classes/${cls.id}`)} style={{ minHeight: '36px' }}>Chi tiết</Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="desktop-class-table">
+              <TableContainer>
+                <Table>
+                  <Thead>
+                    <Tr>
+                      <Th>Tên Lớp</Th>
+                      <Th>Lịch Học</Th>
+                      <Th>Sĩ số</Th>
+                      <Th>Hình thức</Th>
+                      <Th style={{ textAlign: 'right' }}>Thao tác</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {filteredClasses.map(cls => (
+                      <Tr key={cls.id}>
+                        <Td style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text)' }}>{cls.class_name}</Td>
+                        <Td style={{ color: 'var(--color-text-secondary)' }}>{cls.schedule || 'Chưa xếp'}</Td>
+                        <Td style={{ color: 'var(--color-text)' }}>{cls.current_students || 0} học sinh</Td>
+                        <Td>
+                          <Badge variant={cls.class_type === 'ONLINE' ? 'info' : 'primary'}>{cls.class_type}</Badge>
+                        </Td>
+                        <Td style={{ textAlign: 'right' }}>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/classes/${cls.id}`)} style={{ minHeight: '36px' }}>Chi tiết</Button>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </TableContainer>
             </div>
 
             {/* MOBILE CARD LIST VIEW */}
             <div className="mobile-class-cards" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {classes.map(cls => (
+              {filteredClasses.map(cls => (
                 <div 
                   key={cls.id}
                   onClick={() => navigate(`/classes/${cls.id}`)}
                   style={{
                     padding: '14px',
-                    borderRadius: '8px',
+                    borderRadius: 'var(--radius-md)',
                     backgroundColor: 'var(--color-surface)',
                     border: '1px solid var(--color-border)',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                    boxShadow: 'var(--shadow-sm)',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
@@ -159,17 +200,15 @@ const ClassManagement = () => {
             value={newClass.schedule} 
             onChange={(e) => setNewClass({ ...newClass, schedule: e.target.value })} 
           />
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '4px', color: 'var(--color-text)' }}>Hình thức học</label>
-            <select 
-              value={newClass.class_type} 
-              onChange={(e) => setNewClass({ ...newClass, class_type: e.target.value })}
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)', minHeight: '44px' }}
-            >
-              <option value="OFFLINE">Tại lớp (Offline)</option>
-              <option value="ONLINE">Trực tuyến (Online)</option>
-            </select>
-          </div>
+          <Select 
+            label="Hình thức học"
+            value={newClass.class_type} 
+            onChange={(e) => setNewClass({ ...newClass, class_type: e.target.value })}
+            options={[
+              { value: 'OFFLINE', label: 'Tại lớp (Offline)' },
+              { value: 'ONLINE', label: 'Trực tuyến (Online)' }
+            ]}
+          />
           {newClass.class_type === 'ONLINE' && (
             <Input 
               label="Link phòng học Online" 

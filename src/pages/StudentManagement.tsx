@@ -7,6 +7,10 @@ import { Card } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
+import { Avatar } from '../components/ui/Avatar';
+import { Select } from '../components/ui/Select';
+import { TableContainer, Table, Thead, Tbody, Tr, Th, Td } from '../components/ui/Table';
+import { toast } from 'react-toastify';
 
 const StudentManagement = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -49,11 +53,11 @@ const StudentManagement = () => {
     if (!selectedStudentId) return;
     try {
       await axiosClient.put(`/api/students/${selectedStudentId}/reset-password`, { newPassword });
-      alert('Đổi mật khẩu thành công');
+      toast.success('Đổi mật khẩu thành công');
       setShowPasswordModal(false);
       setNewPassword('');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi đổi mật khẩu');
+      toast.error(err.response?.data?.message || 'Lỗi khi đổi mật khẩu');
     }
   };
 
@@ -66,10 +70,10 @@ const StudentManagement = () => {
       if (createRes.data && createRes.data.student) {
         setStudents(prev => [createRes.data.student, ...(Array.isArray(prev) ? prev : [])]);
       }
-      alert('Thêm học sinh mới thành công!');
+      toast.success('Thêm học sinh mới thành công!');
       fetchStudents();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi tạo học sinh');
+      toast.error(err.response?.data?.message || 'Lỗi tạo học sinh');
     }
   };
 
@@ -95,63 +99,77 @@ const StudentManagement = () => {
             />
           </div>
           <div style={{ width: '160px' }}>
-            <select 
+            <Select 
               value={gradeFilter} 
               onChange={(e) => setGradeFilter(e.target.value)}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box', outline: 'none', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)', minHeight: '44px' }}
-            >
-              <option value="ALL">Tất cả khối</option>
-              <option value="10">Khối 10</option>
-              <option value="11">Khối 11</option>
-              <option value="12">Khối 12</option>
-            </select>
+              options={[
+                { value: 'ALL', label: 'Tất cả khối' },
+                { value: '10', label: 'Khối 10' },
+                { value: '11', label: 'Khối 11' },
+                { value: '12', label: 'Khối 12' }
+              ]}
+            />
           </div>
         </div>
       </Card>
 
       <Card style={{ padding: 'var(--spacing-4)' }}>
         {/* DESKTOP TABLE */}
-        <div className="desktop-student-table" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ backgroundColor: 'var(--color-background)' }}>
-                <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Mã HS</th>
-                <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Họ Tên</th>
-                <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>Trường & Khối</th>
-                <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)' }}>SĐT Phụ huynh</th>
-                <th style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', borderBottom: '2px solid var(--color-border)', textAlign: 'right' }}>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={5} style={{ padding: 'var(--spacing-6)', textAlign: 'center' }}>Đang tải dữ liệu...</td></tr>
-              ) : (!Array.isArray(students) || students.length === 0) ? (
-                <tr><td colSpan={5}><EmptyState title="Không tìm thấy học sinh nào" description="Thử thay đổi bộ lọc hoặc bấm '+ Thêm học sinh'." /></td></tr>
-              ) : (Array.isArray(students) ? students : []).map(student => (
-                <tr key={student.id} style={{ borderBottom: '1px solid var(--color-background)', cursor: 'pointer' }} onClick={() => navigate(`/students/${student.id}`)}>
-                  <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)', fontWeight: 'bold' }}>{student.student_code || student.id}</td>
-                  <td style={{ padding: 'var(--spacing-3)', fontWeight: 'bold', color: 'var(--color-text)' }}>{student.full_name}</td>
-                  <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)' }}>
-                    {student.school_name || 'Chưa cập nhật'} {student.grade && `• Khối ${student.grade}`}
-                  </td>
-                  <td style={{ padding: 'var(--spacing-3)', color: 'var(--color-text-secondary)' }}>{student.phone_number || '---'}</td>
-                  <td style={{ padding: 'var(--spacing-3)', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                      <Button 
-                        variant="secondary"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); setSelectedStudentId(student.id); setShowPasswordModal(true); }}
-                        style={{ minHeight: '36px' }}
-                      >
-                        🔑 Đổi MK
-                      </Button>
-                      <Button variant="outline" size="sm" style={{ minHeight: '36px' }}>Xem Hồ Sơ</Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="desktop-student-table">
+          <TableContainer>
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Mã HS</Th>
+                  <Th>Học Sinh</Th>
+                  <Th>Trường & Khối</Th>
+                  <Th>SĐT Phụ huynh</Th>
+                  <Th style={{ textAlign: 'right' }}>Thao tác</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {loading ? (
+                  <Tr><Td colSpan={5} style={{ padding: 'var(--spacing-6)', textAlign: 'center' }}>Đang tải dữ liệu...</Td></Tr>
+                ) : (!Array.isArray(students) || students.length === 0) ? (
+                  <Tr><Td colSpan={5}><EmptyState title="Không tìm thấy học sinh nào" description="Thử thay đổi bộ lọc hoặc bấm '+ Thêm học sinh'." /></Td></Tr>
+                ) : (Array.isArray(students) ? students : []).map(student => (
+                  <Tr key={student.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/students/${student.id}`)}>
+                    <Td style={{ fontWeight: 'bold', color: 'var(--color-text-secondary)' }}>{student.student_code || student.id}</Td>
+                    <Td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Avatar name={student.full_name} size="sm" />
+                        <span style={{ fontWeight: 'bold', color: 'var(--color-text)' }}>{student.full_name}</span>
+                      </div>
+                    </Td>
+                    <Td style={{ color: 'var(--color-text-secondary)' }}>
+                      {student.school_name || 'Chưa cập nhật'} {student.grade && `• Khối ${student.grade}`}
+                    </Td>
+                    <Td style={{ color: 'var(--color-text-secondary)' }}>{student.phone_number || '---'}</Td>
+                    <Td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
+                        <Button 
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => { setSelectedStudentId(student.id); setShowPasswordModal(true); }}
+                          style={{ minHeight: '36px' }}
+                        >
+                          🔑 Đổi MK
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => navigate(`/students/${student.id}`)}
+                          style={{ minHeight: '36px' }}
+                        >
+                          Xem Hồ Sơ
+                        </Button>
+                      </div>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
+          </TableContainer>
         </div>
 
         {/* MOBILE CARDS LIST */}
@@ -167,7 +185,7 @@ const StudentManagement = () => {
                 onClick={() => navigate(`/students/${student.id}`)}
                 style={{
                   padding: '14px',
-                  borderRadius: '8px',
+                  borderRadius: 'var(--radius-md)',
                   backgroundColor: 'var(--color-surface)',
                   border: '1px solid var(--color-border)',
                   display: 'flex',
@@ -177,7 +195,10 @@ const StudentManagement = () => {
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: '16px', color: 'var(--color-text)' }}>{student.full_name}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Avatar name={student.full_name} size="sm" />
+                    <strong style={{ fontSize: '16px', color: 'var(--color-text)' }}>{student.full_name}</strong>
+                  </div>
                   <Badge variant="primary">{student.student_code || `#${student.id}`}</Badge>
                 </div>
                 <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
@@ -186,9 +207,9 @@ const StudentManagement = () => {
                 <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
                   📞 SĐT: <strong>{student.phone_number || '---'}</strong>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }} onClick={e => e.stopPropagation()}>
                   <Button 
-                    onClick={(e) => { e.stopPropagation(); navigate(`/students/${student.id}`); }} 
+                    onClick={() => navigate(`/students/${student.id}`)} 
                     variant="outline" 
                     size="sm" 
                     style={{ flex: 1, minHeight: '44px' }}
@@ -196,7 +217,7 @@ const StudentManagement = () => {
                     Xem hồ sơ 360°
                   </Button>
                   <Button 
-                    onClick={(e) => { e.stopPropagation(); setSelectedStudentId(student.id); setShowPasswordModal(true); }} 
+                    onClick={() => { setSelectedStudentId(student.id); setShowPasswordModal(true); }} 
                     variant="secondary" 
                     size="sm" 
                     style={{ minHeight: '44px' }}

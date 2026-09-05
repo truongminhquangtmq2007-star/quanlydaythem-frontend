@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 import { Button } from '../components/ui/Button';
+import { toast } from 'react-toastify';
 
 const ExamEditor = () => {
   const location = useLocation();
@@ -14,7 +15,7 @@ const ExamEditor = () => {
 
   useEffect(() => {
     if (!examData) {
-      alert('Không có dữ liệu đề thi. Vui lòng tải file lại.');
+      toast.warn('Không có dữ liệu đề thi. Vui lòng tải file lại.');
       navigate('/admin/create-exam');
     }
   }, [examData, navigate]);
@@ -51,7 +52,7 @@ const ExamEditor = () => {
         handleUpdateContent(part, index, 'image_url', res.data.url);
       }
     } catch (error: any) {
-      alert('Lỗi tải ảnh: ' + (error.response?.data?.message || error.message));
+      toast.error('Lỗi tải ảnh: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -155,11 +156,11 @@ const ExamEditor = () => {
           exam_content: examData
         });
       
-      alert('Xuất bản đề thi thành công!');
+      toast.success('Xuất bản đề thi thành công!');
       navigate('/quan-ly-thi'); // Hoặc quay về ExamBank
     } catch (error: any) {
       console.error("Publish Error:", error.response?.data || error);
-      alert('Lỗi xuất bản đề thi: ' + (error.response?.data?.message || error.response?.data?.error || JSON.stringify(error.response?.data) || 'Không xác định'));
+      toast.error('Lỗi xuất bản đề thi: ' + (error.response?.data?.message || error.response?.data?.error || 'Không xác định'));
     } finally {
       setLoading(false);
     }

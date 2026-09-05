@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { EmptyState } from '../components/ui/EmptyState';
+import { toast } from 'react-toastify';
 
 interface Folder {
   id: number;
@@ -79,9 +80,10 @@ const DocumentLibrary = () => {
       await axiosClient.post('/api/folders', { name: folderName, parent_id: currentFolderId, category: 'STORAGE' });
       setShowFolderModal(false);
       setFolderName('');
+      toast.success('Tạo thư mục thành công');
       fetchContents(currentFolderId);
     } catch (err) {
-      alert('Lỗi tạo thư mục');
+      toast.error('Lỗi tạo thư mục');
     }
   };
 
@@ -106,9 +108,10 @@ const DocumentLibrary = () => {
       setShowDocModal(false);
       setDocForm({ title: '', file_url: '' });
       setDocFile(null);
+      toast.success('Thêm tài liệu thành công');
       fetchContents(currentFolderId);
     } catch (err: any) {
-      alert('Lỗi thêm tài liệu: ' + (err?.response?.data?.message || err.message));
+      toast.error('Lỗi thêm tài liệu: ' + (err?.response?.data?.message || err.message));
     } finally {
       setUploadingDoc(false);
     }
@@ -120,9 +123,10 @@ const DocumentLibrary = () => {
     try {
       await axiosClient.delete(`/api/documents/${docToDelete.id}`);
       setDocToDelete(null);
+      toast.success('Đã xóa tài liệu thành công');
       fetchContents(currentFolderId);
     } catch (err) {
-      alert('Lỗi xóa tài liệu');
+      toast.error('Lỗi xóa tài liệu');
     } finally {
       setDeletingDoc(false);
     }
@@ -136,9 +140,10 @@ const DocumentLibrary = () => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa thư mục này và các thư mục/tài liệu bên trong?')) return;
     try {
       await axiosClient.delete(`/api/folders/${folderId}`);
+      toast.success('Đã xóa thư mục thành công');
       fetchContents(currentFolderId);
     } catch (err) {
-      alert('Lỗi xóa thư mục');
+      toast.error('Lỗi xóa thư mục');
     }
   };
 
@@ -165,9 +170,10 @@ const DocumentLibrary = () => {
       }
       setShowMoveModal(false);
       setItemToMove(null);
+      toast.success('Đã di chuyển tài liệu thành công');
       fetchContents(currentFolderId);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi di chuyển tài liệu');
+      toast.error(err.response?.data?.message || 'Lỗi di chuyển tài liệu');
     } finally {
       setMoving(false);
     }

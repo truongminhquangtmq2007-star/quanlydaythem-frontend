@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import axiosClient from '../api/axiosClient';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { ClassInfo, ClassMember, Session, Attendance } from '../types/core';
@@ -139,14 +140,14 @@ const ClassDetail = () => {
     if (!sId) return;
     try {
       await axiosClient.post(`/api/classes/${id}/members`, { student_id: sId });
-      alert("Đã thêm học sinh vào lớp thành công!");
+      toast.success("Đã thêm học sinh vào lớp thành công!");
       setShowAddMember(false);
       setNewStudentId('');
       setSearchQuery('');
       setSearchResults([]);
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi thêm học sinh');
+      toast.error(err.response?.data?.message || 'Lỗi thêm học sinh');
     }
   };
 
@@ -177,7 +178,7 @@ const ClassDetail = () => {
   const handleSaveSession = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSession.session_date) {
-      alert('Vui lòng chọn ngày học');
+      toast.warn('Vui lòng chọn ngày học');
       return;
     }
     setSavingSession(true);
@@ -186,11 +187,11 @@ const ClassDetail = () => {
       if (editingSession.id) {
         const res = await axiosClient.put(`/api/sessions/${editingSession.id}`, editingSession);
         savedSession = res.data?.session;
-        alert('Cập nhật buổi học thành công!');
+        toast.success('Cập nhật buổi học thành công!');
       } else {
         const res = await axiosClient.post(`/api/classes/${id}/sessions`, editingSession);
         savedSession = res.data?.session;
-        alert('Tạo buổi học thành công!');
+        toast.success('Tạo buổi học thành công!');
       }
       setShowSessionModal(false);
       const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
@@ -218,7 +219,7 @@ const ClassDetail = () => {
         }
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi lưu buổi học');
+      toast.error(err.response?.data?.message || 'Lỗi lưu buổi học');
     } finally {
       setSavingSession(false);
     }
@@ -228,7 +229,7 @@ const ClassDetail = () => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa buổi học này không? Tất cả dữ liệu điểm danh sẽ bị xóa.')) return;
     try {
       await axiosClient.delete(`/api/sessions/${sessionId}`);
-      alert('Đã xóa buổi học!');
+      toast.success('Đã xóa buổi học!');
       const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
       setSessions(sessionsRes.data || []);
       if (activeSession?.id === sessionId) {
@@ -236,7 +237,7 @@ const ClassDetail = () => {
         setAttendanceList([]);
       }
     } catch (err) {
-      alert('Lỗi xóa buổi học');
+      toast.error('Lỗi xóa buổi học');
     }
   };
 
@@ -252,14 +253,14 @@ const ClassDetail = () => {
       });
       setShowAssignModal(true);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi tải danh sách tài liệu');
+      toast.error(err.response?.data?.message || 'Lỗi tải danh sách tài liệu');
     }
   };
 
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedDocIds.length === 0) {
-      alert('Vui lòng chọn ít nhất 1 tài liệu để gán vào lớp.');
+      toast.warn('Vui lòng chọn ít nhất 1 tài liệu để gán vào lớp.');
       return;
     }
     setIsAssigning(true);
@@ -272,12 +273,12 @@ const ClassDetail = () => {
         due_at: assignForm.due_at || null,
         title: assignForm.title || null
       });
-      alert('✓ Gán tài liệu / bài tập vào lớp thành công!');
+      toast.success('✓ Gán tài liệu / bài tập vào lớp thành công!');
       setShowAssignModal(false);
       const assignRes = await axiosClient.get(`/api/classes/${id}/assignments`);
       setAssignments(assignRes.data || []);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi giao tài liệu/bài tập vào lớp');
+      toast.error(err.response?.data?.message || 'Lỗi khi giao tài liệu/bài tập vào lớp');
     } finally {
       setIsAssigning(false);
     }
@@ -287,11 +288,11 @@ const ClassDetail = () => {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa bài tập / tài liệu "${title || 'này'}" khỏi lớp?`)) return;
     try {
       await axiosClient.delete(`/api/classes/${id}/assignments/${assignmentId}`);
-      alert('✓ Đã xóa bài tập được giao thành công!');
+      toast.success('✓ Đã xóa bài tập được giao thành công!');
       const assignRes = await axiosClient.get(`/api/classes/${id}/assignments`);
       setAssignments(assignRes.data || []);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi xóa bài tập');
+      toast.error(err.response?.data?.message || 'Lỗi khi xóa bài tập');
     }
   };
 
@@ -302,10 +303,10 @@ const ClassDetail = () => {
     }
     try {
       await axiosClient.delete(`/api/classes/${id}/members/${studentId}`);
-      alert(`✓ Đã xóa học sinh "${displayName}" khỏi lớp.`);
+      toast.success(`✓ Đã xóa học sinh "${displayName}" khỏi lớp.`);
       fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi xóa học sinh khỏi lớp');
+      toast.error(err.response?.data?.message || 'Lỗi khi xóa học sinh khỏi lớp');
     }
   };
 
@@ -315,10 +316,10 @@ const ClassDetail = () => {
     }
     try {
       await axiosClient.delete(`/api/classes/${id}`);
-      alert('✓ Đã xóa lớp học thành công!');
+      toast.success('✓ Đã xóa lớp học thành công!');
       navigate('/classes');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi xóa lớp học');
+      toast.error(err.response?.data?.message || 'Lỗi khi xóa lớp học');
     }
   };
 
@@ -336,11 +337,11 @@ const ClassDetail = () => {
     if (!window.confirm("Công bố các buổi học (Nháp) của lớp này cho phụ huynh và học sinh?")) return;
     try {
       await axiosClient.post('/api/sessions/publish', { class_id: id });
-      alert("Đã công bố thành công!");
+      toast.success("Đã công bố thành công!");
       const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
       setSessions(sessionsRes.data || []);
     } catch(err) {
-      alert("Lỗi khi công bố");
+      toast.error("Lỗi khi công bố");
     }
   };
     
@@ -357,12 +358,12 @@ const ClassDetail = () => {
           sessionTitle: classInfo?.class_name ? `[${classInfo.class_name}] ${activeSession.content || 'Lịch học'}` : 'Buổi học'
         });
       } else {
-        alert(res.data?.message || '✓ Đồng bộ Google Calendar thành công!');
+        toast.success(res.data?.message || '✓ Đồng bộ Google Calendar thành công!');
       }
       const sessionsRes = await axiosClient.get(`/api/classes/${id}/sessions`);
       setSessions(sessionsRes.data || []);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi đồng bộ lịch Google');
+      toast.error(err.response?.data?.message || 'Lỗi đồng bộ lịch Google');
     }
   };
 
@@ -385,7 +386,7 @@ const ClassDetail = () => {
       });
       fetchAttendance(activeSession.id);
     } catch (err) {
-      alert('Lỗi cập nhật điểm danh');
+      toast.error('Lỗi cập nhật điểm danh');
       if (activeSession) fetchAttendance(activeSession.id);
     }
   };
@@ -444,10 +445,10 @@ const ClassDetail = () => {
         teacher_notes: combinedNotes
       });
       setShowEvalModal(false);
-      alert('Đã lưu nhận xét và bài tập của học sinh thành công!');
+      toast.success('Đã lưu nhận xét và bài tập của học sinh thành công!');
       fetchAttendance(activeSession.id);
     } catch (err) {
-      alert('Lỗi khi lưu nhận xét');
+      toast.error('Lỗi khi lưu nhận xét');
     }
   };
 

@@ -2,6 +2,12 @@ import React, { useContext, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemePicker } from './ui/ThemePicker';
+import { Avatar } from './ui/Avatar';
+
+interface MenuGroup {
+  title?: string;
+  items: { path: string; icon: string; label: string }[];
+}
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -11,6 +17,7 @@ const AdminLayout = () => {
   
   const token = localStorage.getItem('token');
   const role = (localStorage.getItem('role') || user?.role || '').toLowerCase();
+  const displayName = user ? `${user.title ? user.title + ' ' : ''}${user.full_name || 'Giáo viên'}` : 'Giáo viên';
 
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -25,23 +32,52 @@ const AdminLayout = () => {
     navigate('/login');
   };
 
-  const menuItems = [
-    { path: '/students', icon: '🎓', label: 'Quản lý Học sinh' },
-    { path: '/classes', icon: '🏫', label: 'Quản lý Lớp học' },
-    ...(role === 'admin' ? [{ path: '/quan-ly-giao-vien', icon: '👩‍🏫', label: 'Quản lý Giáo viên' }] : []),
-    { path: '/tai-lieu', icon: '📁', label: 'Kho Tài Liệu' }, 
-    { path: '/quan-ly-thi', icon: '📝', label: 'Quản lý Thi & Điểm' }, 
-    { path: '/quan-ly-tien-do', icon: '📅', label: 'Lịch Dạy & Điểm Danh' },
-    { path: '/quan-ly-tai-chinh', icon: '💰', label: 'Quản lý Tài chính' }, 
-    { path: '/ho-so', icon: '⚙️', label: 'Hồ sơ cá nhân' }
+  const menuGroups: MenuGroup[] = [
+    {
+      title: 'GIẢNG DẠY',
+      items: [
+        { path: '/classes', icon: '🏫', label: 'Quản lý Lớp học' },
+        { path: '/students', icon: '🎓', label: 'Hồ sơ Học sinh' },
+        { path: '/quan-ly-tien-do', icon: '📅', label: 'Lịch dạy & Điểm danh' },
+        { path: '/tai-lieu', icon: '📁', label: 'Kho Tài Liệu' }
+      ]
+    },
+    {
+      title: 'ĐÁNH GIÁ',
+      items: [
+        { path: '/quan-ly-thi', icon: '📝', label: 'Quản lý Thi & Điểm' }
+      ]
+    },
+    {
+      title: 'CÔNG CỤ AI',
+      items: [
+        { path: '/admin/create-exam', icon: '✨', label: 'Tạo đề thi bằng AI' }
+      ]
+    },
+    ...(role === 'admin' ? [{
+      title: 'HỆ THỐNG',
+      items: [
+        { path: '/quan-ly-giao-vien', icon: '👩‍🏫', label: 'Quản lý Giáo viên' }
+      ]
+    }] : []),
+    {
+      title: 'CÁ NHÂN',
+      items: [
+        { path: '/quan-ly-tai-chinh', icon: '💰', label: 'Quản lý Tài chính' },
+        { path: '/ho-so', icon: '⚙️', label: 'Hồ sơ cá nhân' }
+      ]
+    }
   ];
+
+  // Flat list for title lookup
+  const allMenuItems = menuGroups.flatMap(g => g.items);
 
   // 5 Core items for mobile bottom navigation
   const bottomNavItems = [
-    { path: '/students', icon: '🎓', label: 'Học sinh' },
     { path: '/classes', icon: '🏫', label: 'Lớp học' },
+    { path: '/students', icon: '🎓', label: 'Học sinh' },
+    { path: '/quan-ly-thi', icon: '📝', label: 'Thi & Điểm' },
     { path: '/quan-ly-tien-do', icon: '📅', label: 'Lịch dạy' },
-    { path: '/quan-ly-tai-chinh', icon: '💰', label: 'Học phí' },
   ];
 
   return (
@@ -101,57 +137,64 @@ const AdminLayout = () => {
             ✕
           </button>
 
-          <div style={{ 
-            width: '48px', height: '48px', 
-            backgroundColor: 'var(--color-primary-soft)', 
-            color: 'var(--color-primary)',
-            borderRadius: 'var(--radius-lg)', 
-            display: 'flex', justifyContent: 'center', alignItems: 'center', 
-            marginBottom: 'var(--spacing-3)', 
-            fontSize: '24px' 
-          }}>
-            🎓
-          </div>
+          <Avatar name={displayName} size="lg" style={{ marginBottom: 'var(--spacing-3)' }} />
           <h2 style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--color-text)', fontWeight: 'var(--font-weight-semibold)' }}>
-            {user ? `${user.title || ''} ${user.full_name}` : 'Gia Sư Minh Quang'}
+            {displayName}
           </h2>
           <p style={{ margin: 'var(--spacing-1) 0 0 0', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
             {role === 'admin' ? 'Admin Workspace' : 'Teacher Workspace'}
           </p>
         </div>
 
-        <div style={{ flex: 1, padding: 'var(--spacing-4) var(--spacing-3)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-1)' }}>
-          {menuItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setMobileMenuOpen(false)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: 'var(--spacing-3) var(--spacing-4)',
-                  borderRadius: 'var(--radius-md)',
-                  textDecoration: 'none',
-                  color: isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                  backgroundColor: isActive ? 'var(--color-primary-soft)' : 'transparent',
-                  fontWeight: isActive ? 'var(--font-weight-medium)' : 'var(--font-weight-regular)',
-                  transition: 'all var(--transition-fast)',
-                  minHeight: '44px'
-                }}
-                onMouseOver={(e) => {
-                  if (!isActive) e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)';
-                }}
-                onMouseOut={(e) => {
-                  if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <span style={{ marginRight: 'var(--spacing-3)', fontSize: '1.25rem' }}>{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
+        <div style={{ flex: 1, padding: 'var(--spacing-4) var(--spacing-3)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
+          {menuGroups.map((group, gIdx) => (
+            <div key={gIdx} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-1)' }}>
+              {group.title && (
+                <div style={{
+                  padding: 'var(--spacing-1) var(--spacing-3)',
+                  fontSize: '11px',
+                  fontWeight: 'var(--font-weight-bold)',
+                  color: 'var(--color-text-secondary)',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase'
+                }}>
+                  {group.title}
+                </div>
+              )}
+              {group.items.map((item) => {
+                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 'var(--spacing-2) var(--spacing-3)',
+                      borderRadius: 'var(--radius-md)',
+                      textDecoration: 'none',
+                      color: isActive ? 'var(--color-primary)' : 'var(--color-text)',
+                      backgroundColor: isActive ? 'var(--color-primary-soft)' : 'transparent',
+                      fontWeight: isActive ? 'var(--font-weight-semibold)' : 'var(--font-weight-regular)',
+                      transition: 'all var(--transition-fast)',
+                      minHeight: '40px',
+                      fontSize: 'var(--font-size-sm)'
+                    }}
+                    onMouseOver={(e) => {
+                      if (!isActive) e.currentTarget.style.backgroundColor = 'var(--color-surface-hover)';
+                    }}
+                    onMouseOut={(e) => {
+                      if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <span style={{ marginRight: 'var(--spacing-3)', fontSize: '1.15rem' }}>{item.icon}</span>
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         <div style={{ padding: 'var(--spacing-4) var(--spacing-4)', borderTop: '1px solid var(--color-border)' }}>
@@ -218,27 +261,19 @@ const AdminLayout = () => {
               ☰
             </button>
             <h1 style={{ margin: 0, fontSize: '18px', color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {menuItems.find(i => location.pathname.startsWith(i.path))?.label || 'Quản lý dạy thêm'}
+              {allMenuItems.find(i => location.pathname.startsWith(i.path))?.label || 'Quản lý dạy thêm'}
             </h1>
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
             <ThemePicker />
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-              <div style={{ 
-                width: '34px', height: '34px', 
-                borderRadius: 'var(--radius-full)', 
-                backgroundColor: 'var(--color-primary-soft)', 
-                color: 'var(--color-primary)',
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                fontWeight: 'var(--font-weight-bold)',
-                fontSize: '14px'
-              }}>
-                {user?.full_name ? user.full_name.charAt(0) : 'T'}
-              </div>
+              <Avatar name={displayName} size="sm" />
               <div className="user-info-text" style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text)' }}>{user?.full_name}</span>
-                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>Giáo viên</span>
+                <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text)' }}>{displayName}</span>
+                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                  {role === 'admin' ? 'Quản trị viên' : 'Giáo viên'}
+                </span>
               </div>
             </div>
           </div>

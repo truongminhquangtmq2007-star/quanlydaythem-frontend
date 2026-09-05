@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
+import { toast } from 'react-toastify';
 
 interface Profile360 {
   student: Student;
@@ -75,9 +76,9 @@ const StudentProfile360 = () => {
     try {
       const token = localStorage.getItem('token');
       await axiosClient.put(`/api/students/${id}/goals`, { learning_goals: learningGoals });
-      alert('Đã lưu mục tiêu ngắn hạn!');
+      toast.success('Đã lưu mục tiêu ngắn hạn!');
     } catch (err) {
-      alert('Lỗi khi lưu mục tiêu');
+      toast.error('Lỗi khi lưu mục tiêu');
     } finally {
       setSavingGoals(false);
     }
@@ -88,9 +89,9 @@ const StudentProfile360 = () => {
     try {
       const res = await axiosClient.post(`/api/students/${id}/ai-evaluation`);
       setData(prev => prev ? { ...prev, student: { ...prev.student, ai_evaluation: res.data.data } } : null);
-      alert('Đã tạo phân tích AI thành công!');
+      toast.success('Đã tạo phân tích AI thành công!');
     } catch (err) {
-      alert('Chức năng Phân tích & Định hướng AI đang lỗi API.');
+      toast.error('Chức năng Phân tích & Định hướng AI đang lỗi API.');
     } finally {
       setEvaluating(false);
     }
@@ -102,8 +103,9 @@ const StudentProfile360 = () => {
       const token = localStorage.getItem('token');
       const res = await axiosClient.post(`/api/ai/generate-remark`, { student_id: id });
       setAiRemark({ text: res.data.remark, loading: false });
+      toast.success('Đã tạo nhận xét AI thành công!');
     } catch (err) {
-      alert('Lỗi tạo nhận xét AI');
+      toast.error('Lỗi tạo nhận xét AI');
       setAiRemark({ text: 'Lỗi', loading: false });
     }
   };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosClient from '../api/axiosClient';
+import { toast } from 'react-toastify';
 
 // 1. IMPORT GIAO DIỆN AI VÀO ĐÂY (Đảm bảo file ExamManagerAI.tsx nằm cùng thư mục)
 import CreateExamAI from './CreateExamAI';
@@ -72,7 +73,7 @@ const ExamManagement = () => {
 
   const handleUploadExam = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile || !documentTitle) return alert("Vui lòng nhập tên và chọn tệp!");
+    if (!selectedFile || !documentTitle) return toast.warn("Vui lòng nhập tên và chọn tệp!");
     const formData = new FormData();
     formData.append('file', selectedFile); formData.append('title', documentTitle);
     formData.append('category', 'EXAM'); formData.append('class_id', selectedClassId);
@@ -84,9 +85,9 @@ const ExamManagement = () => {
             category: 'EXAM',
             file_url: uploadRes.data?.secure_url
         });
-      alert(`✅ Đã tải thành công đề thi!`);
+      toast.success(`✅ Đã tải thành công đề thi!`);
       setShowUploadModal(false); setSelectedFile(null); setDocumentTitle(''); fetchExams();
-    } catch (error) { alert("❌ Lỗi khi tải tệp lên."); }
+    } catch (error) { toast.error("❌ Lỗi khi tải tệp lên."); }
   };
 
   const handleQuickToggle = async (doc: Document, newAllowView: boolean) => {
@@ -100,8 +101,9 @@ const ExamManagement = () => {
       });
 
       setDocuments((Array.isArray(documents) ? documents : []).map(d => d.id === doc.id ? { ...d, allow_view_answers: newAllowView } : d));
+      toast.success("✅ Đã lưu trạng thái!");
     } catch (error) {
-      alert("❌ Lỗi khi lưu trạng thái!");
+      toast.error("❌ Lỗi khi lưu trạng thái!");
     }
   };
 
@@ -137,7 +139,7 @@ const ExamManagement = () => {
       setSubmissionsExamContent(resKey.data?.exam_content || null);
       setSelectedForTuition([]);
       setShowSubmissionsModal(true);
-    } catch (error) { alert("Lỗi khi tải dữ liệu bài thi!"); }
+    } catch (error) { toast.error("Lỗi khi tải dữ liệu bài thi!"); }
   };
 
   // NHIỆM VỤ 3: Toggle chọn bài nộp để lưu vào học phí
@@ -172,11 +174,10 @@ const ExamManagement = () => {
     try {
       const token = localStorage.getItem('token');
       await axiosClient.post(`/api/payments/add-exam-scores`, payload);
-      alert(`✅ Đã lưu điểm ${selectedSubs.length} học sinh vào học phí!`);
+      toast.success(`✅ Đã lưu điểm ${selectedSubs.length} học sinh vào học phí!`);
       setSelectedForTuition([]);
     } catch (error) {
-      const names = (Array.isArray(selectedSubs) ? selectedSubs : []).map((s: any) => `${s.student_name}: ${s.total_score}đ`).join('\n');
-      alert(`✅ Đã ghi nhận ${selectedSubs.length} bài thi vào học phí!\n\nĐề: ${submissionsExamTitle}\n${names}`);
+      toast.success(`✅ Đã ghi nhận ${selectedSubs.length} bài thi vào học phí!`);
       setSelectedForTuition([]);
     }
   };
@@ -205,19 +206,19 @@ const ExamManagement = () => {
         part1_key: part1Key, part2_key: part2Key, part3_key: formattedPart3,
         allow_view_answers: allowViewAnswers, duration_minutes: examDuration
       });
-      alert("✅ Đã lưu cấu hình ĐÁP ÁN CHUẨN & THỜI GIAN THI!");
+      toast.success("✅ Đã lưu cấu hình ĐÁP ÁN CHUẨN & THỜI GIAN THI!");
       setSelectedDocForKey(null); fetchExams();
-    } catch (error) { alert("❌ Lỗi khi lưu đáp án!"); }
+    } catch (error) { toast.error("❌ Lỗi khi lưu đáp án!"); }
   };
 
   const handleDeleteExam = async (doc: Document) => {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa đề thi "${doc.title}"?\n(Lịch sử làm bài trước đây của học sinh sẽ được lưu trữ an toàn)`)) return;
     try {
       await axiosClient.delete(`/api/documents/${doc.id}`);
-      alert("✅ Đã xóa đề thi thành công!");
+      toast.success("✅ Đã xóa đề thi thành công!");
       fetchExams();
     } catch (err: any) {
-      alert("Lỗi khi xóa đề: " + (err.response?.data?.error || err.response?.data?.message || err.message));
+      toast.error("Lỗi khi xóa đề: " + (err.response?.data?.error || err.response?.data?.message || err.message));
     }
   };
 

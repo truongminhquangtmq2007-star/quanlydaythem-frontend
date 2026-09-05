@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
+import { toast } from 'react-toastify';
 
 type ViewMode = 'month' | 'week' | 'day' | 'agenda';
 
@@ -50,12 +51,12 @@ const TeacherCalendar = () => {
     if (params.get('sync') === 'success') {
       const email = params.get('email');
       if (email) setGoogleEmail(email);
-      alert(`✓ Kết nối Google Calendar thành công! ${email ? `Tài khoản: ${email}` : ''}`);
+      toast.success(`Kết nối Google Calendar thành công! ${email ? `Tài khoản: ${email}` : ''}`);
       setGoogleConnected(true);
       checkGoogleCalendarStatus();
       navigate('/quan-ly-tien-do', { replace: true });
     } else if (params.get('sync') === 'error') {
-      alert('⚠️ Không thể kết nối Google Calendar hoặc bạn đã hủy xác thực.');
+      toast.warn('Không thể kết nối Google Calendar hoặc bạn đã hủy xác thực.');
       navigate('/quan-ly-tien-do', { replace: true });
     }
   }, [location.search, navigate]);
@@ -91,17 +92,17 @@ const TeacherCalendar = () => {
       if (res.data?.url) {
         window.location.href = res.data.url;
       } else {
-        alert('Không tìm thấy đường dẫn liên kết Google Calendar.');
+        toast.error('Không tìm thấy đường dẫn liên kết Google Calendar.');
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Chức năng Google Calendar chưa được cấu hình Client ID trên hệ thống.');
+      toast.error(err.response?.data?.message || 'Chức năng Google Calendar chưa được cấu hình Client ID trên hệ thống.');
     }
   };
 
   const handleSyncSession = async (session: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!session.is_published) {
-      alert('Buổi học đang ở trạng thái Nháp. Vui lòng vào chi tiết lớp để Công bố buổi học trước khi đồng bộ.');
+      toast.warn('Buổi học đang ở trạng thái Nháp. Vui lòng vào chi tiết lớp để Công bố buổi học trước khi đồng bộ.');
       return;
     }
     setSyncingSessionId(session.id);
@@ -116,11 +117,11 @@ const TeacherCalendar = () => {
           sessionTitle: session.class_name ? `[${session.class_name}] ${session.content || 'Lịch học'}` : 'Buổi học'
         });
       } else {
-        alert(res.data?.message || '✓ Đồng bộ buổi học lên Google Calendar thành công!');
+        toast.success(res.data?.message || 'Đồng bộ buổi học lên Google Calendar thành công!');
       }
       fetchSessions();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Lỗi khi đồng bộ lên Google Calendar.');
+      toast.error(err.response?.data?.message || 'Lỗi khi đồng bộ lên Google Calendar.');
     } finally {
       setSyncingSessionId(null);
     }

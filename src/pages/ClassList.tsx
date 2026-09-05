@@ -5,6 +5,8 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { EmptyState } from '../components/ui/EmptyState';
+import { TableContainer, Table, Thead, Tbody, Tr, Th, Td } from '../components/ui/Table';
+import { toast } from 'react-toastify';
 
 interface ClassData {
   id: number;
@@ -14,7 +16,6 @@ interface ClassData {
 const ClassList = () => {
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [className, setClassName] = useState('');
-  const [message, setMessage] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   
   const navigate = useNavigate();
@@ -37,23 +38,25 @@ const ClassList = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     try {
       if (editingId) {
         await axiosClient.put(`/api/classes/${editingId}`, { class_name: className });
-        setMessage('✅ Cập nhật thành công!');
+        toast.success('Cập nhật thông tin lớp học thành công!');
       } else {
         await axiosClient.post(`/api/classes`, { class_name: className });
-        setMessage('✅ Thêm mới thành công!');
+        toast.success('Thêm lớp học mới thành công!');
       }
-      setClassName(''); setEditingId(null); fetchClasses();
+      setClassName(''); 
+      setEditingId(null); 
+      fetchClasses();
     } catch (error: any) {
-      setMessage(`❌ Lỗi: ${error.response?.data?.message || 'Có lỗi xảy ra'}`);
+      toast.error(`Lỗi: ${error.response?.data?.message || 'Có lỗi xảy ra'}`);
     }
   };
 
   const handleEditClick = (cls: ClassData) => {
-    setEditingId(cls.id); setClassName(cls.class_name);
+    setEditingId(cls.id); 
+    setClassName(cls.class_name);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -61,10 +64,10 @@ const ClassList = () => {
     if (!window.confirm(`⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA LỚP HỌC "${name || `#${id}`}"?\n\nLớp học sẽ bị gỡ khỏi danh sách quản lý. Dữ liệu lịch sử điểm danh và học phí sẽ được bảo lưu an toàn.`)) return;
     try {
       await axiosClient.delete(`/api/classes/${id}`);
-      setMessage('✅ Đã xóa lớp học thành công!');
+      toast.success('Đã xóa lớp học thành công!');
       fetchClasses();
     } catch (error: any) {
-      alert(`❌ Lỗi: ${error.response?.data?.message || 'Không thể xóa lớp học này'}`);
+      toast.error(`Lỗi: ${error.response?.data?.message || 'Không thể xóa lớp học này'}`);
     }
   };
 
@@ -99,46 +102,47 @@ const ClassList = () => {
             </Button>
           )}
         </form>
-        {message && <p style={{ marginTop: 'var(--spacing-4)', marginBottom: 0, fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)', color: message.includes('❌') ? 'var(--color-danger)' : 'var(--color-success)' }}>{message}</p>}
       </Card>
       
       {/* CARD: BẢNG DỮ LIỆU */}
       <Card>
-        <div className="overflow-x-auto">
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead style={{ backgroundColor: 'var(--color-background)', borderBottom: '2px solid var(--color-border)' }}>
-              <tr>
-                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase' }}>ID</th>
-                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase' }}>Tên Lớp Học</th>
-                <th style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', textTransform: 'uppercase', textAlign: 'center' }}>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
+        <TableContainer>
+          <Table>
+            <Thead>
+              <Tr>
+                <Th>ID</Th>
+                <Th>Tên Lớp Học</Th>
+                <Th style={{ textAlign: 'center' }}>Hành động</Th>
+              </Tr>
+            </Thead>
+            <Tbody>
               {classes.map((cls) => (
-                <tr key={cls.id} style={{ borderBottom: '1px solid var(--color-background)' }}>
-                  <td style={{ padding: 'var(--spacing-4)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-medium)' }}>#{cls.id}</td>
-                  <td style={{ padding: 'var(--spacing-4)' }}>
+                <Tr key={cls.id}>
+                  <Td style={{ color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-medium)' }}>#{cls.id}</Td>
+                  <Td>
                     <Link to={`/classes/${cls.id}`} style={{ textDecoration: 'none', color: 'var(--color-text)', fontWeight: '700', fontSize: '15px' }}>
                       {cls.class_name}
                     </Link>
-                  </td>
-                  <td style={{ padding: 'var(--spacing-4)', textAlign: 'center' }}>
-                    <Link to={`/classes/${cls.id}`} style={{ display: 'inline-block', marginRight: 'var(--spacing-2)', padding: 'var(--spacing-2) var(--spacing-4)', backgroundColor: '#e0f2fe', color: '#0369a1', textDecoration: 'none', borderRadius: 'var(--radius-md)', fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)' }}>Chi tiết</Link>
-                    <Button onClick={() => handleEditClick(cls)} variant="secondary" size="sm" style={{ marginRight: 'var(--spacing-2)' }}>Sửa</Button>
-                    <Button onClick={() => handleDelete(cls.id, cls.class_name)} variant="danger" size="sm">Xóa</Button>
-                  </td>
-                </tr>
+                  </Td>
+                  <Td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                      <Link to={`/classes/${cls.id}`} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '6px 14px', backgroundColor: 'var(--color-primary-light, #e0f2fe)', color: 'var(--color-primary, #0369a1)', textDecoration: 'none', borderRadius: 'var(--radius-md)', fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--font-size-sm)', minHeight: '36px' }}>Chi tiết</Link>
+                      <Button onClick={() => handleEditClick(cls)} variant="secondary" size="sm" style={{ minHeight: '36px' }}>Sửa</Button>
+                      <Button onClick={() => handleDelete(cls.id, cls.class_name)} variant="danger" size="sm" style={{ minHeight: '36px' }}>Xóa</Button>
+                    </div>
+                  </Td>
+                </Tr>
               ))}
               {classes.length === 0 && (
-                <tr>
-                  <td colSpan={3} style={{ padding: 'var(--spacing-10)' }}>
+                <Tr>
+                  <Td colSpan={3} style={{ padding: 'var(--spacing-10)' }}>
                     <EmptyState title="Chưa có lớp học nào" description="Bạn có thể tạo lớp học mới bằng form phía trên." />
-                  </td>
-                </tr>
+                  </Td>
+                </Tr>
               )}
-            </tbody>
-          </table>
-        </div>
+            </Tbody>
+          </Table>
+        </TableContainer>
       </Card>
     </div>
   );

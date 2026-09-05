@@ -7,6 +7,7 @@ import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Input } from '../components/ui/Input';
+import { toast } from 'react-toastify';
 
 // Helper: Convert Vietnamese number to words
 export function numberToVietnameseWords(num: number): string {
@@ -330,7 +331,7 @@ const TuitionManager = () => {
 
   const handlePreviewBtnClick = () => {
     if (!createData.student_id || !createData.start_date || !createData.end_date) {
-      alert("Vui lòng chọn học sinh và khoảng thời gian (Từ ngày - Đến ngày)");
+      toast.warn("Vui lòng chọn học sinh và khoảng thời gian (Từ ngày - Đến ngày)");
       return;
     }
     fetchPreview(createData.student_id, createData.start_date, createData.end_date, createData.unit_price);
@@ -338,12 +339,12 @@ const TuitionManager = () => {
   
   const handleCreateBill = async () => {
     if (!createData.student_id || !createData.start_date || !createData.end_date) {
-      alert("Vui lòng nhập đầy đủ thông tin học sinh và kỳ thu");
+      toast.warn("Vui lòng nhập đầy đủ thông tin học sinh và kỳ thu");
       return;
     }
     const unitPriceNum = parseInt(createData.unit_price, 10);
     if (isNaN(unitPriceNum) || unitPriceNum < 0) {
-      alert("Vui lòng nhập đơn giá hợp lệ (≥ 0 VNĐ)");
+      toast.warn("Vui lòng nhập đơn giá hợp lệ (≥ 0 VNĐ)");
       return;
     }
     setCreatingBill(true);
@@ -353,9 +354,9 @@ const TuitionManager = () => {
       setPreviewData(null);
       setCreateData({ student_id: '', start_date: '', end_date: '', bill_note: '', unit_price: '' });
       fetchBills();
-      alert("✅ Đã tạo phiếu thu thành công!");
+      toast.success("✅ Đã tạo phiếu thu thành công!");
     } catch(e: any) { 
-      alert(e.response?.data?.error || "Lỗi tạo phiếu thu"); 
+      toast.error(e.response?.data?.error || "Lỗi tạo phiếu thu"); 
     } finally {
       setCreatingBill(false);
     }
@@ -389,10 +390,10 @@ const TuitionManager = () => {
     if (!confirm) return;
     try {
       await axiosClient.put(`/api/payments/${id}/pay`, {});
-      alert('✅ Đã xác nhận thanh toán thành công!');
+      toast.success('✅ Đã xác nhận thanh toán thành công!');
       fetchBills(); 
     } catch (error) { 
-      alert('❌ Lỗi hệ thống.'); 
+      toast.error('❌ Lỗi hệ thống.'); 
     }
   };
 
@@ -401,10 +402,10 @@ const TuitionManager = () => {
     if (!confirm) return;
     try {
       await axiosClient.delete(`/api/payments/bills/${billId}`);
-      alert('✓ Đã xóa phiếu thu học phí thành công!');
+      toast.success('✓ Đã xóa phiếu thu học phí thành công!');
       fetchBills();
     } catch (err: any) {
-      alert(err.response?.data?.error || err.response?.data?.message || 'Lỗi khi xóa phiếu thu');
+      toast.error(err.response?.data?.error || err.response?.data?.message || 'Lỗi khi xóa phiếu thu');
     }
   };
 
@@ -435,7 +436,7 @@ const TuitionManager = () => {
         paperSize: 'A4'
       });
     } catch(e: any) { 
-      alert(e.response?.data?.message || "Lỗi tải phiếu thu"); 
+      toast.error(e.response?.data?.message || "Lỗi tải phiếu thu"); 
     }
   };
 
@@ -462,7 +463,7 @@ const TuitionManager = () => {
         setInvoiceModal((prev: any) => ({ ...prev, teacher_note: res.data.remark }));
       }
     } catch(e: any) {
-      alert("Không thể tạo nhận xét bằng AI lúc này. Bạn vẫn có thể nhập nhận xét thủ công.");
+      toast.warn("Không thể tạo nhận xét bằng AI lúc này. Bạn vẫn có thể nhập nhận xét thủ công.");
     } finally {
       setAiLoading(false);
     }
