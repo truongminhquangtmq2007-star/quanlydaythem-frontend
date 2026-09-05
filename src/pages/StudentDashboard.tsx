@@ -7,29 +7,55 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
 
-const StudentDashboard = () => {
+interface TopicItem {
+  topic: string;
+  total_questions: number;
+  correct_answers: number;
+  accuracy_rate: number;
+}
+
+interface ScoreItem {
+  id: number;
+  total_score: number;
+  submitted_at: string;
+  document_id?: number;
+}
+
+interface AiInsight {
+  summary?: string;
+  strengths?: string[];
+  focus_areas?: string[];
+  action_plan?: string[];
+  confidence_score?: number;
+  generated_at?: string;
+}
+
+const StudentDashboard: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [generatingInsight, setGeneratingInsight] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const res = await axiosClient.get('/api/student/dashboard');
+      setData(res.data);
+      if (res.data?.profile?.email) {
+        setEmailInput(res.data.profile.email);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi tải dữ liệu bảng điều khiển');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await axiosClient.get('/api/student/dashboard');
-        setData(res.data);
-        if (res.data?.profile?.email) {
-          setEmailInput(res.data.profile.email);
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error('Lỗi tải dữ liệu bảng điều khiển');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
 
@@ -40,12 +66,33 @@ const StudentDashboard = () => {
       await axiosClient.put('/api/student/email', { email: emailInput });
       toast.success('Cập nhật email thành công!');
       setShowEmailModal(false);
-      const res = await axiosClient.get('/api/student/dashboard');
-      setData(res.data);
+      await fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Lỗi cập nhật email');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleGenerateInsight = async () => {
+    setGeneratingInsight(true);
+    try {
+      const res = await axiosClient.post('/api/ai/insight/generate', {});
+      if (res.data?.data?.insight) {
+        setData((prev: any) => ({
+          ...prev,
+          aiInsight: {
+            ...res.data.data.insight,
+            generated_at: res.data.data.generated_at
+          }
+        }));
+        toast.success('Đã cập nhật bản phân tích cố vấn học tập AI!');
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Không thể tạo phân tích lúc này. Vui lòng thử lại sau.';
+      toast.warning(msg);
+    } finally {
+      setGeneratingInsight(false);
     }
   };
 
@@ -57,13 +104,20 @@ const StudentDashboard = () => {
           <Skeleton height="120px" />
           <Skeleton height="120px" />
           <Skeleton height="120px" />
+          <Skeleton height="120px" />
         </div>
         <Skeleton height="300px" />
       </div>
     );
   }
 
-  if (!data) return <EmptyState title="Lỗi dữ liệu" description="Không thể tải dữ liệu." />;
+  if (!data) return <EmptyState title="Lỗi dữ liệu" description="Không thể tải dữ liệu bảng điều khiển." />;
+
+  const recentScores: ScoreItem[] = (data.stats?.recentScores || []).slice().reverse(); // Sắp xếp theo thứ tự thời gian tăng dần
+  const weakTopics: TopicItem[] = data.weakTopics || [];
+  const strongTopics: TopicItem[] = data.strongTopics || [];
+  const allTopics: TopicItem[] = data.allTopics || [];
+  const aiInsight: AiInsight | null = data.aiInsight || null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,26 +154,247 @@ const StudentDashboard = () => {
         </div>
       </Card>
 
-      {/* STATS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-4)' }}>
+      {/* STATS OVERVIEW */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--spacing-4)' }}>
         <Card style={{ padding: 'var(--spacing-5)', borderLeft: '4px solid var(--color-info)' }}>
-          <h3 className="text-secondary" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-2) 0' }}>Tỷ lệ chuyên cần</h3>
+          <h3 className="text-secondary" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-2) 0' }}>Tỷ lệ chuyên cần (30 ngày)</h3>
           <div style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>
             {data.stats?.attendanceRate}%
           </div>
         </Card>
         <Card style={{ padding: 'var(--spacing-5)', borderLeft: '4px solid var(--color-success)' }}>
-          <h3 className="text-secondary" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-2) 0' }}>Điểm trung bình (30 ngày)</h3>
+          <h3 className="text-secondary" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-2) 0' }}>Điểm trung bình</h3>
           <div style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>
             {data.stats?.avgScore}
           </div>
         </Card>
         <Card style={{ padding: 'var(--spacing-5)', borderLeft: '4px solid var(--color-warning)' }}>
-          <h3 className="text-secondary" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-2) 0' }}>Bài đã làm</h3>
+          <h3 className="text-secondary" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-2) 0' }}>Bài thi hoàn thành</h3>
           <div style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>
             {data.stats?.examsCount}
           </div>
         </Card>
+        <Card style={{ padding: 'var(--spacing-5)', borderLeft: '4px solid var(--color-primary)' }}>
+          <h3 className="text-secondary" style={{ fontSize: 'var(--font-size-sm)', margin: '0 0 var(--spacing-2) 0' }}>Chuyên đề đã tích lũy</h3>
+          <div style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text)' }}>
+            {allTopics.length}
+          </div>
+        </Card>
+      </div>
+
+      {/* SCORE PROGRESS TREND CHART */}
+      <Card style={{ padding: 'var(--spacing-6)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
+          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', fontSize: 'var(--font-size-xl)' }}>
+            <span>📊</span> Tiến độ điểm bài thi gần nhất
+          </h2>
+          <span className="text-secondary" style={{ fontSize: 'var(--font-size-sm)' }}>
+            Chỉ tính bài đã nộp hoàn thành
+          </span>
+        </div>
+
+        {recentScores.length === 0 ? (
+          <p className="text-muted" style={{ margin: 0, padding: 'var(--spacing-4) 0' }}>
+            Chưa có bài thi nào được hoàn thành để vẽ biểu đồ tiến độ.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'flex-end', 
+              gap: 'var(--spacing-3)', 
+              height: '180px', 
+              padding: 'var(--spacing-4) 0',
+              borderBottom: '2px solid var(--color-border)'
+            }}>
+              {recentScores.map((sc, idx) => {
+                const score = Number(sc.total_score);
+                const heightPercent = Math.max(10, Math.min(100, (score / 10) * 100));
+                let barBg = 'var(--color-primary)';
+                if (score >= 8) barBg = 'var(--color-success)';
+                else if (score < 5) barBg = 'var(--color-danger)';
+                else if (score < 7) barBg = 'var(--color-warning)';
+
+                const dateText = sc.submitted_at ? new Date(sc.submitted_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : `#${idx + 1}`;
+
+                return (
+                  <div 
+                    key={sc.id || idx}
+                    style={{ 
+                      flex: 1, 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      height: '100%', 
+                      justifyContent: 'flex-end' 
+                    }}
+                  >
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px', color: barBg }}>
+                      {score.toFixed(1)}
+                    </span>
+                    <div 
+                      style={{ 
+                        width: '70%', 
+                        maxWidth: '40px',
+                        height: `${heightPercent}%`, 
+                        backgroundColor: barBg, 
+                        borderRadius: '6px 6px 0 0',
+                        transition: 'height 0.5s ease-in-out'
+                      }} 
+                      title={`Bài ngày ${dateText}: ${score}/10`}
+                    />
+                    <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)', marginTop: '6px' }}>
+                      {dateText}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+              <span>Cũ hơn</span>
+              <span>Mới nhất ➔</span>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* AI LEARNING INSIGHT & ACTION PLAN */}
+      <Card style={{ padding: 'var(--spacing-6)', borderLeft: '4px solid var(--color-primary)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)', flexWrap: 'wrap', gap: 'var(--spacing-2)' }}>
+          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', fontSize: 'var(--font-size-xl)' }}>
+            <span>🤖</span> Cố vấn học tập AI & Lộ trình hành động
+          </h2>
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            onClick={handleGenerateInsight} 
+            isLoading={generatingInsight}
+          >
+            🔄 {aiInsight ? 'Làm mới phân tích' : 'Phân tích ngay'}
+          </Button>
+        </div>
+
+        {!aiInsight ? (
+          <div style={{ padding: 'var(--spacing-4)', backgroundColor: 'var(--color-background)', borderRadius: 'var(--radius-md)' }}>
+            <p className="text-secondary" style={{ margin: 0 }}>
+              Hệ thống chưa tạo báo cáo phân tích cá nhân hóa. Nhấn <strong>"Phân tích ngay"</strong> để AI Sư phạm tổng hợp năng lực chuyên đề và đề xuất lộ trình ôn tập 4 bước cho bạn.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)' }}>
+            {/* SUMMARY */}
+            <div style={{ 
+              padding: 'var(--spacing-4)', 
+              backgroundColor: 'var(--color-primary-soft)', 
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--color-text)',
+              fontSize: '14px',
+              lineHeight: '1.6'
+            }}>
+              <strong>💡 Đánh giá tổng quan:</strong> {aiInsight.summary}
+            </div>
+
+            {/* ACTION PLAN */}
+            {aiInsight.action_plan && aiInsight.action_plan.length > 0 && (
+              <div>
+                <h4 style={{ margin: '0 0 var(--spacing-2) 0', fontSize: '14px', color: 'var(--color-text)' }}>
+                  🎯 Kế hoạch hành động khuyến nghị (Theo mức ưu tiên):
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
+                  {aiInsight.action_plan.map((act, idx) => (
+                    <div 
+                      key={idx}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'flex-start', 
+                        gap: 'var(--spacing-2)',
+                        padding: 'var(--spacing-3)',
+                        backgroundColor: 'var(--color-surface)',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--color-border)',
+                        fontSize: '13px'
+                      }}
+                    >
+                      <span>📌</span>
+                      <span>{act}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {aiInsight.generated_at && (
+              <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', textAlign: 'right' }}>
+                Cập nhật lúc: {new Date(aiInsight.generated_at).toLocaleString('vi-VN')}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      {/* TOPIC PERFORMANCE: STRENGTHS & FOCUS AREAS */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 'var(--spacing-4)' }}>
+        
+        {/* STRENGTHS */}
+        <Card style={{ padding: 'var(--spacing-6)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
+            <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', fontSize: 'var(--font-size-lg)' }}>
+              <span>🌟</span> Thế mạnh vững chắc (≥ 80%)
+            </h2>
+            <Badge variant="success">≥ 5 câu</Badge>
+          </div>
+
+          {strongTopics.length === 0 ? (
+            <p className="text-muted" style={{ margin: 0 }}>Chưa có chuyên đề đạt ngưỡng thế mạnh (≥ 80% trên tối thiểu 5 câu).</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {strongTopics.map((t, idx) => (
+                <div key={idx} style={{ padding: 'var(--spacing-2) 0' }}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>{t.topic}</span>
+                    <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-success)', fontSize: '13px' }}>
+                      {t.accuracy_rate}% ({t.correct_answers}/{t.total_questions} câu)
+                    </span>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--color-surface-hover)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+                    <div style={{ width: `${t.accuracy_rate}%`, height: '100%', backgroundColor: 'var(--color-success)', borderRadius: 'var(--radius-full)' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* WEAK TOPICS / FOCUS AREAS */}
+        <Card style={{ padding: 'var(--spacing-6)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
+            <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', fontSize: 'var(--font-size-lg)' }}>
+              <span>⚠️</span> Cần củng cố & Luyện thêm (&lt; 50%)
+            </h2>
+            <Badge variant="danger">Ưu tiên</Badge>
+          </div>
+
+          {weakTopics.length === 0 ? (
+            <p className="text-muted" style={{ margin: 0 }}>Không có chuyên đề báo động dưới 50%. Duy trì phong độ rất tốt!</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {weakTopics.map((t, idx) => (
+                <div key={idx} style={{ padding: 'var(--spacing-2) 0' }}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>{t.topic}</span>
+                    <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-danger)', fontSize: '13px' }}>
+                      {t.accuracy_rate}% ({t.correct_answers}/{t.total_questions} câu)
+                    </span>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--color-surface-hover)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+                    <div style={{ width: `${t.accuracy_rate}%`, height: '100%', backgroundColor: 'var(--color-danger)', borderRadius: 'var(--radius-full)' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
       </div>
 
       {/* UPCOMING SESSIONS */}
@@ -205,7 +480,7 @@ const StudentDashboard = () => {
         )}
       </Card>
 
-      {/* ASSIGNED HOMEWORK / DOCUMENTS SECTION */}
+      {/* ASSIGNED HOMEWORK / DOCUMENTS */}
       <Card style={{ padding: 'var(--spacing-6)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-4)' }}>
           <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', fontSize: 'var(--font-size-xl)' }}>
@@ -278,37 +553,7 @@ const StudentDashboard = () => {
         )}
       </Card>
 
-      {/* WEAK TOPICS */}
-      <Card style={{ padding: 'var(--spacing-6)' }}>
-        <h2 style={{ marginBottom: 'var(--spacing-4)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-          <span>📈</span> Tiến độ chuyên đề
-        </h2>
-        <div className="flex flex-col gap-4">
-          {(!data.weakTopics || data.weakTopics.length === 0) ? (
-            <p className="text-muted">Chưa có dữ liệu bài làm để phân tích.</p>
-          ) : (
-            data.weakTopics.map((t: any, idx: number) => {
-              const rate = Number(t.accuracy_rate);
-              let barColor = 'var(--color-success)';
-              if (rate < 50) barColor = 'var(--color-danger)';
-              else if (rate < 80) barColor = 'var(--color-warning)';
-
-              return (
-                <div key={idx}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>{t.topic}</span>
-                    <span style={{ fontWeight: 'var(--font-weight-bold)', color: barColor }}>{rate}%</span>
-                  </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--color-surface-hover)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-                    <div style={{ width: `${rate}%`, height: '100%', backgroundColor: barColor, borderRadius: 'var(--radius-full)', transition: 'width 1s ease-out' }} />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </Card>
-
+      {/* EDIT EMAIL MODAL */}
       <Modal isOpen={showEmailModal} onClose={() => setShowEmailModal(false)} title="Cập nhật Email">
         <form onSubmit={handleUpdateEmail} className="flex flex-col gap-4">
           <Input 
