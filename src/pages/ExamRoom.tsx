@@ -11,6 +11,7 @@ import { ExamHeader } from '../components/exam/ExamHeader';
 import { QuestionNavigator } from '../components/exam/QuestionNavigator';
 import { SubmitConfirmModal } from '../components/exam/SubmitConfirmModal';
 import { Button } from '../components/ui/Button';
+import { toast } from 'react-toastify';
 import type { ExamGradingResult } from '../types/exam';
 
 // ==========================================
@@ -103,7 +104,7 @@ const renderContent = (text: string) => {
             <span
               style={{
                 fontSize: '11px',
-                color: '#b91c1c'
+                color: 'var(--color-danger)'
               }}
             >
               {error.message}
@@ -197,7 +198,7 @@ const ExamRoom = () => {
         setViewState('RESULT');
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể tải chi tiết lần thi này.');
+      toast.error(err.response?.data?.message || 'Không thể tải chi tiết lần thi này.');
     }
   };
 
@@ -281,12 +282,12 @@ const ExamRoom = () => {
           if (res.data && res.data.exam_content) {
             setExamData(res.data.exam_content);
           } else {
-            alert('Giáo viên chưa cập nhật nội dung chi tiết cho đề thi này!');
+            toast.error('Giáo viên chưa cập nhật nội dung chi tiết cho đề thi này!');
             setExamData({ part1: [], part2: [], part3: [], sharedContexts: [] });
           }
         } catch (error) {
           console.error('Lỗi khi tải nội dung đề thi:', error);
-          alert('Không thể tải nội dung đề thi. Vui lòng thử lại!');
+          toast.error('Không thể tải nội dung đề thi. Vui lòng thử lại!');
         }
       };
 
@@ -354,7 +355,7 @@ const ExamRoom = () => {
       setGradingResult(res.data as ExamGradingResult);
       setViewState('RESULT');
     } catch (error: any) { 
-      alert("Lỗi nộp bài: " + (error?.response?.data?.message || error.message)); 
+      toast.error("Lỗi nộp bài: " + (error?.response?.data?.message || error.message)); 
     } finally {
       setIsSubmitting(false);
     }
@@ -380,18 +381,18 @@ const ExamRoom = () => {
 
   const renderGroupBlock = (group: SharedContext) => (
     <div style={{
-      backgroundColor: '#fffbeb',
-      border: '1px solid #fde68a',
+      backgroundColor: 'var(--color-warning-soft)',
+      border: '1px solid var(--color-warning)',
       borderRadius: 'var(--radius-lg)',
       padding: 'var(--spacing-4) var(--spacing-5)',
       marginBottom: 'var(--spacing-4)',
-      boxShadow: '0 2px 6px rgba(245, 158, 11, 0.08)',
-      color: '#92400e',
+      boxShadow: 'var(--shadow-sm)',
+      color: 'var(--color-text)',
       fontSize: `${fontSize - 1}px`,
       lineHeight: 1.6
     }}>
       {group.image_url && <ImageBlock url={group.image_url} />}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold', color: '#b45309', marginBottom: '6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold', color: 'var(--color-warning)', marginBottom: '6px' }}>
         <span>📖 Dữ liệu ngữ cảnh chung cho các Câu {group.questionIds.join(', ')}:</span>
       </div>
       <div style={{ color: 'var(--color-text)' }}>{renderContent(group.content)}</div>
@@ -460,7 +461,16 @@ const ExamRoom = () => {
       questionText: { fontSize: `${fontSize}px`, marginBottom: 'var(--spacing-4)', lineHeight: 1.6 },
       optionsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--spacing-3)' },
       optionItem: (selected: boolean) => ({
-        padding: 'var(--spacing-3)', borderRadius: 'var(--radius-md)', border: selected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)', backgroundColor: selected ? 'var(--color-primary-soft)' : 'var(--color-surface)', cursor: 'pointer', display: 'flex', gap: 'var(--spacing-3)', transition: 'all var(--transition-fast)'
+        padding: 'var(--spacing-3) var(--spacing-4)',
+        minHeight: '44px',
+        alignItems: 'center',
+        borderRadius: 'var(--radius-md)',
+        border: selected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+        backgroundColor: selected ? 'var(--color-primary-soft)' : 'var(--color-surface)',
+        cursor: 'pointer',
+        display: 'flex',
+        gap: 'var(--spacing-3)',
+        transition: 'all var(--transition-fast)'
       }),
       radioCircle: (selected: boolean) => ({
         width: '20px', height: '20px', minWidth: '20px', borderRadius: '50%', border: selected ? '6px solid var(--color-primary)' : '2px solid var(--color-border)', backgroundColor: 'var(--color-surface)', transition: 'all 0.2s'
@@ -578,15 +588,17 @@ const ExamRoom = () => {
                                     return (
                                       <tr key={stmt}>
                                         <td style={examStyles.tfCell}><strong>{stmt})</strong> {renderContent(q.statements[stmt])}</td>
-                                        <td style={{ textAlign: 'center', borderBottom: '1px solid var(--color-border)' }}>
+                                        <td 
+                                          onClick={() => setPart2Answers({ ...part2Answers, [q.id]: { ...part2Answers[q.id], [stmt]: 'Đ' } })}
+                                          style={{ textAlign: 'center', borderBottom: '1px solid var(--color-border)', cursor: 'pointer', padding: 'var(--spacing-3)' }}>
                                           <div 
-                                            onClick={() => setPart2Answers({ ...part2Answers, [q.id]: { ...part2Answers[q.id], [stmt]: 'Đ' } })}
-                                            style={{ margin: '0 auto', cursor: 'pointer', ...examStyles.radioCircle(currentAns === 'Đ') }}></div>
+                                            style={{ margin: '0 auto', ...examStyles.radioCircle(currentAns === 'Đ') }}></div>
                                         </td>
-                                        <td style={{ textAlign: 'center', borderBottom: '1px solid var(--color-border)' }}>
+                                        <td 
+                                          onClick={() => setPart2Answers({ ...part2Answers, [q.id]: { ...part2Answers[q.id], [stmt]: 'S' } })}
+                                          style={{ textAlign: 'center', borderBottom: '1px solid var(--color-border)', cursor: 'pointer', padding: 'var(--spacing-3)' }}>
                                           <div 
-                                            onClick={() => setPart2Answers({ ...part2Answers, [q.id]: { ...part2Answers[q.id], [stmt]: 'S' } })}
-                                            style={{ margin: '0 auto', cursor: 'pointer', ...examStyles.radioCircle(currentAns === 'S') }}></div>
+                                            style={{ margin: '0 auto', ...examStyles.radioCircle(currentAns === 'S') }}></div>
                                         </td>
                                       </tr>
                                     );

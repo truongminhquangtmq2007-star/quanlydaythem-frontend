@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import axiosClient from '../api/axiosClient';
 import { useNavigate, Link } from 'react-router-dom'; 
 import { AuthContext } from '../context/AuthContext';
-import { Card } from '../components/ui/Card';
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
+import { Card, Input, Button, Alert } from '../components/ui';
 
 const StudentLogin = () => {
   const [username, setUsername] = useState('');
@@ -82,15 +80,9 @@ const StudentLogin = () => {
           />
           
           {message && (
-            <div style={{ 
-              color: 'var(--color-danger)', 
-              backgroundColor: 'var(--color-danger-soft)', 
-              padding: 'var(--spacing-3)', 
-              borderRadius: 'var(--radius-md)', 
-              fontSize: 'var(--font-size-sm)' 
-            }}>
+            <Alert variant="danger">
               {message}
-            </div>
+            </Alert>
           )}
 
           <Button type="submit" size="lg" isLoading={loading} style={{ marginTop: 'var(--spacing-2)' }}>

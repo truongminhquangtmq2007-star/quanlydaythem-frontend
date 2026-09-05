@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
+import { toast } from 'react-toastify';
 import AITutorBlock from '../components/AITutorBlock';
 
 // ==========================================
@@ -73,7 +74,7 @@ const ViewAnswers = () => {
           setExamKey(res.data);
         }
       } catch (e) { 
-        alert("Không thể tải chi tiết đáp án đề thi!"); 
+        toast.error("Không thể tải chi tiết đáp án đề thi!"); 
       } finally {
         setIsLoading(false);
       }

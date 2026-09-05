@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { EmptyState } from '../ui/EmptyState';
 
 interface ExamListProps {
   exams: any[];
@@ -23,7 +24,11 @@ export const ExamList: React.FC<ExamListProps> = ({ exams, myScores, onBack, onS
       </div>
 
       {exams.length === 0 ? (
-        <div className="text-center text-muted" style={{ padding: 'var(--spacing-8)' }}>Chưa có đề thi nào được mở cho lớp của bạn.</div>
+        <EmptyState
+          icon="📝"
+          title="Chưa có đề thi nào"
+          description="Hiện tại chưa có đề thi nào được mở cho lớp của bạn. Hãy liên hệ giáo viên hoặc quay lại sau nhé!"
+        />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--spacing-6)' }}>
           {exams.map(doc => {
@@ -75,7 +80,7 @@ export const ExamList: React.FC<ExamListProps> = ({ exams, myScores, onBack, onS
                                </span>
                              </div>
                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                               <span style={{ fontWeight: 'bold', color: Number(att.total_score) >= 8 ? 'var(--color-success)' : Number(att.total_score) >= 5 ? '#f59e0b' : 'var(--color-danger)' }}>
+                               <span style={{ fontWeight: 'bold', color: Number(att.total_score) >= 8 ? 'var(--color-success)' : Number(att.total_score) >= 5 ? 'var(--color-warning)' : 'var(--color-danger)' }}>
                                  {att.total_score}đ
                                </span>
                                {onViewAttempt && (

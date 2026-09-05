@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemePicker } from './ui/ThemePicker';
+import { Avatar } from './ui/Avatar';
 
 const StudentLayout = () => {
   const navigate = useNavigate();
@@ -95,17 +96,7 @@ const StudentLayout = () => {
             ✕
           </button>
 
-          <div style={{ 
-            width: '56px', height: '56px', 
-            backgroundColor: 'var(--color-primary-soft)', 
-            color: 'var(--color-primary)',
-            borderRadius: '50%', 
-            display: 'flex', justifyContent: 'center', alignItems: 'center', 
-            marginBottom: 'var(--spacing-3)', 
-            fontSize: '28px' 
-          }}>
-            🧑‍🎓
-          </div>
+          <Avatar name={studentName} size="xl" style={{ marginBottom: 'var(--spacing-3)' }} />
           <h3 style={{ margin: 0, fontSize: 'var(--font-size-lg)', color: 'var(--color-text)', fontWeight: 'var(--font-weight-semibold)' }}>
             {studentName}
           </h3>
@@ -219,17 +210,7 @@ const StudentLayout = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
             <ThemePicker />
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
-              <div style={{ 
-                width: '34px', height: '34px', 
-                borderRadius: 'var(--radius-full)', 
-                backgroundColor: 'var(--color-primary-soft)', 
-                color: 'var(--color-primary)',
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                fontWeight: 'var(--font-weight-bold)',
-                fontSize: '14px'
-              }}>
-                {studentName ? studentName.charAt(0) : 'S'}
-              </div>
+              <Avatar name={studentName} size="sm" />
               <div className="user-info-text" style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text)' }}>{studentName}</span>
                 <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>Học viên</span>

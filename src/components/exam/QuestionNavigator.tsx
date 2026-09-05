@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '../ui/Button';
 
 interface QuestionNavigatorProps {
   questions: any[];
@@ -100,13 +101,13 @@ export const QuestionNavigator: React.FC<QuestionNavigatorProps> = ({
           <div className="flex items-center gap-1"><div style={{ width: 12, height: 12, backgroundColor: 'var(--color-warning-soft)', border: '1px solid var(--color-warning)', borderRadius: 2 }}></div> Dang dở</div>
           <div className="flex items-center gap-1"><div style={{ width: 12, height: 12, border: '1px solid var(--color-border)', borderRadius: 2 }}></div> Chưa làm</div>
         </div>
-        <button 
+        <Button 
+          variant="primary"
           onClick={onSubmitClick}
-          className="btn btn-primary"
           style={{ width: '100%' }}
         >
           Nộp Bài
-        </button>
+        </Button>
       </div>
     </div>
   );

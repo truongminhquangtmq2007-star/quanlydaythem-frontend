@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import axiosClient from '../api/axiosClient';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Skeleton } from '../components/ui/Skeleton';
-import { EmptyState } from '../components/ui/EmptyState';
-import { Modal } from '../components/ui/Modal';
-import { Input } from '../components/ui/Input';
-import { Badge } from '../components/ui/Badge';
+import { Card, Button, Skeleton, EmptyState, Modal, Input, Badge, Avatar, ProgressBar, Alert } from '../components/ui';
 
 interface TopicItem {
   topic: string;
@@ -129,27 +123,18 @@ const StudentDashboard: React.FC = () => {
         gap: 'var(--spacing-6)', 
         padding: 'var(--spacing-6)',
         backgroundColor: 'var(--color-primary-soft)',
-        border: 'none'
+        border: '1px solid var(--color-border)',
+        flexWrap: 'wrap'
       }}>
-        <div style={{ 
-          width: '80px', height: '80px', 
-          borderRadius: '50%', 
-          backgroundColor: 'var(--color-surface)', 
-          color: 'var(--color-primary)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', 
-          fontSize: '40px',
-          boxShadow: 'var(--shadow-sm)'
-        }}>
-          👋
-        </div>
-        <div>
-          <h1 style={{ margin: 0, color: 'var(--color-primary)' }}>Xin chào, {data.profile?.full_name}!</h1>
+        <Avatar name={data.profile?.full_name || 'Học viên'} size="xl" />
+        <div style={{ flex: 1, minWidth: '240px' }}>
+          <h1 style={{ margin: 0, color: 'var(--color-primary)', fontSize: 'var(--font-size-2xl)' }}>Xin chào, {data.profile?.full_name}!</h1>
           <p className="text-secondary" style={{ margin: 'var(--spacing-1) 0' }}>Trường {data.profile?.school || 'Chưa cập nhật'}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', marginTop: 'var(--spacing-2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', marginTop: 'var(--spacing-2)', flexWrap: 'wrap' }}>
             <span className="text-secondary" style={{ fontSize: 'var(--font-size-sm)' }}>
               Email: {data.profile?.email || 'Chưa cập nhật'}
             </span>
-            <Button variant="ghost" size="sm" onClick={() => setShowEmailModal(true)}>Sửa</Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowEmailModal(true)}>Sửa email</Button>
           </div>
         </div>
       </Card>
@@ -351,14 +336,12 @@ const StudentDashboard: React.FC = () => {
               {strongTopics.map((t, idx) => (
                 <div key={idx} style={{ padding: 'var(--spacing-2) 0' }}>
                   <div className="flex justify-between items-center mb-1">
-                    <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>{t.topic}</span>
-                    <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-success)', fontSize: '13px' }}>
+                    <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>{t.topic}</span>
+                    <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-success)', fontSize: 'var(--font-size-xs)' }}>
                       {t.accuracy_rate}% ({t.correct_answers}/{t.total_questions} câu)
                     </span>
                   </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--color-surface-hover)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-                    <div style={{ width: `${t.accuracy_rate}%`, height: '100%', backgroundColor: 'var(--color-success)', borderRadius: 'var(--radius-full)' }} />
-                  </div>
+                  <ProgressBar value={t.accuracy_rate} color="var(--color-success)" height="6px" />
                 </div>
               ))}
             </div>
@@ -381,14 +364,12 @@ const StudentDashboard: React.FC = () => {
               {weakTopics.map((t, idx) => (
                 <div key={idx} style={{ padding: 'var(--spacing-2) 0' }}>
                   <div className="flex justify-between items-center mb-1">
-                    <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)' }}>{t.topic}</span>
-                    <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-danger)', fontSize: '13px' }}>
+                    <span style={{ fontWeight: 'var(--font-weight-medium)', fontSize: 'var(--font-size-sm)', color: 'var(--color-text)' }}>{t.topic}</span>
+                    <span style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-danger)', fontSize: 'var(--font-size-xs)' }}>
                       {t.accuracy_rate}% ({t.correct_answers}/{t.total_questions} câu)
                     </span>
                   </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--color-surface-hover)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-                    <div style={{ width: `${t.accuracy_rate}%`, height: '100%', backgroundColor: 'var(--color-danger)', borderRadius: 'var(--radius-full)' }} />
-                  </div>
+                  <ProgressBar value={t.accuracy_rate} color="var(--color-danger)" height="6px" />
                 </div>
               ))}
             </div>
@@ -448,16 +429,9 @@ const StudentDashboard: React.FC = () => {
                       <span style={{ backgroundColor: 'var(--color-background)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--color-border)' }}>
                         ⏰ {timeStr}
                       </span>
-                      <span style={{
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        backgroundColor: isOnline ? '#eff6ff' : '#f0fdf4',
-                        color: isOnline ? '#2563eb' : '#15803d'
-                      }}>
+                      <Badge variant={isOnline ? 'info' : 'success'}>
                         {isOnline ? '🌐 Trực tuyến' : '🏫 Trực tiếp'}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
 
@@ -465,7 +439,7 @@ const StudentDashboard: React.FC = () => {
                     <a 
                       href={sess.meet_link} 
                       target="_blank" 
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       style={{ textDecoration: 'none' }}
                     >
                       <Button variant="primary" size="sm">
@@ -524,7 +498,7 @@ const StudentDashboard: React.FC = () => {
                       </span>
                     )}
                     {item.due_at && (
-                      <span style={{ color: '#d97706', fontWeight: 'bold' }}>
+                      <span style={{ color: 'var(--color-warning)', fontWeight: 'bold' }}>
                         ⏰ Hạn nộp: {new Date(item.due_at).toLocaleDateString('vi-VN')} {new Date(item.due_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
@@ -535,7 +509,7 @@ const StudentDashboard: React.FC = () => {
                   <a 
                     href={item.file_url} 
                     target="_blank" 
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     style={{ textDecoration: 'none' }}
                   >
                     <Button variant="primary" size="sm">

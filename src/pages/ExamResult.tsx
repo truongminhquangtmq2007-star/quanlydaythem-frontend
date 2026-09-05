@@ -8,6 +8,8 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import axiosClient from '../api/axiosClient';
 import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { ProgressBar } from '../components/ui/ProgressBar';
 
 // ==========================================
 // HÀM TIỆN ÍCH: Render LaTeX an toàn
@@ -94,9 +96,9 @@ const findGroupIfFirst = (examData: any, part: string, qId: number): SharedConte
 };
 
 const renderGroupBlock = (group: SharedContext) => (
-  <div style={{ backgroundColor: 'var(--color-surface)beb', border: '1px dashed var(--color-warning)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-5)', color: '#78350f', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
+  <div style={{ backgroundColor: 'var(--color-warning-soft)', border: '1px dashed var(--color-warning)', padding: 'var(--spacing-4)', borderRadius: 'var(--radius-md)', marginBottom: 'var(--spacing-5)', color: 'var(--color-text)', lineHeight: '1.6', fontSize: '15px', clear: 'both' }}>
     {group.image_url && <ImageBlock url={group.image_url} />}
-    <div style={{ fontWeight: 'var(--font-weight-bold)', marginBottom: 'var(--spacing-2)' }}>
+    <div style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-warning)', marginBottom: 'var(--spacing-2)' }}>
       📌 Sử dụng thông tin sau để trả lời các câu {group.questionIds.join(', ')}:
     </div>
     <div>{renderContent(group.content)}</div>
@@ -251,14 +253,9 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                     <div style={styles.questionText}>
                       <strong>Câu {q.id}. </strong>{renderContent(q.questionText)}
                     </div>
-                    <div style={{
-                      padding: '4px 12px', borderRadius: 'var(--radius-xl)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)',
-                      backgroundColor: isCorrect ? '#dcfce7' : '#fef2f2',
-                      color: isCorrect ? '#15803d' : '#dc2626',
-                      whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 'var(--spacing-2)'
-                    }}>
+                    <Badge variant={isCorrect ? 'success' : 'danger'} size="md" style={{ flexShrink: 0, marginLeft: 'var(--spacing-2)' }}>
                       {isCorrect ? '✓ Đúng' : '✗ Sai'} ({detail?.score_earned ?? 0}đ)
-                    </div>
+                    </Badge>
                   </div>
                   <div style={styles.optionsGrid}>
                     {['A', 'B', 'C', 'D'].map((opt) => {
@@ -376,15 +373,14 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                   <div style={styles.questionText}>
                     <strong>Câu {qId}. </strong>{q ? renderContent(q.questionText) : ''}
                   </div>
-                  <div style={{
-                    padding: '6px 14px', borderRadius: 'var(--radius-md)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)',
-                    backgroundColor: correctCount === 4 ? '#dcfce7' : correctCount >= 2 ? '#fefce8' : '#fef2f2',
-                    color: correctCount === 4 ? '#15803d' : correctCount >= 2 ? '#a16207' : '#dc2626',
-                    whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 'var(--spacing-2)', textAlign: 'center' as const
-                  }}>
+                  <Badge 
+                    variant={correctCount === 4 ? 'success' : correctCount >= 2 ? 'warning' : 'danger'} 
+                    size="md" 
+                    style={{ flexShrink: 0, marginLeft: 'var(--spacing-2)', textAlign: 'center' }}
+                  >
                     <div>{baremLabel}</div>
-                    <div style={{ fontSize: 'var(--font-size-base)', marginTop: '2px' }}>+{qScore}đ</div>
-                  </div>
+                    <div style={{ fontSize: 'var(--font-size-base)', fontWeight: 'bold' }}>+{qScore}đ</div>
+                  </Badge>
                 </div>
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 'var(--spacing-2)' }}>
@@ -467,14 +463,9 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
                   <div style={styles.questionText}>
                     <strong>Câu {qId}. </strong>{q ? renderContent(q.questionText) : ''}
                   </div>
-                  <div style={{
-                    padding: '4px 12px', borderRadius: 'var(--radius-xl)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)',
-                    backgroundColor: isCorrect ? '#dcfce7' : '#fef2f2',
-                    color: isCorrect ? '#15803d' : '#dc2626',
-                    whiteSpace: 'nowrap', flexShrink: 0, marginLeft: 'var(--spacing-2)'
-                  }}>
+                  <Badge variant={isCorrect ? 'success' : 'danger'} size="md" style={{ flexShrink: 0, marginLeft: 'var(--spacing-2)' }}>
                     {isCorrect ? '✓ Đúng' : '✗ Sai'} ({scoreEarned}/{maxScore}đ)
-                  </div>
+                  </Badge>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-5)', marginTop: 'var(--spacing-3)', flexWrap: 'wrap' }}>
@@ -579,45 +570,30 @@ const ExamResult: React.FC<ExamResultProps> = (props) => {
               <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-2)' }}>
                 {isEnglishExam ? 'Trắc nghiệm' : 'Phần I — Trắc nghiệm'}
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-primary-dark)' }}>{p1Score}đ</div>
-              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)' }}>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-primary)' }}>{p1Score}đ</div>
+              <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)', marginBottom: 'var(--spacing-2)' }}>
                 {p1Correct}/{p1Total} câu đúng
               </div>
-              <div style={{ marginTop: 'var(--spacing-2)', height: '6px', borderRadius: '3px', backgroundColor: 'var(--color-border)', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: '3px', backgroundColor: 'var(--color-primary)',
-                  width: p1Total > 0 ? `${(p1Correct / p1Total) * 100}%` : '0%', transition: 'width 0.5s ease'
-                }} />
-              </div>
+              <ProgressBar value={p1Total > 0 ? (p1Correct / p1Total) * 100 : 0} color="var(--color-primary)" height="6px" />
             </div>
 
             {/* Part 2 */}
             {!isEnglishExam && (
               <div style={styles.partBox('var(--color-warning)')}>
                 <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-2)' }}>Phần II — Đúng / Sai</div>
-                <div style={{ fontSize: '28px', fontWeight: '800', color: '#d97706' }}>{p2Score}đ</div>
-                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)' }}>{p2Correct}/{p2Total} câu đúng hoàn toàn</div>
-                <div style={{ marginTop: 'var(--spacing-2)', height: '6px', borderRadius: '3px', backgroundColor: 'var(--color-border)', overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: '3px', backgroundColor: 'var(--color-warning)',
-                    width: p2Total > 0 ? `${(p2Correct / p2Total) * 100}%` : '0%', transition: 'width 0.5s ease'
-                  }} />
-                </div>
+                <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-warning)' }}>{p2Score}đ</div>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)', marginBottom: 'var(--spacing-2)' }}>{p2Correct}/{p2Total} câu đúng hoàn toàn</div>
+                <ProgressBar value={p2Total > 0 ? (p2Correct / p2Total) * 100 : 0} color="var(--color-warning)" height="6px" />
               </div>
             )}
 
             {/* Part 3 */}
             {!isEnglishExam && (
-              <div style={styles.partBox('#8b5cf6')}>
+              <div style={styles.partBox('var(--color-primary)')}>
                 <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', fontWeight: 'var(--font-weight-semibold)', marginBottom: 'var(--spacing-2)' }}>Phần III — Trả lời ngắn</div>
-                <div style={{ fontSize: '28px', fontWeight: '800', color: '#7c3aed' }}>{p3Score}đ</div>
-                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)' }}>{p3Correct}/{p3Total} câu đúng</div>
-                <div style={{ marginTop: 'var(--spacing-2)', height: '6px', borderRadius: '3px', backgroundColor: 'var(--color-border)', overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: '3px', backgroundColor: '#8b5cf6',
-                    width: p3Total > 0 ? `${(p3Correct / p3Total) * 100}%` : '0%', transition: 'width 0.5s ease'
-                  }} />
-                </div>
+                <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--color-primary)' }}>{p3Score}đ</div>
+                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginTop: 'var(--spacing-1)', marginBottom: 'var(--spacing-2)' }}>{p3Correct}/{p3Total} câu đúng</div>
+                <ProgressBar value={p3Total > 0 ? (p3Correct / p3Total) * 100 : 0} color="var(--color-primary)" height="6px" />
               </div>
             )}
           </div>
