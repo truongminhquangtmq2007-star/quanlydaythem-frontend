@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
+import AITutorBlock from '../components/AITutorBlock';
 
 // ==========================================
 // CẤU TRÚC DỮ LIỆU
@@ -160,6 +161,7 @@ const ViewAnswers = () => {
                       <span style={{ color: 'var(--color-success)' }}>✅ Đáp án chuẩn:</span>
                       <span style={{ color: '#059669', fontSize: 'var(--font-size-lg)' }}>{correctOpt || 'Chưa cập nhật'}</span>
                     </div>
+                    {docId && <AITutorBlock examId={docId} questionId={qId} part="part1" />}
                   </div>
                 </React.Fragment>
               );
@@ -201,6 +203,7 @@ const ViewAnswers = () => {
                         </tbody>
                       </table>
                     </div>
+                    {docId && <AITutorBlock examId={docId} questionId={qId} part="part2" />}
                   </div>
                 </React.Fragment>
               );
@@ -231,6 +234,7 @@ const ViewAnswers = () => {
                         {correctAns || 'Chưa cập nhật'}
                       </span>
                     </div>
+                    {docId && <AITutorBlock examId={docId} questionId={qId} part="part3" />}
                   </div>
                 </React.Fragment>
               );
