@@ -155,8 +155,8 @@ const ClassDetail = () => {
     setEditingSession({ 
       class_id: id, 
       session_date: new Date().toISOString().split('T')[0], 
-      start_time: '18:00', 
-      end_time: '19:30',
+      start_time: '19:00', 
+      end_time: '21:00',
       content: '',
       homework: ''
     });
