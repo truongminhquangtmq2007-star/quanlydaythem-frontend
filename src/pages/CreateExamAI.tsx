@@ -8,6 +8,7 @@ import { Card } from '../components/ui/Card';
 import axiosClient from '../api/axiosClient';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
+import { QuestionImageUploader } from '../components/QuestionImageUploader';
 
 // ==========================================
 // HÀM RENDER "BỌC THÉP" TỐI THƯỢNG (XỬ LÝ MỌI KÝ TỰ TÀNG HÌNH & LATEX)
@@ -398,6 +399,64 @@ const CreateExamAI: React.FC = () => {
     });
   };
 
+  const [uploadingImageKey, setUploadingImageKey] = useState<string | null>(null);
+
+  const handleImageUpload = async (part: 'part1' | 'part2' | 'part3', index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Chỉ chấp nhận file hình ảnh (JPG, PNG, GIF, WEBP)!');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Kích thước ảnh vượt quá 10MB. Vui lòng chọn ảnh nhỏ hơn!');
+      return;
+    }
+
+    setUploadingImageKey(`${part}_${index}`);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const res = await axiosClient.post('/api/upload/image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data?.url) {
+        setEditContent((prev: any) => {
+          if (!prev || !prev[part]) return prev;
+          const updatedList = [...prev[part]];
+          updatedList[index] = { ...updatedList[index], image_url: res.data.url };
+          const updatedContent = { ...prev, [part]: updatedList };
+          setJsonString(JSON.stringify(updatedContent, null, 2));
+          return updatedContent;
+        });
+        toast.success('Tải ảnh lên thành công!');
+      } else {
+        toast.error('Không nhận được URL ảnh từ máy chủ.');
+      }
+    } catch (error: any) {
+      console.error('Lỗi upload ảnh:', error);
+      toast.error('Lỗi tải ảnh: ' + (error.response?.data?.message || error.message || 'Không xác định'));
+    } finally {
+      setUploadingImageKey(null);
+    }
+  };
+
+  const handleRemoveImage = (part: 'part1' | 'part2' | 'part3', index: number) => {
+    setEditContent((prev: any) => {
+      if (!prev || !prev[part]) return prev;
+      const updatedList = [...prev[part]];
+      updatedList[index] = { ...updatedList[index], image_url: '' };
+      const updatedContent = { ...prev, [part]: updatedList };
+      setJsonString(JSON.stringify(updatedContent, null, 2));
+      return updatedContent;
+    });
+    toast.info('Đã xóa ảnh minh họa.');
+  };
+
   // Save Draft or Publish Exam
   const handleSaveOrPublish = async (isDraft: boolean = false) => {
     if (!examTitle.trim()) {
@@ -765,6 +824,11 @@ const CreateExamAI: React.FC = () => {
                                       <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '8px 12px', marginBottom: '10px', color: '#92400e', fontSize: '13px' }}>
                                         <strong>📖 Ngữ liệu chung cho câu {group.questionIds.join(', ')}:</strong>
                                         <div style={{ marginTop: '4px' }}>{renderContent(group.content)}</div>
+                                        {group.image_url && (
+                                          <div style={{ marginTop: '6px' }}>
+                                            <img src={group.image_url} alt="Ngữ liệu chung" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '6px' }} />
+                                          </div>
+                                        )}
                                       </div>
                                     )}
 
@@ -783,6 +847,16 @@ const CreateExamAI: React.FC = () => {
                                         {isRegen ? '🔄 Đang đổi...' : '🔄 Đổi câu này'}
                                       </Button>
                                     </div>
+
+                                    {/* Control Upload / Thay ảnh cho câu hỏi Part 1 */}
+                                    <QuestionImageUploader
+                                      part="part1"
+                                      index={idx}
+                                      imageUrl={q.image_url}
+                                      onUpload={handleImageUpload}
+                                      onRemove={handleRemoveImage}
+                                      isUploading={uploadingImageKey === `part1_${idx}`}
+                                    />
 
                                     {/* Options Grid */}
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px', marginBottom: '10px' }}>
@@ -838,6 +912,11 @@ const CreateExamAI: React.FC = () => {
                                       <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '8px 12px', marginBottom: '10px', color: '#92400e', fontSize: '13px' }}>
                                         <strong>📖 Ngữ liệu chung cho câu {group.questionIds.join(', ')}:</strong>
                                         <div style={{ marginTop: '4px' }}>{renderContent(group.content)}</div>
+                                        {group.image_url && (
+                                          <div style={{ marginTop: '6px' }}>
+                                            <img src={group.image_url} alt="Ngữ liệu chung" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '6px' }} />
+                                          </div>
+                                        )}
                                       </div>
                                     )}
 
@@ -856,6 +935,16 @@ const CreateExamAI: React.FC = () => {
                                         {isRegen ? '🔄 Đang đổi...' : '🔄 Đổi câu này'}
                                       </Button>
                                     </div>
+
+                                    {/* Control Upload / Thay ảnh cho câu hỏi Part 2 */}
+                                    <QuestionImageUploader
+                                      part="part2"
+                                      index={idx}
+                                      imageUrl={q.image_url}
+                                      onUpload={handleImageUpload}
+                                      onRemove={handleRemoveImage}
+                                      isUploading={uploadingImageKey === `part2_${idx}`}
+                                    />
 
                                     {/* Statements Table */}
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', marginBottom: '10px' }}>
@@ -934,6 +1023,11 @@ const CreateExamAI: React.FC = () => {
                                       <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '8px 12px', marginBottom: '10px', color: '#92400e', fontSize: '13px' }}>
                                         <strong>📖 Ngữ liệu chung cho câu {group.questionIds.join(', ')}:</strong>
                                         <div style={{ marginTop: '4px' }}>{renderContent(group.content)}</div>
+                                        {group.image_url && (
+                                          <div style={{ marginTop: '6px' }}>
+                                            <img src={group.image_url} alt="Ngữ liệu chung" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '6px' }} />
+                                          </div>
+                                        )}
                                       </div>
                                     )}
 
@@ -952,6 +1046,16 @@ const CreateExamAI: React.FC = () => {
                                         {isRegen ? '🔄 Đang đổi...' : '🔄 Đổi câu này'}
                                       </Button>
                                     </div>
+
+                                    {/* Control Upload / Thay ảnh cho câu hỏi Part 3 */}
+                                    <QuestionImageUploader
+                                      part="part3"
+                                      index={idx}
+                                      imageUrl={q.image_url}
+                                      onUpload={handleImageUpload}
+                                      onRemove={handleRemoveImage}
+                                      isUploading={uploadingImageKey === `part3_${idx}`}
+                                    />
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                                       <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--color-text-secondary)' }}>Đáp án chuẩn:</span>
