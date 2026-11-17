@@ -166,7 +166,12 @@ const ExamRoom = () => {
       
       setExams(Array.isArray(resDocs.data) ? resDocs.data : (resDocs.data.documents || []));
       setMyScores(historyMap);
-    } catch (error) { console.error("Lỗi lấy đề thi:", error); }
+    } catch (error: any) {
+      console.error("Lỗi lấy đề thi:", error);
+      if (error?.response?.data?.message) {
+        toast.error(error.response.data.message);
+      }
+    }
   }, []);
 
   useEffect(() => { if (viewState === 'LIST') fetchExams(); }, [viewState, fetchExams]);

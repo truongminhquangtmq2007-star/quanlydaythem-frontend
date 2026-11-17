@@ -29,6 +29,7 @@ interface AiInsight {
 const StudentDashboard: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [updating, setUpdating] = useState(false);
@@ -38,12 +39,15 @@ const StudentDashboard: React.FC = () => {
     try {
       const res = await axiosClient.get('/api/student/dashboard');
       setData(res.data);
+      setErrorMsg(null);
       if (res.data?.profile?.email) {
         setEmailInput(res.data.profile.email);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Lỗi tải dữ liệu bảng điều khiển');
+      const msg = err?.response?.data?.message || 'Lỗi tải dữ liệu bảng điều khiển';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -105,7 +109,7 @@ const StudentDashboard: React.FC = () => {
     );
   }
 
-  if (!data) return <EmptyState title="Lỗi dữ liệu" description="Không thể tải dữ liệu bảng điều khiển." />;
+  if (!data) return <EmptyState title="Không thể truy cập" description={errorMsg || "Không thể tải dữ liệu bảng điều khiển."} />;
 
   const recentScores: ScoreItem[] = (data.stats?.recentScores || []).slice().reverse(); // Sắp xếp theo thứ tự thời gian tăng dần
   const weakTopics: TopicItem[] = data.weakTopics || [];

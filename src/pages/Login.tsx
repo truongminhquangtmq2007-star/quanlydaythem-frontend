@@ -29,8 +29,8 @@ const Login = () => {
       
       navigate('/students'); 
       
-    } catch (error) {
-      setMessage('Sai tên đăng nhập hoặc mật khẩu!');
+    } catch (error: any) {
+      setMessage(error?.response?.data?.message || 'Sai tên đăng nhập hoặc mật khẩu!');
     } finally {
       setLoading(false);
     }
